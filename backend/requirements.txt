@@ -4,3 +4,4 @@ python-dotenv
 openai
 newspaper3k
 gunicorn
+lxml[html_clean]
