@@ -40,28 +40,29 @@ def classify():
         except Exception:
             return jsonify({"error": "Failed to extract content from article"}), 500
 
-    try:
-        prompt = f"""
+try:
+    prompt = f"""
 Classify the following article using IAB 3.1 taxonomy.
 Return:
 - Article Title:
 - IAB category and subcategory with code
-- tone"
+- tone
 - Audience intent
 - audience
 - keywords
-- buying intent score of the article - examine based on the article how likely is someone to purches a product, return a % between 1% to
-
+- buying intent score of the article - examine based on the article how likely is someone to purchase a product, return a % between 1% to 100%
 
 Article:
 \"\"\"{article_text}\"\"\"
 """
-        response = client.chat.completions.create(
-    model="gpt-4",
-    messages=[{"role": "user", "content": prompt}],
-)
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}],
+    )
+    response_text = response.choices[0].message.content.strip()
+except Exception as e:
+    return jsonify({"error": str(e)}), 500
 
-response_text = response.choices[0].message.content.strip()
 
 # Parse the GPT response line by line
 lines = response_text.split("\n")
