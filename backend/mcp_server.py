@@ -1,9 +1,11 @@
 import os
+import requests
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
 from openai import OpenAI
 from newspaper import Article
+from bs4 import BeautifulSoup
 
 load_dotenv()
 app = Flask(__name__)
@@ -18,17 +20,29 @@ def classify():
     if not url:
         return jsonify({"error": "Missing URL"}), 400
 
+    # Try newspaper3k first
     try:
         article = Article(url)
         article.download()
         article.parse()
-        article_text = article.text
+        article_text = article.text.strip()
+        if not article_text:
+            raise ValueError("Empty article text")
     except:
-        return jsonify({"error": "Failed to parse article"}), 500
+        # Fallback to BeautifulSoup
+        try:
+            resp = requests.get(url, timeout=10)
+            soup = BeautifulSoup(resp.content, "html.parser")
+            paragraphs = soup.find_all("p")
+            article_text = " ".join(p.get_text() for p in paragraphs).strip()
+            if not article_text:
+                raise ValueError("Fallback also returned empty content")
+        except Exception:
+            return jsonify({"error": "Failed to extract content from article"}), 500
 
     try:
         prompt = f"""
-Classify the following article using IAB 3.1 taxonomy. 
+Classify the following article using IAB 3.1 taxonomy.
 Return:
 - IAB category and subcategory with code
 - Audience intent
@@ -46,6 +60,3 @@ Article:
         return jsonify({"result": response.choices[0].message.content.strip()})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-if __name__ == "__main__":
-    app.run(debug=True)
