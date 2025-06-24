@@ -40,8 +40,8 @@ def classify():
         except Exception:
             return jsonify({"error": "Failed to extract content from article"}), 500
 
-try:
-    prompt = f"""
+    try:
+        prompt = f"""
 Classify the following article using IAB 3.1 taxonomy.
 Return:
 - Article Title
@@ -56,39 +56,42 @@ Article:
 \"\"\"{article_text}\"\"\"
 """
 
-    response = client.chat.completions.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}],
-    )
-    response_text = response.choices[0].message.content.strip()
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": prompt}],
+        )
+        response_text = response.choices[0].message.content.strip()
 
-    # Parse the GPT response into structured JSON
-    result = {
-        "iab_category": "N/A",
-        "iab_code": "N/A",
-        "iab_subcategory": "N/A",
-        "iab_subcode": "N/A",
-        "tone": "N/A",
-        "intent": "N/A",
-        "audience": "N/A",
-        "keywords": [],
-        "buying_intent": "N/A"
-    }
+        # Initialize result dictionary
+        result = {
+            "iab_category": "N/A",
+            "iab_code": "N/A",
+            "iab_subcategory": "N/A",
+            "iab_subcode": "N/A",
+            "tone": "N/A",
+            "intent": "N/A",
+            "audience": "N/A",
+            "keywords": [],
+            "buying_intent": "N/A"
+        }
 
-    # Line-by-line parsing
-    for line in response_text.split("\n"):
-        line = line.strip()
-        if line.lower().startswith("iab category") or "iab" in line.lower():
-            result["iab_category"] = line.split(":", 1)[-1].strip()
-        elif line.lower().startswith("tone"):
-            result["tone"] = line.split(":", 1)[-1].strip()
-        elif "audience intent" in line.lower():
-            result["intent"] = line.split(":", 1)[-1].strip()
-        elif line.lower().startswith("audience"):
-            result["audience"] = line.split(":", 1)[-1].strip()
-        elif line.lower().startswith("keywords"):
-            result["keywords"] = [kw.strip() for kw in line.split(":", 1)[-1].split(",")]
-        elif "buying intent" in line.lower():
-            result["buying_intent"] = line.split(":", 1)[-1].strip()
+        # Line-by-line parsing
+        for line in response_text.split("\n"):
+            line = line.strip()
+            if "iab" in line.lower():
+                result["iab_category"] = line.split(":", 1)[-1].strip()
+            elif line.lower().startswith("tone"):
+                result["tone"] = line.split(":", 1)[-1].strip()
+            elif "audience intent" in line.lower():
+                result["intent"] = line.split(":", 1)[-1].strip()
+            elif line.lower().startswith("audience"):
+                result["audience"] = line.split(":", 1)[-1].strip()
+            elif line.lower().startswith("keywords"):
+                result["keywords"] = [kw.strip() for kw in line.split(":", 1)[-1].split(",")]
+            elif "buying intent" in line.lower():
+                result["buying_intent"] = line.split(":", 1)[-1].strip()
 
-    return jsonify(result)
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
