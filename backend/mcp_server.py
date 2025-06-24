@@ -44,19 +44,62 @@ def classify():
         prompt = f"""
 Classify the following article using IAB 3.1 taxonomy.
 Return:
+- Article Title:
 - IAB category and subcategory with code
+- tone"
 - Audience intent
-- Tone
-- Summary
-- Keywords
+- audience
+- keywords
+- buying intent score of the article - examine based on the article how likely is someone to purches a product, return a % between 1% to
+
 
 Article:
 \"\"\"{article_text}\"\"\"
 """
         response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": prompt}],
-        )
-        return jsonify({"result": response.choices[0].message.content.strip()})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    model="gpt-4",
+    messages=[{"role": "user", "content": prompt}],
+)
+
+response_text = response.choices[0].message.content.strip()
+
+# Parse the GPT response line by line
+lines = response_text.split("\n")
+result = {
+    "title": "N/A",
+    "iab_category": "N/A",
+    "iab_code": "N/A",
+    "iab_subcategory": "N/A",
+    "iab_subcode": "N/A",
+    "tone": "N/A",
+    "intent": "N/A",
+    "audience": "N/A",
+    "keywords": [],
+    "buying_intent_score": "N/A"
+}
+
+for line in lines:
+    line = line.strip()
+    if line.lower().startswith("article title:"):
+        result["title"] = line.split(":", 1)[1].strip()
+    elif line.lower().startswith("iab category:"):
+        parts = line.split(":", 1)[1].strip().split(" (")
+        result["iab_category"] = parts[0].strip()
+        result["iab_code"] = parts[1][:-1] if len(parts) > 1 else "N/A"
+    elif line.lower().startswith("subcategory:"):
+        parts = line.split(":", 1)[1].strip().split(" (")
+        result["iab_subcategory"] = parts[0].strip()
+        result["iab_subcode"] = parts[1][:-1] if len(parts) > 1 else "N/A"
+    elif line.lower().startswith("tone:"):
+        result["tone"] = line.split(":", 1)[1].strip()
+    elif line.lower().startswith("audience intent:"):
+        result["intent"] = line.split(":", 1)[1].strip()
+    elif line.lower().startswith("audience:"):
+        result["audience"] = line.split(":", 1)[1].strip()
+    elif line.lower().startswith("keywords:"):
+        keywords_text = line.split(":", 1)[1].strip()
+        result["keywords"] = [kw.strip() for kw in keywords_text.split(",")]
+    elif line.lower().startswith("buying intent score:"):
+        result["buying_intent_score"] = line.split(":", 1)[1].strip()
+
+return jsonify(result)
