@@ -61,7 +61,9 @@ Article:
     )
     response_text = response.choices[0].message.content.strip()
 except Exception as e:
+    print("GPT error:", str(e))
     return jsonify({"error": str(e)}), 500
+
 
 
 # Parse the GPT response line by line
