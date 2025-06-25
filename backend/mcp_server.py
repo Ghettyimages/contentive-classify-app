@@ -29,7 +29,6 @@ def classify():
         if not article_text:
             raise ValueError("Empty article text")
     except:
-        # Fallback to BeautifulSoup
         try:
             resp = requests.get(url, timeout=10)
             soup = BeautifulSoup(resp.content, "html.parser")
@@ -42,25 +41,19 @@ def classify():
 
     try:
         prompt = f"""
-You are a content classification engine for digital advertising. Your job is to analyze article content and return structured metadata used in programmatic targeting.
-
-Classify the following article using the IAB 3.1 taxonomy and extract relevant metadata.
-
-Follow this strict format exactly:
-
-- IAB Category: [Name] ([Code])
-- Subcategory: [Name] ([Code])
-- Tone: [Informative | Emotional | Persuasive | Neutral | Critical | Other]
-- Audience Intent: [Brief sentence summarizing why someone would seek out this article]
-- Audience: [e.g., Sports fans, Tech-savvy adults, Political analysts]
-- Keywords: [comma-separated list of 5–10 keywords]
-- Buying Intent Score: [A number from 1% to 100% followed by a brief explanation in parentheses — e.g., "35% (Mentions specific products and compares features)"]
-- Suggested Ad Campaign Types: [Describe 1–2 campaign types or verticals (e.g., political ads, travel insurance, military recruitment), and why they would be contextually relevant to this article]
-
-Only return the structured fields above. Do not include extra commentary or explanations.
+Classify the following article using IAB 3.1 taxonomy.
+Return:
+- Article Title
+- IAB category and subcategory with code
+- Tone
+- Audience intent
+- Audience
+- Keywords
+- Buying intent score of the article (between 1% to 100%, include reasoning)
+- Suggested Ad Campaign Types
 
 Article:
-\"\"\"{article_text}\"\"\"
+"""{article_text}"""
 """
 
         response = client.chat.completions.create(
@@ -69,7 +62,7 @@ Article:
         )
         response_text = response.choices[0].message.content.strip()
 
-        # Initialize default structure
+        # Flexible parser
         result = {
             "iab_category": "N/A",
             "iab_code": "N/A",
@@ -80,36 +73,34 @@ Article:
             "audience": "N/A",
             "keywords": [],
             "buying_intent": "N/A",
-            "campaign_suggestions": "N/A"
+            "ad_suggestions": "N/A"
         }
 
-        # Line-by-line parsing
         for line in response_text.split("\n"):
             line = line.strip()
-            if line.lower().startswith("iab category"):
-                parts = line.split(":")[1].strip()
-                result["iab_category"] = parts
-            elif line.lower().startswith("subcategory"):
-                parts = line.split(":")[1].strip()
-                result["iab_subcategory"] = parts
-            elif line.lower().startswith("tone"):
-                result["tone"] = line.split(":")[1].strip()
-            elif "audience intent" in line.lower():
-                result["intent"] = line.split(":", 1)[-1].strip()
-            elif line.lower().startswith("audience:"):
-                result["audience"] = line.split(":", 1)[-1].strip()
-            elif line.lower().startswith("keywords"):
-                kw_text = line.split(":", 1)[-1].strip()
-                result["keywords"] = [kw.strip() for kw in kw_text.split(",") if kw.strip()]
-            elif "buying intent" in line.lower():
-                result["buying_intent"] = line.split(":", 1)[-1].strip()
-            elif "suggested ad campaign" in line.lower():
-                result["campaign_suggestions"] = line.split(":", 1)[-1].strip()
+            if not line or ":" not in line:
+                continue
+
+            key, value = line.split(":", 1)
+            key = key.strip().lower()
+            value = value.strip()
+
+            if "iab" in key and ("category" in key or "subcategory" in key):
+                result["iab_category"] = value
+            elif "tone" in key:
+                result["tone"] = value
+            elif "intent" in key:
+                result["intent"] = value
+            elif key.startswith("audience"):
+                result["audience"] = value
+            elif "keyword" in key:
+                result["keywords"] = [kw.strip() for kw in value.split(",") if kw.strip()]
+            elif "buying intent" in key:
+                result["buying_intent"] = value
+            elif "ad campaign" in key:
+                result["ad_suggestions"] = value
 
         return jsonify(result)
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-if __name__ == "__main__":
-    app.run(debug=True)
