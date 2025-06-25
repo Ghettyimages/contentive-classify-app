@@ -41,20 +41,20 @@ def classify():
 
     try:
         prompt = f"""Classify the following article using IAB 3.1 taxonomy.
-Return:
-- Article Title
-- IAB category and subcategory with code
-- Tone
-- Audience intent
-- Audience
-- Keywords
-- Buying intent score of the article (between 1% to 100%, include reasoning)
-- Suggested Ad Campaign Types
+Return all results using this exact format:
+
+- IAB Category: [label with code]
+- IAB Subcategory: [label with code]
+- Tone: [brief tone summary]
+- User Intent: [what the user is trying to achieve]
+- Audience: [target audience type or profile]
+- Keywords: [comma-separated list]
+- Buying Intent Score: [1% to 100%] (include reasoning)
+- Suggested Ad Campaign Types: [brief comma-separated list or description]
 
 Article:
 {article_text}
 """
-
 
         response = client.chat.completions.create(
             model="gpt-4",
@@ -62,7 +62,6 @@ Article:
         )
         response_text = response.choices[0].message.content.strip()
 
-        # Flexible parser
         result = {
             "iab_category": "N/A",
             "iab_code": "N/A",
@@ -85,15 +84,17 @@ Article:
             key = key.strip().lower()
             value = value.strip()
 
-            if "iab" in key and ("category" in key or "subcategory" in key):
+            if "iab category" in key:
                 result["iab_category"] = value
+            elif "iab subcategory" in key:
+                result["iab_subcategory"] = value
             elif "tone" in key:
                 result["tone"] = value
-            elif "intent" in key:
+            elif "user intent" in key:
                 result["intent"] = value
             elif key.startswith("audience"):
                 result["audience"] = value
-            elif "keyword" in key:
+            elif "keywords" in key:
                 result["keywords"] = [kw.strip() for kw in value.split(",") if kw.strip()]
             elif "buying intent" in key:
                 result["buying_intent"] = value
