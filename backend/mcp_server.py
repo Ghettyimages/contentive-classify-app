@@ -40,8 +40,7 @@ def classify():
             return jsonify({"error": "Failed to extract content from article"}), 500
 
     try:
-        prompt = f"""
-Classify the following article using IAB 3.1 taxonomy.
+        prompt = f"""Classify the following article using IAB 3.1 taxonomy.
 Return:
 - Article Title
 - IAB category and subcategory with code
@@ -53,8 +52,9 @@ Return:
 - Suggested Ad Campaign Types
 
 Article:
-"""{article_text}"""
+{article_text}
 """
+
 
         response = client.chat.completions.create(
             model="gpt-4",
