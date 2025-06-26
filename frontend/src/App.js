@@ -9,13 +9,17 @@ function App() {
   const handleClassify = async () => {
     setLoading(true);
     try {
-      const response = await axios.post("http://localhost:5000/classify", { url });
+      const response = await axios.post(
+        "https://contentive-classify-app.onrender.com/classify",
+        { url }
+      );
       setResult(response.data);
     } catch (error) {
       console.error("Error classifying article:", error);
       setResult(null);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
