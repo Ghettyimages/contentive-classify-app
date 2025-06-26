@@ -13,6 +13,8 @@ CORS(app)
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+MAX_TOKENS = 6000  # Safe limit for input truncation
+
 @app.route("/classify", methods=["POST"])
 def classify():
     data = request.get_json()
@@ -38,6 +40,10 @@ def classify():
                 raise ValueError("Fallback also returned empty content")
         except Exception:
             return jsonify({"error": "Failed to extract content from article"}), 500
+
+    # Truncate input for token safety
+    if len(article_text) > MAX_TOKENS * 4:  # Roughly 4 chars per token
+        article_text = article_text[:MAX_TOKENS * 4]
 
     try:
         prompt = f"""Classify the following article using IAB 3.1 taxonomy.
@@ -105,4 +111,3 @@ Article:
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
