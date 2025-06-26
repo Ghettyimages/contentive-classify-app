@@ -98,7 +98,7 @@ Article:
                 result["tone"] = value
             elif "user intent" in key:
                 result["intent"] = value
-            elif key.startswith("audience"):
+            elif "audience" in key:
                 result["audience"] = value
             elif "keywords" in key:
                 result["keywords"] = [kw.strip() for kw in value.split(",") if kw.strip()]
