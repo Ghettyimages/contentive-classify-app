@@ -24,6 +24,18 @@ function App() {
 
   return (
     <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
+      {/* ✅ Logo and Tagline Block */}
+      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <img
+          src="/logo2.png"
+          alt="Contentive Media Logo"
+          style={{ maxWidth: '210px', height: 'auto', marginBottom: '-2.0rem' }} // ⬅️ added this line
+  />
+        <h1 style={{ margin: '0.2rem 0 0 0', fontSize: '1.8rem' }}>CONTENTIVE MEDIA</h1>
+        <p style={{ fontSize: '1rem', color: '#444', margin: '0.5rem' }}>connecting content with intent</p>
+      </div>
+
+      {/* 🧠 Classify Form */}
       <h1>Classify Article by URL</h1>
       <input
         type="text"
