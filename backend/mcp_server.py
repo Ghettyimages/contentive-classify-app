@@ -111,3 +111,22 @@ Article:
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route("/classify-bulk", methods=["POST"])
+def classify_bulk():
+    data = request.json
+    urls = data.get("urls", [])
+    results = []
+
+    for url in urls:
+        try:
+            result = classify_url(url)  # Reuse your single-URL classifier
+            result["url"] = url         # Add original URL to result
+            results.append(result)
+        except Exception as e:
+            results.append({
+                "url": url,
+                "error": str(e)
+            })
+
+    return jsonify({"results": results})
