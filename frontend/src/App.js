@@ -8,6 +8,7 @@ function App() {
 
   const [bulkInput, setBulkInput] = useState("");
   const [bulkResults, setBulkResults] = useState([]);
+  const [loadingBulk, setLoadingBulk] = useState(false);
 
   const handleClassify = async () => {
     setLoading(true);
@@ -29,6 +30,7 @@ function App() {
     const urls = bulkInput.split("\n").map((url) => url.trim()).filter(Boolean);
     if (urls.length === 0) return;
 
+    setLoadingBulk(true);
     try {
       const response = await axios.post(
         "https://contentive-classify-app.onrender.com/classify-bulk",
@@ -38,6 +40,8 @@ function App() {
     } catch (error) {
       console.error("Error during bulk classification:", error);
       setBulkResults([]);
+    } finally {
+      setLoadingBulk(false);
     }
   };
 
@@ -87,7 +91,7 @@ function App() {
         <p style={{ fontSize: '1rem', color: '#444', margin: '0.5rem' }}>connecting content with intent</p>
       </div>
 
-      {/* 🧠 Classify Form */}
+      {/* 🧠 Single URL Classification */}
       <h1>Classify Article by URL</h1>
       <input
         type="text"
@@ -141,9 +145,20 @@ function App() {
         style={{ width: "100%", padding: "1rem", fontSize: "1rem", marginBottom: "1rem" }}
       />
 
-      <button onClick={handleBulkClassify} style={{ marginRight: "1rem" }}>
+      <button
+        onClick={handleBulkClassify}
+        style={{
+          marginLeft: "0",
+          padding: "0.5rem 1rem",
+          fontSize: "1rem",
+          cursor: "pointer",
+          marginBottom: "1rem"
+        }}
+      >
         Classify All
       </button>
+
+      {loadingBulk && <p style={{ marginTop: "1rem" }}>Loading bulk classification...</p>}
 
       {bulkResults.length > 0 && (
         <>
