@@ -51,18 +51,16 @@ function App() {
 
   const exportCSV = () => {
     const headers = [
-      "url",
-      "iab_category",
-      "iab_code",
-      "iab_subcategory",
-      "iab_subcode",
-      "tone",
-      "intent",
-      "audience",
-      "keywords",
-      "buying_intent",
-      "ad_suggestions",
-    ];
+  "url",
+  "iab_category",
+  "iab_subcategory",
+  "tone",
+  "intent",
+  "audience",
+  "keywords",
+  "buying_intent",
+  "ad_suggestions",
+];
     const csvContent = [
       headers.join(","),
       ...bulkResults.map((r) =>
@@ -185,20 +183,19 @@ function App() {
 
           <table style={{ width: "100%", marginTop: "1rem", borderCollapse: "collapse" }}>
             <thead>
-              <tr>
-                <th>URL</th>
-                <th>IAB Category</th>
-                <th>IAB Code</th>
-                <th>IAB Subcategory</th>
-                <th>IAB Subcode</th>
-                <th>Tone</th>
-                <th>Intent</th>
-                <th>Audience</th>
-                <th>Keywords</th>
-                <th>Buying Intent</th>
-                <th>Ad Suggestions</th>
-              </tr>
-            </thead>
+  <tr>
+    <th>URL</th>
+    <th>IAB Category</th>
+    <th>IAB Subcategory</th>
+    <th>Tone</th>
+    <th>Intent</th>
+    <th>Audience</th>
+    <th>Keywords</th>
+    <th>Buying Intent</th>
+    <th>Ad Suggestions</th>
+  </tr>
+</thead>
+
             <tbody>
               {bulkResults.map((r, i) => (
                 <tr key={i}>
@@ -214,9 +211,7 @@ function App() {
                     {r.url}
                   </td>
                   <td>{r.iab_category}</td>
-                  <td>{r.iab_code}</td>
                   <td>{r.iab_subcategory}</td>
-                  <td>{r.iab_subcode}</td>
                   <td>{r.tone}</td>
                   <td>{r.intent}</td>
                   <td>{r.audience}</td>
