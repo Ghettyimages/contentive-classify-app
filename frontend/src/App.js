@@ -51,16 +51,18 @@ function App() {
 
   const exportCSV = () => {
     const headers = [
-  "url",
-  "iab_category",
-  "iab_subcategory",
-  "tone",
-  "intent",
-  "audience",
-  "keywords",
-  "buying_intent",
-  "ad_suggestions",
-];
+      "url",
+      "iab_category",
+      "iab_subcategory",
+      "iab_secondary_category",
+      "iab_secondary_subcategory",
+      "tone",
+      "intent",
+      "audience",
+      "keywords",
+      "buying_intent",
+      "ad_suggestions",
+    ];
     const csvContent = [
       headers.join(","),
       ...bulkResults.map((r) =>
@@ -139,6 +141,8 @@ function App() {
           <h3>Classification Results</h3>
           <p><strong>IAB Category:</strong> {result.iab_category || "N/A"}</p>
           <p><strong>IAB Subcategory:</strong> {result.iab_subcategory || "N/A"}</p>
+          <p><strong>Secondary IAB Category:</strong> {result.iab_secondary_category || "N/A"}</p>
+          <p><strong>Secondary IAB Subcategory:</strong> {result.iab_secondary_subcategory || "N/A"}</p>
           <p><strong>Tone:</strong> {result.tone || "N/A"}</p>
           <p><strong>User Intent:</strong> {result.intent || "N/A"}</p>
           <p><strong>Audience:</strong> {result.audience || "N/A"}</p>
@@ -183,19 +187,20 @@ function App() {
 
           <table style={{ width: "100%", marginTop: "1rem", borderCollapse: "collapse" }}>
             <thead>
-  <tr>
-    <th>URL</th>
-    <th>IAB Category</th>
-    <th>IAB Subcategory</th>
-    <th>Tone</th>
-    <th>Intent</th>
-    <th>Audience</th>
-    <th>Keywords</th>
-    <th>Buying Intent</th>
-    <th>Ad Suggestions</th>
-  </tr>
-</thead>
-
+              <tr>
+                <th>URL</th>
+                <th>IAB Category</th>
+                <th>IAB Subcategory</th>
+                <th>Secondary IAB Category</th>
+                <th>Secondary IAB Subcategory</th>
+                <th>Tone</th>
+                <th>Intent</th>
+                <th>Audience</th>
+                <th>Keywords</th>
+                <th>Buying Intent</th>
+                <th>Ad Suggestions</th>
+              </tr>
+            </thead>
             <tbody>
               {bulkResults.map((r, i) => (
                 <tr key={i}>
@@ -212,6 +217,8 @@ function App() {
                   </td>
                   <td>{r.iab_category}</td>
                   <td>{r.iab_subcategory}</td>
+                  <td>{r.iab_secondary_category}</td>
+                  <td>{r.iab_secondary_subcategory}</td>
                   <td>{r.tone}</td>
                   <td>{r.intent}</td>
                   <td>{r.audience}</td>
