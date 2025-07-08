@@ -88,6 +88,7 @@ Article:
             messages=[{"role": "user", "content": prompt}],
         )
         response_text = response.choices[0].message.content.strip()
+        print("DEBUG GPT RESPONSE:\n", response_text)  # ← Optional but useful
 
         result = {
             "iab_category": "N/A",
@@ -112,7 +113,7 @@ Article:
                 continue
 
             key, value = line.split(":", 1)
-            key = key.strip().lower()
+            key = key.strip().lower().replace("-", "").replace("_", "").replace("  ", " ")
             value = value.strip()
 
             if key == "iab category":
@@ -139,7 +140,7 @@ Article:
                 result["audience"] = value
             elif key == "keywords":
                 result["keywords"] = [kw.strip() for kw in value.split(",") if kw.strip()]
-            elif key == "buying intent score":
+            elif key.startswith("buying intent"):
                 result["buying_intent"] = value
             elif "ad campaign" in key:
                 result["ad_suggestions"] = value
