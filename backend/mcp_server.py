@@ -29,7 +29,6 @@ def classify():
     if not url:
         return jsonify({"error": "Missing URL"}), 400
 
-    # Try newspaper3k first
     try:
         article = Article(url)
         article.download()
@@ -88,7 +87,7 @@ Article:
             messages=[{"role": "user", "content": prompt}],
         )
         response_text = response.choices[0].message.content.strip()
-        print("DEBUG GPT RESPONSE:\n", response_text)  # ← Optional but useful
+        print("DEBUG GPT RESPONSE:\n", response_text)
 
         result = {
             "iab_category": "N/A",
@@ -112,8 +111,11 @@ Article:
             if not line or ":" not in line:
                 continue
 
+            if line.startswith("- "):
+                line = line[2:]
+
             key, value = line.split(":", 1)
-            key = key.strip().lower().replace("-", "").replace("_", "").replace("  ", " ")
+            key = key.strip().lower()
             value = value.strip()
 
             if key == "iab category":
