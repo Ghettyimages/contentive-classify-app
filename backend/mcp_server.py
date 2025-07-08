@@ -120,20 +120,16 @@ Article:
 
             if key == "iab category":
                 label, code = extract_label_and_code(value)
-                result["iab_category"] = label
-                result["iab_code"] = code
+                result["iab_category"] = f"{label} ({code})"
             elif key == "iab subcategory":
                 label, code = extract_label_and_code(value)
-                result["iab_subcategory"] = label
-                result["iab_subcode"] = code
+                result["iab_subcategory"] = f"{label} ({code})"
             elif key == "secondary iab category":
                 label, code = extract_label_and_code(value)
-                result["iab_secondary_category"] = label
-                result["iab_secondary_code"] = code
+                result["iab_secondary_category"] = f"{label} ({code})"
             elif key == "secondary iab subcategory":
                 label, code = extract_label_and_code(value)
-                result["iab_secondary_subcategory"] = label
-                result["iab_secondary_subcode"] = code
+                result["iab_secondary_subcategory"] = f"{label} ({code})"
             elif key == "tone":
                 result["tone"] = value
             elif key == "user intent":
