@@ -117,7 +117,7 @@ function HomePage() {
   SignalSync by Contentive Media
 </h2>
 <p style={{ color: "#555", marginBottom: "1rem" }}>
-  See how contextual content drives outcomes — powered by real attribution.
+  See how contextual content drives outcomes!!!powered by real attribution.
 </p>
 
 
