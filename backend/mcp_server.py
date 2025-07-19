@@ -221,3 +221,7 @@ def parse_response(response_text):
             result["ad_suggestions"] = value
 
     return result
+
+if __name__ == "__main__":
+    # Run the Flask app in development mode
+    app.run(debug=True, host="0.0.0.0", port=5000)
