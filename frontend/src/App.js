@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import axios from "axios";
+import "./App.css";
 
 function App() {
   const [url, setUrl] = useState("");
@@ -173,62 +174,89 @@ function App() {
       >
         Classify All
       </button>
-      {bulkLoading && <p style={{ marginTop: "1rem" }}>Loading...</p>}
+      {bulkLoading && (
+        <div className="results-container">
+          <div className="loading-state">
+            <p>🔄 Processing {bulkUrls.split('\n').filter(Boolean).length} URLs...</p>
+            <p>This may take a few moments</p>
+          </div>
+        </div>
+      )}
 
       {bulkResults.length > 0 && (
-        <div style={{ marginTop: "2rem" }}>
-          <button onClick={exportCSV} style={{ marginRight: "1rem" }}>
-            Export CSV
-          </button>
-          <button onClick={exportJSON}>Export JSON</button>
-          <p style={{ marginTop: "0.5rem", color: "#444" }}>
-            export for all intent data
-          </p>
-
-          <table style={{ width: "100%", marginTop: "1rem", borderCollapse: "collapse" }}>
-            <thead>
-              <tr>
-                <th>URL</th>
-                <th>IAB Category</th>
-                <th>IAB Subcategory</th>
-                <th>Secondary IAB Category</th>
-                <th>Secondary IAB Subcategory</th>
-                <th>Tone</th>
-                <th>Intent</th>
-                <th>Audience</th>
-                <th>Keywords</th>
-                <th>Buying Intent</th>
-                <th>Ad Suggestions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bulkResults.map((r, i) => (
-                <tr key={i}>
-                  <td
-                    style={{
-                      maxWidth: "250px",
-                      overflow: "hidden",
-                      whiteSpace: "nowrap",
-                      textOverflow: "ellipsis",
-                    }}
-                    title={r.url}
-                  >
-                    {r.url}
-                  </td>
-                  <td>{r.iab_category}</td>
-                  <td>{r.iab_subcategory}</td>
-                  <td>{r.iab_secondary_category}</td>
-                  <td>{r.iab_secondary_subcategory}</td>
-                  <td>{r.tone}</td>
-                  <td>{r.intent}</td>
-                  <td>{r.audience}</td>
-                  <td>{Array.isArray(r.keywords) ? r.keywords.join(", ") : r.keywords}</td>
-                  <td>{r.buying_intent}</td>
-                  <td>{r.ad_suggestions}</td>
+        <div className="results-container">
+          <div className="results-header">
+            <h3 className="results-title">
+              Classification Results ({bulkResults.length} items)
+            </h3>
+            <div className="export-buttons">
+              <button onClick={exportCSV} className="export-btn">
+                📊 Export CSV
+              </button>
+              <button onClick={exportJSON} className="export-btn secondary">
+                📄 Export JSON
+              </button>
+            </div>
+          </div>
+          
+          <div className="table-container">
+            <table className="results-table">
+              <thead>
+                <tr>
+                  <th>URL</th>
+                  <th>Primary Category</th>
+                  <th>Primary Subcategory</th>
+                  <th>Secondary Category</th>
+                  <th>Secondary Subcategory</th>
+                  <th>Tone</th>
+                  <th>Intent</th>
+                  <th>Audience</th>
+                  <th>Keywords</th>
+                  <th>Buying Intent</th>
+                  <th>Ad Suggestions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {bulkResults.map((r, i) => (
+                  <tr key={i}>
+                    <td className="url-cell" title={r.url}>
+                      {r.url}
+                    </td>
+                    <td className="category-cell">
+                      {r.iab_category || "—"}
+                    </td>
+                    <td className="subcategory-cell">
+                      {r.iab_subcategory || "—"}
+                    </td>
+                    <td className="category-cell">
+                      {r.iab_secondary_category || "—"}
+                    </td>
+                    <td className="subcategory-cell">
+                      {r.iab_secondary_subcategory || "—"}
+                    </td>
+                    <td className="tone-cell">
+                      {r.tone || "—"}
+                    </td>
+                    <td className="intent-cell">
+                      {r.intent || "—"}
+                    </td>
+                    <td className="audience-cell">
+                      {r.audience || "—"}
+                    </td>
+                    <td className="keywords-cell" title={Array.isArray(r.keywords) ? r.keywords.join(", ") : r.keywords}>
+                      {Array.isArray(r.keywords) ? r.keywords.join(", ") : r.keywords || "—"}
+                    </td>
+                    <td className="buying-intent-cell">
+                      {r.buying_intent || "—"}
+                    </td>
+                    <td className="ad-suggestions-cell" title={r.ad_suggestions}>
+                      {r.ad_suggestions || "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
