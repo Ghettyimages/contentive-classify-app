@@ -2,6 +2,8 @@
 
 A full-stack web application for classifying web content using AI-powered analysis.
 
+🤖 **Now with automated deployment!** Every push to main automatically deploys to production.
+
 ## 🚀 Quick Start
 
 ### Prerequisites
