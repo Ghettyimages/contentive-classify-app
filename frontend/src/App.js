@@ -189,13 +189,18 @@ function App() {
             <h3 className="results-title">
               Classification Results ({bulkResults.length} items)
             </h3>
-            <div className="export-buttons">
-              <button onClick={exportCSV} className="export-btn">
-                📊 Export CSV
-              </button>
-              <button onClick={exportJSON} className="export-btn secondary">
-                📄 Export JSON
-              </button>
+            <div>
+              <div className="export-buttons">
+                <button onClick={exportCSV} className="export-btn">
+                  📊 Export CSV
+                </button>
+                <button onClick={exportJSON} className="export-btn secondary">
+                  📄 Export JSON
+                </button>
+              </div>
+              <p className="export-instructions">
+                Export to see all intent data
+              </p>
             </div>
           </div>
           
@@ -206,14 +211,9 @@ function App() {
                   <th>URL</th>
                   <th>Primary Category</th>
                   <th>Primary Subcategory</th>
-                  <th>Secondary Category</th>
-                  <th>Secondary Subcategory</th>
                   <th>Tone</th>
                   <th>Intent</th>
-                  <th>Audience</th>
                   <th>Keywords</th>
-                  <th>Buying Intent</th>
-                  <th>Ad Suggestions</th>
                 </tr>
               </thead>
               <tbody>
@@ -222,35 +222,20 @@ function App() {
                     <td className="url-cell" title={r.url}>
                       {r.url}
                     </td>
-                    <td className="category-cell">
+                    <td className="category-cell" title={r.iab_category}>
                       {r.iab_category || "—"}
                     </td>
-                    <td className="subcategory-cell">
+                    <td className="subcategory-cell" title={r.iab_subcategory}>
                       {r.iab_subcategory || "—"}
                     </td>
-                    <td className="category-cell">
-                      {r.iab_secondary_category || "—"}
-                    </td>
-                    <td className="subcategory-cell">
-                      {r.iab_secondary_subcategory || "—"}
-                    </td>
-                    <td className="tone-cell">
+                    <td className="tone-cell" title={r.tone}>
                       {r.tone || "—"}
                     </td>
-                    <td className="intent-cell">
+                    <td className="intent-cell" title={r.intent}>
                       {r.intent || "—"}
-                    </td>
-                    <td className="audience-cell">
-                      {r.audience || "—"}
                     </td>
                     <td className="keywords-cell" title={Array.isArray(r.keywords) ? r.keywords.join(", ") : r.keywords}>
                       {Array.isArray(r.keywords) ? r.keywords.join(", ") : r.keywords || "—"}
-                    </td>
-                    <td className="buying-intent-cell">
-                      {r.buying_intent || "—"}
-                    </td>
-                    <td className="ad-suggestions-cell" title={r.ad_suggestions}>
-                      {r.ad_suggestions || "—"}
                     </td>
                   </tr>
                 ))}
