@@ -39,19 +39,13 @@ function App() {
     setBulkResults([]);
 
     try {
-      console.log("Sending bulk request with URLs:", urls);
       const response = await axios.post(
         "https://contentive-classify-app.onrender.com/classify-bulk",
         { urls }
       );
-      console.log("Bulk response:", response.data);
-      console.log("Results array:", response.data.results);
-      const results = response.data.results || [];
-      console.log("About to set bulk results:", results);
-      setBulkResults(results);
+      setBulkResults(response.data.results || []);
     } catch (error) {
       console.error("Bulk classification error:", error);
-      console.error("Error details:", error.response?.data);
     } finally {
       setBulkLoading(false);
     }
@@ -189,10 +183,6 @@ function App() {
         </div>
       )}
 
-      {/* Debug: Show bulk results state */}
-      {console.log("Current bulkResults state:", bulkResults)}
-      {console.log("bulkResults.length:", bulkResults.length)}
-      
       {bulkResults.length > 0 && (
         <div className="results-container">
           <div className="results-header">
