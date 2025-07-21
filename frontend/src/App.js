@@ -16,8 +16,14 @@ function App() {
     setLoading(true);
     try {
       const response = await axios.post(
-        "/classify",
-        { url }
+        "https://contentive-classify-app.onrender.com/classify",
+        { url },
+        {
+          timeout: 60000, // 1 minute timeout
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
       );
       setResult(response.data);
     } catch (error) {
@@ -29,20 +35,37 @@ function App() {
   };
 
   const handleBulkClassify = async () => {
+    console.log("handleBulkClassify called");
+    console.log("bulkUrls raw:", bulkUrls);
+    
     const urls = bulkUrls
       .split("\n")
       .map((u) => u.trim())
       .filter(Boolean);
-    if (urls.length === 0) return;
+    
+    console.log("Processed URLs:", urls);
+    
+    if (urls.length === 0) {
+      console.log("No URLs provided, returning early");
+      alert("Please enter some URLs to classify");
+      return;
+    }
 
+    console.log("Starting bulk classification...");
     setBulkLoading(true);
     setBulkResults([]);
 
     try {
       console.log("Sending bulk request with URLs:", urls);
       const response = await axios.post(
-        "/classify-bulk",
-        { urls }
+        "https://contentive-classify-app.onrender.com/classify-bulk",
+        { urls },
+        {
+          timeout: 300000, // 5 minutes timeout
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
       );
       console.log("Bulk response:", response.data);
       console.log("Results array:", response.data.results);
@@ -52,6 +75,11 @@ function App() {
     } catch (error) {
       console.error("Bulk classification error:", error);
       console.error("Error details:", error.response?.data);
+      console.error("Error status:", error.response?.status);
+      console.error("Error message:", error.message);
+      
+      // Show user-friendly error
+      alert(`Error: ${error.message}. Please check the console for details.`);
     } finally {
       setBulkLoading(false);
     }
