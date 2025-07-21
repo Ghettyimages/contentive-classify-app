@@ -91,13 +91,6 @@
   background: #7f8c8d;
 }
 
-.export-instructions {
-  font-size: 0.9rem;
-  color: #7f8c8d;
-  margin-top: 0.5rem;
-  font-style: italic;
-}
-
 .table-container {
   overflow-x: auto;
   background: white;
@@ -145,59 +138,42 @@
   background-color: #e9ecef;
 }
 
-/* Column-specific styling - Standardized like keywords column */
+/* Column-specific styling */
 .url-cell {
   max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 500;
-  color: #2c3e50;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: #2980b9;
 }
 
 .category-cell {
   max-width: 150px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   font-weight: 500;
   color: #2c3e50;
 }
 
 .subcategory-cell {
   max-width: 150px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 500;
-  color: #2c3e50;
+  color: #7f8c8d;
+  font-size: 0.85rem;
 }
 
 .tone-cell {
   max-width: 100px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 500;
-  color: #2c3e50;
+  text-align: center;
 }
 
 .intent-cell {
   max-width: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   font-weight: 500;
-  color: #2c3e50;
 }
 
 .audience-cell {
   max-width: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 500;
-  color: #2c3e50;
+  color: #8e44ad;
 }
 
 .keywords-cell {
@@ -205,17 +181,14 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 500;
-  color: #2c3e50;
+  color: #27ae60;
+  font-size: 0.85rem;
 }
 
 .buying-intent-cell {
   max-width: 100px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 500;
-  color: #2c3e50;
+  text-align: center;
+  font-weight: 600;
 }
 
 .ad-suggestions-cell {
@@ -223,8 +196,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 500;
-  color: #2c3e50;
+  color: #e67e22;
+  font-size: 0.85rem;
 }
 
 /* Responsive design */
