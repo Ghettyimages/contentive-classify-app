@@ -10,7 +10,11 @@ from bs4 import BeautifulSoup
 
 load_dotenv()
 app = Flask(__name__)
-CORS(app)
+CORS(app, 
+     origins=["*"],
+     methods=["GET", "POST", "OPTIONS"],
+     allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+     supports_credentials=False)
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 MAX_TOKENS = 6000  # Safe limit for input truncation

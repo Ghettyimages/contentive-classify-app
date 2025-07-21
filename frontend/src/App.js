@@ -16,7 +16,13 @@ function App() {
     try {
       const response = await axios.post(
         "https://contentive-classify-app.onrender.com/classify",
-        { url }
+        { url },
+        {
+          withCredentials: false,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
       );
       setResult(response.data);
     } catch (error) {
@@ -41,7 +47,13 @@ function App() {
       console.log("🚀 Starting bulk request with URLs:", urls);
       const response = await axios.post(
         "https://contentive-classify-app.onrender.com/classify-bulk",
-        { urls }
+        { urls },
+        {
+          withCredentials: false,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
       );
       console.log("✅ Response received:", response.data);
       setBulkResults(response.data.results || []);
