@@ -16,7 +16,7 @@ function App() {
     setLoading(true);
     try {
       const response = await axios.post(
-        "/classify",
+        "https://contentive-classify-app.onrender.com/classify",
         { url }
       );
       setResult(response.data);
@@ -41,7 +41,7 @@ function App() {
     try {
       console.log("Sending bulk request with URLs:", urls);
       const response = await axios.post(
-        "/classify-bulk",
+        "https://contentive-classify-app.onrender.com/classify-bulk",
         { urls }
       );
       console.log("Bulk response:", response.data);

@@ -1,7 +1,6 @@
 import os
 import re
 import requests
-from datetime import datetime
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -11,21 +10,10 @@ from bs4 import BeautifulSoup
 
 load_dotenv()
 app = Flask(__name__)
-CORS(app, 
-     origins=["*"],
-     methods=["GET", "POST", "OPTIONS"],
-     allow_headers=["Content-Type", "Authorization"])
+CORS(app)
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 MAX_TOKENS = 6000  # Safe limit for input truncation
-
-@app.route("/", methods=["GET"])
-def health_check():
-    return jsonify({"status": "healthy", "message": "ContentiveMedia Classify API is running"})
-
-@app.route("/health", methods=["GET"])
-def health():
-    return jsonify({"status": "healthy", "timestamp": str(datetime.now())})
 
 def extract_label_and_code(text):
     match = re.search(r"^(.*?)\s*\((IAB[\d\-]+)\)", text.strip())
@@ -107,28 +95,21 @@ Article:
 
 @app.route("/classify-bulk", methods=["POST"])
 def classify_bulk():
-    print(f"[BULK] Received request from {request.remote_addr}")
     data = request.json
-    print(f"[BULK] Request data: {data}")
     urls = data.get("urls", [])
-    print(f"[BULK] Processing {len(urls)} URLs")
     results = []
 
-    for i, url in enumerate(urls):
+    for url in urls:
         try:
-            print(f"[BULK] Processing URL {i+1}/{len(urls)}: {url}")
             result = classify_url(url)
             result["url"] = url
             results.append(result)
-            print(f"[BULK] Successfully processed: {url}")
         except Exception as e:
-            print(f"[BULK] Error processing {url}: {str(e)}")
             results.append({
                 "url": url,
                 "error": str(e)
             })
 
-    print(f"[BULK] Returning {len(results)} results")
     return jsonify({"results": results})
 
 def classify_url(url):
