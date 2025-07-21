@@ -38,13 +38,18 @@ function App() {
     setBulkResults([]);
 
     try {
+      console.log("🚀 Starting bulk request with URLs:", urls);
       const response = await axios.post(
         "https://contentive-classify-app.onrender.com/classify-bulk",
         { urls }
       );
+      console.log("✅ Response received:", response.data);
       setBulkResults(response.data.results || []);
+      console.log("📊 Results set in state:", response.data.results?.length || 0, "items");
     } catch (error) {
-      console.error("Bulk classification error:", error);
+      console.error("❌ Bulk classification error:", error);
+      console.error("Error details:", error.response?.data);
+      alert("Error: " + error.message + " - Check console for details");
     } finally {
       setBulkLoading(false);
     }
