@@ -11,7 +11,11 @@ from bs4 import BeautifulSoup
 load_dotenv()
 app = Flask(__name__)
 CORS(app, 
-     origins=["*"],
+     origins=[
+         "*",  # Allow all origins for now
+         "https://contentive-classify-app-frontend.onrender.com",
+         "https://contentivemedia.com"
+     ],
      methods=["GET", "POST", "OPTIONS"],
      allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
      supports_credentials=False)
