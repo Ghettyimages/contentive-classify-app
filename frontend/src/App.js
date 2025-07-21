@@ -14,8 +14,13 @@ function App() {
   const handleClassify = async () => {
     setLoading(true);
     try {
+      // Use relative URL if on same domain, otherwise use full URL
+      const apiUrl = window.location.hostname === 'contentive-classify-app.onrender.com' 
+        ? '/classify'
+        : 'https://contentive-classify-app.onrender.com/classify';
+      
       const response = await axios.post(
-        "https://contentive-classify-app.onrender.com/classify",
+        apiUrl,
         { url },
         {
           withCredentials: false,
@@ -45,8 +50,16 @@ function App() {
 
     try {
       console.log("🚀 Starting bulk request with URLs:", urls);
+      
+      // Use relative URL if on same domain, otherwise use full URL
+      const apiUrl = window.location.hostname === 'contentive-classify-app.onrender.com' 
+        ? '/classify-bulk'
+        : 'https://contentive-classify-app.onrender.com/classify-bulk';
+      
+      console.log("🌐 Using API URL:", apiUrl);
+      
       const response = await axios.post(
-        "https://contentive-classify-app.onrender.com/classify-bulk",
+        apiUrl,
         { urls },
         {
           withCredentials: false,
