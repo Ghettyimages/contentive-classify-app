@@ -14,18 +14,9 @@ function App() {
   const handleClassify = async () => {
     setLoading(true);
     try {
-      // Always use the backend service URL
-      const apiUrl = 'https://contentive-classify-app.onrender.com/classify';
-      
       const response = await axios.post(
-        apiUrl,
-        { url },
-        {
-          withCredentials: false,
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        }
+        "https://contentive-classify-app.onrender.com/classify",
+        { url }
       );
       setResult(response.data);
     } catch (error) {
@@ -47,30 +38,13 @@ function App() {
     setBulkResults([]);
 
     try {
-      console.log("🚀 Starting bulk request with URLs:", urls);
-      
-      // Always use the backend service URL
-      const apiUrl = 'https://contentive-classify-app.onrender.com/classify-bulk';
-      
-      console.log("🌐 Using API URL:", apiUrl);
-      
       const response = await axios.post(
-        apiUrl,
-        { urls },
-        {
-          withCredentials: false,
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        }
+        "https://contentive-classify-app.onrender.com/classify-bulk",
+        { urls }
       );
-      console.log("✅ Response received:", response.data);
       setBulkResults(response.data.results || []);
-      console.log("📊 Results set in state:", response.data.results?.length || 0, "items");
     } catch (error) {
-      console.error("❌ Bulk classification error:", error);
-      console.error("Error details:", error.response?.data);
-      alert("Error: " + error.message + " - Check console for details");
+      console.error("Bulk classification error:", error);
     } finally {
       setBulkLoading(false);
     }
@@ -80,9 +54,13 @@ function App() {
     const headers = [
       "url",
       "iab_category",
+      "iab_code",
       "iab_subcategory",
+      "iab_subcode",
       "iab_secondary_category",
+      "iab_secondary_code",
       "iab_secondary_subcategory",
+      "iab_secondary_subcode",
       "tone",
       "intent",
       "audience",
@@ -90,6 +68,7 @@ function App() {
       "buying_intent",
       "ad_suggestions",
     ];
+
     const csvContent = [
       headers.join(","),
       ...bulkResults.map((r) =>
@@ -104,24 +83,24 @@ function App() {
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
+    const exportUrl = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
+    a.href = exportUrl;
     a.download = "classification_results.csv";
     a.click();
-    URL.revokeObjectURL(url);
+    URL.revokeObjectURL(exportUrl);
   };
 
   const exportJSON = () => {
     const blob = new Blob([JSON.stringify(bulkResults, null, 2)], {
       type: "application/json",
     });
-    const url = URL.createObjectURL(blob);
+    const exportUrl = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
+    a.href = exportUrl;
     a.download = "classification_results.json";
     a.click();
-    URL.revokeObjectURL(url);
+    URL.revokeObjectURL(exportUrl);
   };
 
   return (
@@ -130,7 +109,7 @@ function App() {
         <img
           src="/logo2.png"
           alt="Contentive Media Logo"
-          style={{ maxWidth: "210px", height: "auto", marginBottom: "-2.0rem" }}
+          style={{ maxWidth: "210px", height: "auto", marginBottom: "-2rem" }}
         />
         <h1 style={{ margin: "0.2rem 0 0 0", fontSize: "1.8rem" }}>
           CONTENTIVE MEDIA
@@ -140,7 +119,6 @@ function App() {
         </p>
       </div>
 
-      {/* 🧠 Single URL Classification */}
       <h2>Classify Article by URL</h2>
       <input
         type="text"
@@ -165,20 +143,19 @@ function App() {
       {result && (
         <div style={{ marginTop: "2rem" }}>
           <h3>Classification Results</h3>
-          <p><strong>IAB Category:</strong> {result.iab_category || "N/A"}</p>
-          <p><strong>IAB Subcategory:</strong> {result.iab_subcategory || "N/A"}</p>
-          <p><strong>Secondary IAB Category:</strong> {result.iab_secondary_category || "N/A"}</p>
-          <p><strong>Secondary IAB Subcategory:</strong> {result.iab_secondary_subcategory || "N/A"}</p>
-          <p><strong>Tone:</strong> {result.tone || "N/A"}</p>
-          <p><strong>User Intent:</strong> {result.intent || "N/A"}</p>
-          <p><strong>Audience:</strong> {result.audience || "N/A"}</p>
-          <p><strong>Keywords:</strong> {Array.isArray(result.keywords) ? result.keywords.join(", ") : "N/A"}</p>
-          <p><strong>Buying Intent Score:</strong> {result.buying_intent || "N/A"}</p>
-          <p><strong>Suggested Ad Campaign Types:</strong> {result.ad_suggestions || "N/A"}</p>
+          <p><strong>IAB Category:</strong> {result.iab_category} ({result.iab_code})</p>
+          <p><strong>IAB Subcategory:</strong> {result.iab_subcategory} ({result.iab_subcode})</p>
+          <p><strong>Secondary IAB Category:</strong> {result.iab_secondary_category} ({result.iab_secondary_code})</p>
+          <p><strong>Secondary IAB Subcategory:</strong> {result.iab_secondary_subcategory} ({result.iab_secondary_subcode})</p>
+          <p><strong>Tone:</strong> {result.tone}</p>
+          <p><strong>User Intent:</strong> {result.intent}</p>
+          <p><strong>Audience:</strong> {result.audience}</p>
+          <p><strong>Keywords:</strong> {Array.isArray(result.keywords) ? result.keywords.join(", ") : result.keywords}</p>
+          <p><strong>Buying Intent:</strong> {result.buying_intent}</p>
+          <p><strong>Ad Suggestions:</strong> {result.ad_suggestions}</p>
         </div>
       )}
 
-      {/* 🔁 Bulk URL Classification */}
       <hr style={{ margin: "3rem 0" }} />
       <h2>Bulk URL Classification</h2>
       <textarea
@@ -235,16 +212,16 @@ function App() {
                       maxWidth: "250px",
                       overflow: "hidden",
                       whiteSpace: "nowrap",
-                      textOverflow: "ellipsis",
+                      textOverflow: "ellipsis"
                     }}
                     title={r.url}
                   >
                     {r.url}
                   </td>
-                  <td>{r.iab_category}</td>
-                  <td>{r.iab_subcategory}</td>
-                  <td>{r.iab_secondary_category}</td>
-                  <td>{r.iab_secondary_subcategory}</td>
+                  <td>{r.iab_category} ({r.iab_code})</td>
+                  <td>{r.iab_subcategory} ({r.iab_subcode})</td>
+                  <td>{r.iab_secondary_category} ({r.iab_secondary_code})</td>
+                  <td>{r.iab_secondary_subcategory} ({r.iab_secondary_subcode})</td>
                   <td>{r.tone}</td>
                   <td>{r.intent}</td>
                   <td>{r.audience}</td>
