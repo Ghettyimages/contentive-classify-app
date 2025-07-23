@@ -22,6 +22,7 @@ CORS(app,
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 MAX_TOKENS = 6000  # Safe limit for input truncation
+# Checkpoint 1 - Working baseline restored
 
 def extract_label_and_code(text):
     match = re.search(r"^(.*?)\s*\((IAB[\d\-]+)\)", text.strip())
