@@ -103,7 +103,17 @@ function App() {
 
   return (
     <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
-      <h1>Contentive Media Classifier</h1>
+      <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+        <img
+          src="/logo2.png"
+          alt="Contentive Media Logo"
+          style={{ maxWidth: "210px", height: "auto", marginBottom: "-2.0rem" }}
+        />
+        <h1 style={{ margin: "0.2rem 0 0 0", fontSize: "1.8rem" }}>CONTENTIVE MEDIA</h1>
+        <p style={{ fontSize: "1rem", color: "#444", margin: "0.5rem" }}>
+          connecting content with intent
+        </p>
+      </div>
 
       <h2>Classify Article by URL</h2>
       <input
