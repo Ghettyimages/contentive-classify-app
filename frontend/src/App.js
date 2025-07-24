@@ -128,8 +128,28 @@ function App() {
 
       {result && (
         <div style={{ marginTop: "2rem" }}>
-          <h3>Result</h3>
-          <pre>{JSON.stringify(result, null, 2)}</pre>
+          <h3>Classification Results</h3>
+          <div style={{ 
+            backgroundColor: "#f9f9f9", 
+            padding: "1.5rem", 
+            borderRadius: "8px",
+            border: "1px solid #ddd"
+          }}>
+            <p><strong>IAB Category:</strong> {result.iab_category || "N/A"}</p>
+            <p><strong>IAB Code:</strong> {result.iab_code || "N/A"}</p>
+            <p><strong>IAB Subcategory:</strong> {result.iab_subcategory || "N/A"}</p>
+            <p><strong>IAB Subcode:</strong> {result.iab_subcode || "N/A"}</p>
+            <p><strong>Secondary Category:</strong> {result.iab_secondary_category || "N/A"}</p>
+            <p><strong>Secondary Code:</strong> {result.iab_secondary_code || "N/A"}</p>
+            <p><strong>Secondary Subcategory:</strong> {result.iab_secondary_subcategory || "N/A"}</p>
+            <p><strong>Secondary Subcode:</strong> {result.iab_secondary_subcode || "N/A"}</p>
+            <p><strong>Tone:</strong> {result.tone || "N/A"}</p>
+            <p><strong>Intent:</strong> {result.intent || "N/A"}</p>
+            <p><strong>Audience:</strong> {result.audience || "N/A"}</p>
+            <p><strong>Keywords:</strong> {Array.isArray(result.keywords) ? result.keywords.join(", ") : result.keywords || "N/A"}</p>
+            <p><strong>Buying Intent:</strong> {result.buying_intent || "N/A"}</p>
+            <p><strong>Ad Suggestions:</strong> {result.ad_suggestions || "N/A"}</p>
+          </div>
         </div>
       )}
 
