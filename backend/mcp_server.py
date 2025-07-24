@@ -1,135 +1,60 @@
+import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from newspaper import Article
 from bs4 import BeautifulSoup
 import requests
-import os
 from openai import OpenAI
 
 app = Flask(__name__)
-CORS(app, origins=["https://contentivemedia.com"])  # Adjust for production
+CORS(app)
+
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-MAX_TOKENS = 3000
+MAX_TOKENS = 3500
 
-def extract_label_and_code(value):
-    if "(" in value and ")" in value:
-        label = value.split("(")[0].strip()
-        code = value.split("(")[1].replace(")", "").strip()
-    else:
-        label = value.strip()
-        code = "N/A"
-    return label, code
+SYSTEM_PROMPT = """
+You are a content classification engine that analyzes article text and returns structured metadata for ad targeting.
 
-def classify_url(url):
-    try:
-        article = Article(url)
-        article.download()
-        article.parse()
-        article_text = article.text.strip()
-        if not article_text:
-            raise ValueError("Empty article text")
-    except:
-        resp = requests.get(url, timeout=10)
-        soup = BeautifulSoup(resp.content, "html.parser")
-        paragraphs = soup.find_all("p")
-        article_text = " ".join(p.get_text() for p in paragraphs).strip()
-        if not article_text:
-            raise ValueError("Fallback also returned empty content")
+Based on the full article text, extract the following fields and return them as JSON:
 
-    if len(article_text) > MAX_TOKENS * 4:
-        article_text = article_text[:MAX_TOKENS * 4]
+{
+  "iab_category": "IAB9 (Sports)",
+  "iab_code": "IAB9",
+  "iab_subcategory": "IAB9-5 (Football)",
+  "iab_subcode": "IAB9-5",
+  "iab_secondary_category": "IAB1 (Arts & Entertainment)",
+  "iab_secondary_code": "IAB1",
+  "iab_secondary_subcategory": "IAB1-6 (Celebrity Fan/Gossip)",
+  "iab_secondary_subcode": "IAB1-6",
+  "tone": "Descriptive, Positive",
+  "intent": "To provide an in-depth breakdown of the topic for readers researching the subject.",
+  "audience": "Fans of the topic, general readers interested in the category.",
+  "keywords": ["keyword1", "keyword2", "keyword3"],
+  "buying_intent": "Medium – the article includes contextually relevant mentions of commercial categories, but is not explicitly promotional.",
+  "ad_suggestions": "Brand sponsorship, contextual display ads, affiliate commerce"
+}
 
-    prompt = f"""
-You are a contextual advertising analyst. Classify the article below using the IAB 3.1 taxonomy and extract key metadata.
-
-Return all results in this exact format (with label and code in parentheses):
-
-- IAB Category: [label (code)]
-- IAB Subcategory: [label (code)]
-- Secondary IAB Category: [label (code)] (optional)
-- Secondary IAB Subcategory: [label (code)] (optional)
-- Tone: [brief tone summary]
-- User Intent: [what the reader is trying to achieve]
-- Audience: [target audience type or profile]
-- Keywords: [comma-separated list of key concepts and entities]
-- Buying Intent Score: [Low / Medium / High] – [brief reasoning]
-- Suggested Ad Campaign Types: [brief list or examples]
-
-Article:
-\"\"\"
-{article_text}
-\"\"\"
+Notes:
+- Use IAB Tech Lab Content Taxonomy 3.1
+- Return field values as strings unless otherwise noted.
+- Ensure both category names and their IAB codes (e.g., IAB9-5) are returned.
+- If no secondary category fits, return null fields for secondary category.
+- Ensure keywords are comma-separated strings or arrays.
 """
 
-    response = client.chat.completions.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}],
-    )
-    response_text = response.choices[0].message.content.strip()
-
-    result = {
-        "iab_category": "N/A",
-        "iab_code": "N/A",
-        "iab_subcategory": "N/A",
-        "iab_subcode": "N/A",
-        "iab_secondary_category": "N/A",
-        "iab_secondary_code": "N/A",
-        "iab_secondary_subcategory": "N/A",
-        "iab_secondary_subcode": "N/A",
-        "tone": "N/A",
-        "intent": "N/A",
-        "audience": "N/A",
-        "keywords": [],
-        "buying_intent": "N/A",
-        "ad_suggestions": "N/A"
-    }
-
-    for line in response_text.split("\n"):
-        line = line.strip()
-        if not line or ":" not in line:
-            continue
-
-        key, value = line.split(":", 1)
-        key = key.strip().lower()
-        value = value.strip()
-
-        if "iab category" == key:
-            label, code = extract_label_and_code(value)
-            result["iab_category"] = label
-            result["iab_code"] = code
-        elif "iab subcategory" == key:
-            label, code = extract_label_and_code(value)
-            result["iab_subcategory"] = label
-            result["iab_subcode"] = code
-        elif "secondary iab category" == key:
-            label, code = extract_label_and_code(value)
-            result["iab_secondary_category"] = label
-            result["iab_secondary_code"] = code
-        elif "secondary iab subcategory" == key:
-            label, code = extract_label_and_code(value)
-            result["iab_secondary_subcategory"] = label
-            result["iab_secondary_subcode"] = code
-        elif "tone" in key:
-            result["tone"] = value
-        elif "user intent" in key:
-            result["intent"] = value
-        elif "audience" in key:
-            result["audience"] = value
-        elif "keywords" in key:
-            result["keywords"] = [kw.strip() for kw in value.split(",") if kw.strip()]
-        elif "buying intent" in key:
-            result["buying_intent"] = value
-        elif "ad campaign" in key:
-            result["ad_suggestions"] = value
-
-    return result
+@app.route("/")
+def index():
+    return "MCP Server is running."
 
 @app.route("/classify", methods=["POST"])
 def classify():
+    data = request.json
+    url = data.get("url")
+    if not url:
+        return jsonify({"error": "Missing URL"}), 400
+
     try:
-        data = request.json
-        url = data.get("url")
         result = classify_url(url)
         return jsonify(result)
     except Exception as e:
@@ -154,5 +79,43 @@ def classify_bulk():
 
     return jsonify({"results": results})
 
+def classify_url(url):
+    try:
+        article = Article(url)
+        article.download()
+        article.parse()
+        article_text = article.text.strip()
+        if not article_text:
+            raise ValueError("Empty article text")
+    except:
+        resp = requests.get(url, timeout=10)
+        soup = BeautifulSoup(resp.content, "html.parser")
+        paragraphs = soup.find_all("p")
+        article_text = " ".join(p.get_text() for p in paragraphs).strip()
+        if not article_text:
+            raise ValueError("Fallback also returned empty content")
+
+    if len(article_text) > MAX_TOKENS * 4:
+        article_text = article_text[:MAX_TOKENS * 4]
+
+    user_prompt = f"""Here is the article text:
+    \"\"\"{article_text}\"\"\""""
+
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt}
+        ],
+        temperature=0.4,
+    )
+
+    content = response.choices[0].message.content.strip()
+
+    try:
+        return eval(content)  # Assumes GPT returns valid Python dict string
+    except:
+        raise ValueError("Failed to parse GPT response:\n" + content)
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=10000)
