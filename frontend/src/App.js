@@ -1,5 +1,3 @@
-// src/App.js
-
 import React, { useState } from "react";
 import axios from "axios";
 
@@ -7,6 +5,7 @@ function App() {
   const [url, setUrl] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+
   const [bulkUrls, setBulkUrls] = useState("");
   const [bulkResults, setBulkResults] = useState([]);
   const [bulkLoading, setBulkLoading] = useState(false);
@@ -18,7 +17,7 @@ function App() {
         "https://contentive-classify-app.onrender.com/classify",
         { url }
       );
-      setResult(response.data);
+      setResult(response.data.classification);
     } catch (error) {
       console.error("Error classifying article:", error);
       setResult(null);
@@ -54,13 +53,9 @@ function App() {
     const headers = [
       "url",
       "iab_category",
-      "iab_code",
       "iab_subcategory",
-      "iab_subcode",
       "iab_secondary_category",
-      "iab_secondary_code",
       "iab_secondary_subcategory",
-      "iab_secondary_subcode",
       "tone",
       "intent",
       "audience",
@@ -68,39 +63,75 @@ function App() {
       "buying_intent",
       "ad_suggestions",
     ];
-
     const csvContent = [
       headers.join(","),
-      ...bulkResults.map((r) =>
-        headers
-          .map((h) =>
-            Array.isArray(r[h])
-              ? `"${r[h].join("; ").replace(/"/g, '""')}"`
-              : `"${(r[h] || "").toString().replace(/"/g, '""')}"`
-          )
-          .join(",")
-      ),
+      ...bulkResults.map((r) => {
+        const c = r.classification || {};
+        return headers
+          .map((h) => {
+            let value = "";
+            switch (h) {
+              case "iab_category":
+                value = c.iab?.category?.label || "";
+                break;
+              case "iab_subcategory":
+                value = c.iab?.subcategory?.label || "";
+                break;
+              case "iab_secondary_category":
+                value = c.iab?.secondary_category?.label || "";
+                break;
+              case "iab_secondary_subcategory":
+                value = c.iab?.secondary_subcategory?.label || "";
+                break;
+              case "tone":
+                value = c.tone?.primary || "";
+                break;
+              case "intent":
+                value = c.intent || "";
+                break;
+              case "audience":
+                value = c.audience || "";
+                break;
+              case "keywords":
+                value = Array.isArray(c.keywords) ? c.keywords.join("; ") : c.keywords || "";
+                break;
+              case "buying_intent":
+                value = c.buying_intent || "";
+                break;
+              case "ad_suggestions":
+                value = c.ad_suggestions || "";
+                break;
+              case "url":
+                value = r.url || "";
+                break;
+              default:
+                value = "";
+            }
+            return `"${(value || "").toString().replace(/"/g, '""')}"`;
+          })
+          .join(",");
+      }),
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv" });
-    const exportUrl = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = exportUrl;
+    a.href = url;
     a.download = "classification_results.csv";
     a.click();
-    URL.revokeObjectURL(exportUrl);
+    URL.revokeObjectURL(url);
   };
 
   const exportJSON = () => {
     const blob = new Blob([JSON.stringify(bulkResults, null, 2)], {
       type: "application/json",
     });
-    const exportUrl = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = exportUrl;
+    a.href = url;
     a.download = "classification_results.json";
     a.click();
-    URL.revokeObjectURL(exportUrl);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -109,11 +140,9 @@ function App() {
         <img
           src="/logo2.png"
           alt="Contentive Media Logo"
-          style={{ maxWidth: "210px", height: "auto", marginBottom: "-2rem" }}
+          style={{ maxWidth: "210px", height: "auto", marginBottom: "-2.0rem" }}
         />
-        <h1 style={{ margin: "0.2rem 0 0 0", fontSize: "1.8rem" }}>
-          CONTENTIVE MEDIA
-        </h1>
+        <h1 style={{ margin: "0.2rem 0 0 0", fontSize: "1.8rem" }}>CONTENTIVE MEDIA</h1>
         <p style={{ fontSize: "1rem", color: "#444", margin: "0.5rem" }}>
           connecting content with intent
         </p>
@@ -143,16 +172,16 @@ function App() {
       {result && (
         <div style={{ marginTop: "2rem" }}>
           <h3>Classification Results</h3>
-          <p><strong>IAB Category:</strong> {result.iab_category} ({result.iab_code})</p>
-          <p><strong>IAB Subcategory:</strong> {result.iab_subcategory} ({result.iab_subcode})</p>
-          <p><strong>Secondary IAB Category:</strong> {result.iab_secondary_category} ({result.iab_secondary_code})</p>
-          <p><strong>Secondary IAB Subcategory:</strong> {result.iab_secondary_subcategory} ({result.iab_secondary_subcode})</p>
-          <p><strong>Tone:</strong> {result.tone}</p>
-          <p><strong>User Intent:</strong> {result.intent}</p>
-          <p><strong>Audience:</strong> {result.audience}</p>
-          <p><strong>Keywords:</strong> {Array.isArray(result.keywords) ? result.keywords.join(", ") : result.keywords}</p>
-          <p><strong>Buying Intent:</strong> {result.buying_intent}</p>
-          <p><strong>Ad Suggestions:</strong> {result.ad_suggestions}</p>
+          <p><strong>IAB Category:</strong> {result.iab?.category?.label || "N/A"}</p>
+          <p><strong>IAB Subcategory:</strong> {result.iab?.subcategory?.label || "N/A"}</p>
+          <p><strong>Secondary IAB Category:</strong> {result.iab?.secondary_category?.label || "N/A"}</p>
+          <p><strong>Secondary IAB Subcategory:</strong> {result.iab?.secondary_subcategory?.label || "N/A"}</p>
+          <p><strong>Tone:</strong> {result.tone?.primary || "N/A"}</p>
+          <p><strong>User Intent:</strong> {result.intent || "N/A"}</p>
+          <p><strong>Audience:</strong> {result.audience || "N/A"}</p>
+          <p><strong>Keywords:</strong> {Array.isArray(result.keywords) ? result.keywords.join(", ") : "N/A"}</p>
+          <p><strong>Buying Intent Score:</strong> {result.buying_intent || "N/A"}</p>
+          <p><strong>Suggested Ad Campaign Types:</strong> {result.ad_suggestions || "N/A"}</p>
         </div>
       )}
 
@@ -205,31 +234,34 @@ function App() {
               </tr>
             </thead>
             <tbody>
-              {bulkResults.map((r, i) => (
-                <tr key={i}>
-                  <td
-                    style={{
-                      maxWidth: "250px",
-                      overflow: "hidden",
-                      whiteSpace: "nowrap",
-                      textOverflow: "ellipsis"
-                    }}
-                    title={r.url}
-                  >
-                    {r.url}
-                  </td>
-                  <td>{r.iab_category} ({r.iab_code})</td>
-                  <td>{r.iab_subcategory} ({r.iab_subcode})</td>
-                  <td>{r.iab_secondary_category} ({r.iab_secondary_code})</td>
-                  <td>{r.iab_secondary_subcategory} ({r.iab_secondary_subcode})</td>
-                  <td>{r.tone}</td>
-                  <td>{r.intent}</td>
-                  <td>{r.audience}</td>
-                  <td>{Array.isArray(r.keywords) ? r.keywords.join(", ") : r.keywords}</td>
-                  <td>{r.buying_intent}</td>
-                  <td>{r.ad_suggestions}</td>
-                </tr>
-              ))}
+              {bulkResults.map((r, i) => {
+                const c = r.classification || {};
+                return (
+                  <tr key={i}>
+                    <td
+                      style={{
+                        maxWidth: "250px",
+                        overflow: "hidden",
+                        whiteSpace: "nowrap",
+                        textOverflow: "ellipsis",
+                      }}
+                      title={r.url}
+                    >
+                      {r.url}
+                    </td>
+                    <td>{c.iab?.category?.label || "N/A"}</td>
+                    <td>{c.iab?.subcategory?.label || "N/A"}</td>
+                    <td>{c.iab?.secondary_category?.label || "N/A"}</td>
+                    <td>{c.iab?.secondary_subcategory?.label || "N/A"}</td>
+                    <td>{c.tone?.primary || "N/A"}</td>
+                    <td>{c.intent || "N/A"}</td>
+                    <td>{c.audience || "N/A"}</td>
+                    <td>{Array.isArray(c.keywords) ? c.keywords.join(", ") : c.keywords || "N/A"}</td>
+                    <td>{c.buying_intent || "N/A"}</td>
+                    <td>{c.ad_suggestions || "N/A"}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
