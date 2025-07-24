@@ -191,13 +191,24 @@ function App() {
             Export CSV
           </button>
           <button onClick={exportJSON}>Export JSON</button>
+          <p style={{ 
+            fontSize: "0.9rem", 
+            color: "#666", 
+            margin: "0.5rem 0", 
+            fontStyle: "italic" 
+          }}>
+            Export for full intent data
+          </p>
 
           <table
             style={{
               width: "100%",
               marginTop: "1rem",
               borderCollapse: "collapse",
-              fontSize: "0.9rem",
+              fontSize: "0.85rem",
+              border: "1px solid #ddd",
+              backgroundColor: "#fff",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
             }}
           >
             <thead>
@@ -218,33 +229,71 @@ function App() {
                   "Keywords",
                   "Buying Intent",
                   "Ad Suggestions",
-                ].map((h) => (
-                  <th key={h} style={{ borderBottom: "1px solid #ccc" }}>
-                    {h}
-                  </th>
-                ))}
+                                 ].map((h) => (
+                   <th key={h} style={{ 
+                     borderBottom: "2px solid #ddd",
+                     backgroundColor: "#f8f9fa",
+                     padding: "12px 8px",
+                     textAlign: "left",
+                     fontWeight: "600",
+                     color: "#333",
+                     fontSize: "0.8rem"
+                   }}>
+                     {h}
+                   </th>
+                 ))}
               </tr>
             </thead>
             <tbody>
-              {bulkResults.map((r, i) => (
-                <tr key={i}>
-                  <td>{r.url}</td>
-                  <td>{r.iab_category}</td>
-                  <td>{r.iab_code}</td>
-                  <td>{r.iab_subcategory}</td>
-                  <td>{r.iab_subcode}</td>
-                  <td>{r.iab_secondary_category}</td>
-                  <td>{r.iab_secondary_code}</td>
-                  <td>{r.iab_secondary_subcategory}</td>
-                  <td>{r.iab_secondary_subcode}</td>
-                  <td>{r.tone}</td>
-                  <td>{r.intent}</td>
-                  <td>{r.audience}</td>
-                  <td>{Array.isArray(r.keywords) ? r.keywords.join(", ") : r.keywords}</td>
-                  <td>{r.buying_intent}</td>
-                  <td>{r.ad_suggestions}</td>
-                </tr>
-              ))}
+                             {bulkResults.map((r, i) => (
+                 <tr key={i} style={{ 
+                   borderBottom: "1px solid #eee",
+                   "&:hover": { backgroundColor: "#f9f9f9" }
+                 }}>
+                   <td style={{ 
+                     padding: "10px 8px", 
+                     borderRight: "1px solid #eee",
+                     maxWidth: "200px",
+                     overflow: "hidden",
+                     textOverflow: "ellipsis",
+                     whiteSpace: "nowrap"
+                   }}>{r.url}</td>
+                   <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>{r.iab_category ? r.iab_category.replace(/^IAB\d+\s*\(/, '').replace(/\)$/, '') : "N/A"}</td>
+                   <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>{r.iab_code}</td>
+                   <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>{r.iab_subcategory ? r.iab_subcategory.replace(/^IAB\d+-\d+\s*\(/, '').replace(/\)$/, '') : "N/A"}</td>
+                   <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>{r.iab_subcode}</td>
+                   <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>{r.iab_secondary_category ? r.iab_secondary_category.replace(/^IAB\d+\s*\(/, '').replace(/\)$/, '') : "N/A"}</td>
+                   <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>{r.iab_secondary_code}</td>
+                   <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>{r.iab_secondary_subcategory ? r.iab_secondary_subcategory.replace(/^IAB\d+-\d+\s*\(/, '').replace(/\)$/, '') : "N/A"}</td>
+                   <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>{r.iab_secondary_subcode}</td>
+                   <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>{r.tone}</td>
+                   <td style={{ 
+                     padding: "10px 8px", 
+                     borderRight: "1px solid #eee",
+                     maxWidth: "150px",
+                     overflow: "hidden",
+                     textOverflow: "ellipsis",
+                     whiteSpace: "nowrap"
+                   }}>{r.intent}</td>
+                   <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>{r.audience}</td>
+                   <td style={{ 
+                     padding: "10px 8px", 
+                     borderRight: "1px solid #eee",
+                     maxWidth: "120px",
+                     overflow: "hidden",
+                     textOverflow: "ellipsis",
+                     whiteSpace: "nowrap"
+                   }}>{Array.isArray(r.keywords) ? r.keywords.join(", ") : r.keywords}</td>
+                   <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>{r.buying_intent}</td>
+                   <td style={{ 
+                     padding: "10px 8px",
+                     maxWidth: "150px",
+                     overflow: "hidden",
+                     textOverflow: "ellipsis",
+                     whiteSpace: "nowrap"
+                   }}>{r.ad_suggestions}</td>
+                 </tr>
+               ))}
             </tbody>
           </table>
         </div>
