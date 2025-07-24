@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import axios from "axios";
 
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "";
+
 function App() {
   const [url, setUrl] = useState("");
   const [result, setResult] = useState(null);
@@ -13,7 +15,7 @@ function App() {
     setLoading(true);
     try {
       const response = await axios.post(
-        "https://contentive-classify-app.onrender.com/classify",
+        `${API_BASE_URL}/classify`,
         { url }
       );
       setResult(response.data);
@@ -37,7 +39,7 @@ function App() {
 
     try {
       const response = await axios.post(
-        "https://contentive-classify-app.onrender.com/classify-bulk",
+        `${API_BASE_URL}/classify-bulk`,
         { urls }
       );
       setBulkResults(response.data.results || []);
