@@ -123,4 +123,6 @@ def classify_url(url):
         raise ValueError("Failed to parse GPT response as valid JSON:\n" + content)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+    # Use the default Flask development port so it matches the documentation
+    # and helper scripts.
+    app.run(host="0.0.0.0", port=5000)
