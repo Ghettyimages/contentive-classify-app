@@ -1,4 +1,5 @@
 import os
+import json
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from newspaper import Article
@@ -6,17 +7,19 @@ from bs4 import BeautifulSoup
 import requests
 from openai import OpenAI
 
+# Initialize Flask app
 app = Flask(__name__)
 CORS(app)
 
+# Set up OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
 MAX_TOKENS = 3500
 
+# Prompt used to instruct GPT
 SYSTEM_PROMPT = """
 You are a content classification engine that analyzes article text and returns structured metadata for ad targeting.
 
-Based on the full article text, extract the following fields and return them as JSON:
+Return only a valid JSON object with the following fields:
 
 {
   "iab_category": "IAB9 (Sports)",
@@ -35,12 +38,10 @@ Based on the full article text, extract the following fields and return them as 
   "ad_suggestions": "Brand sponsorship, contextual display ads, affiliate commerce"
 }
 
-Notes:
+Rules:
 - Use IAB Tech Lab Content Taxonomy 3.1
-- Return field values as strings unless otherwise noted.
-- Ensure both category names and their IAB codes (e.g., IAB9-5) are returned.
-- If no secondary category fits, return null fields for secondary category.
-- Ensure keywords are comma-separated strings or arrays.
+- If no secondary category fits, set the secondary fields to null
+- Return strict JSON only — no comments, markdown, or extra text
 """
 
 @app.route("/")
@@ -80,6 +81,7 @@ def classify_bulk():
     return jsonify({"results": results})
 
 def classify_url(url):
+    # Step 1: Try newspaper3k
     try:
         article = Article(url)
         article.download()
@@ -88,6 +90,7 @@ def classify_url(url):
         if not article_text:
             raise ValueError("Empty article text")
     except:
+        # Step 2: Fallback with BeautifulSoup
         resp = requests.get(url, timeout=10)
         soup = BeautifulSoup(resp.content, "html.parser")
         paragraphs = soup.find_all("p")
@@ -99,7 +102,8 @@ def classify_url(url):
         article_text = article_text[:MAX_TOKENS * 4]
 
     user_prompt = f"""Here is the article text:
-    \"\"\"{article_text}\"\"\""""
+
+\"\"\"{article_text}\"\"\""""
 
     response = client.chat.completions.create(
         model="gpt-4",
@@ -112,10 +116,11 @@ def classify_url(url):
 
     content = response.choices[0].message.content.strip()
 
+    # Parse and return JSON safely
     try:
-        return eval(content)  # Assumes GPT returns valid Python dict string
-    except:
-        raise ValueError("Failed to parse GPT response:\n" + content)
+        return json.loads(content)
+    except json.JSONDecodeError:
+        raise ValueError("Failed to parse GPT response as valid JSON:\n" + content)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
