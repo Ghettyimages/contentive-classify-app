@@ -6,6 +6,7 @@ from newspaper import Article
 from bs4 import BeautifulSoup
 import requests
 from openai import OpenAI
+from firebase_service import get_firebase_service
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -80,7 +81,38 @@ def classify_bulk():
 
     return jsonify({"results": results})
 
+@app.route("/recent-classifications", methods=["GET"])
+def get_recent_classifications():
+    """Get recent classifications from Firestore."""
+    try:
+        limit = request.args.get("limit", 10, type=int)
+        if limit > 100:  # Prevent excessive queries
+            limit = 100
+            
+        firebase_service = get_firebase_service()
+        results = firebase_service.get_recent_classifications(limit)
+        return jsonify({"results": results})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 def classify_url(url):
+    # Initialize Firebase service
+    try:
+        firebase_service = get_firebase_service()
+    except Exception as e:
+        print(f"Firebase service initialization failed: {e}")
+        firebase_service = None
+    
+    # Check if URL has already been classified and stored in Firestore
+    if firebase_service:
+        cached_result = firebase_service.get_classification_by_url(url)
+        if cached_result:
+            print(f"Returning cached classification for: {url}")
+            return cached_result
+    
+    # If not cached, proceed with classification
+    print(f"Classifying URL (not cached): {url}")
+    
     # Step 1: Try newspaper3k
     try:
         article = Article(url)
@@ -116,9 +148,20 @@ def classify_url(url):
 
     content = response.choices[0].message.content.strip()
 
-    # Parse and return JSON safely
+    # Parse JSON safely
     try:
-        return json.loads(content)
+        classification_result = json.loads(content)
+        
+        # Store the result in Firestore if service is available
+        if firebase_service:
+            try:
+                firebase_service.save_classification(url, classification_result)
+                print(f"Successfully saved classification to Firestore for: {url}")
+            except Exception as e:
+                print(f"Failed to save classification to Firestore: {e}")
+        
+        return classification_result
+        
     except json.JSONDecodeError:
         raise ValueError("Failed to parse GPT response as valid JSON:\n" + content)
 

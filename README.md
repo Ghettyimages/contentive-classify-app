@@ -10,6 +10,7 @@ A full-stack web application for classifying web content using AI-powered analys
 - Node.js (v18 or higher)
 - Python 3.9+
 - OpenAI API key
+- Firebase project (for Firestore database)
 
 ### 1. Clone and Setup
 ```bash
@@ -23,8 +24,15 @@ chmod +x dev-setup.sh dev-start.sh
 ```bash
 cd backend
 cp .env.example .env
-# Edit .env and add your OPENAI_API_KEY
+# Edit .env and add your OPENAI_API_KEY and Firebase configuration
 ```
+
+#### Firebase Setup
+1. Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
+2. Enable Firestore Database
+3. Go to Project Settings > Service Accounts
+4. Generate a new private key (JSON file)
+5. Copy the JSON content and set it as `FIREBASE_SERVICE_ACCOUNT` in your `.env` file
 
 ### 3. Start Development
 ```bash
@@ -39,7 +47,14 @@ This will start:
 
 - **Frontend**: React app with modern UI
 - **Backend**: Flask API with OpenAI integration
+- **Database**: Firebase Firestore for caching and persistence
 - **Deployment**: Automated via GitHub Actions to Render
+
+## 🔌 API Endpoints
+
+- `POST /classify` - Classify a single URL
+- `POST /classify-bulk` - Classify multiple URLs
+- `GET /recent-classifications` - Get recent classifications from Firestore
 
 ## 📱 Features
 
@@ -48,8 +63,17 @@ This will start:
 - Content tone and intent analysis
 - Keyword extraction
 - Ad campaign suggestions
+- **Firestore caching** - Avoid re-classifying previously analyzed URLs
+- **Bulk processing** - Classify multiple URLs simultaneously
+- **Data persistence** - Store all classification results with timestamps
 
 ## 🔧 Development
+
+### Testing Firebase Integration
+```bash
+cd backend
+python test_firebase.py
+```
 
 ### Manual Start
 ```bash

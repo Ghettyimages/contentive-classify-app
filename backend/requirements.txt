@@ -5,3 +5,4 @@ openai
 newspaper3k
 gunicorn
 lxml[html_clean]
+firebase-admin

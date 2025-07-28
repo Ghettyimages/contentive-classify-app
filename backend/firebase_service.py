@@ -1,0 +1,150 @@
+import os
+import json
+from datetime import datetime
+from typing import Optional, Dict, Any
+import firebase_admin
+from firebase_admin import credentials, firestore
+from firebase_admin.exceptions import FirebaseError
+
+class FirebaseService:
+    def __init__(self):
+        """Initialize Firebase Admin SDK and Firestore client."""
+        try:
+            # Check if Firebase app is already initialized
+            if not firebase_admin._apps:
+                # Initialize with service account key from environment
+                service_account_info = os.getenv("FIREBASE_SERVICE_ACCOUNT")
+                if service_account_info:
+                    # Parse the JSON service account info
+                    cred_dict = json.loads(service_account_info)
+                    cred = credentials.Certificate(cred_dict)
+                else:
+                    # Fallback to default credentials (for local development)
+                    cred = credentials.ApplicationDefault()
+                
+                firebase_admin.initialize_app(cred)
+            
+            self.db = firestore.client()
+            self.collection_name = "classified_urls"
+            
+        except Exception as e:
+            print(f"Firebase initialization error: {e}")
+            raise
+    
+    def get_classification_by_url(self, url: str) -> Optional[Dict[str, Any]]:
+        """
+        Retrieve classification data for a given URL from Firestore.
+        
+        Args:
+            url: The URL to look up
+            
+        Returns:
+            Classification data if found, None otherwise
+        """
+        try:
+            # Create a document ID from the URL (hash or sanitized)
+            doc_id = self._create_doc_id(url)
+            doc_ref = self.db.collection(self.collection_name).document(doc_id)
+            doc = doc_ref.get()
+            
+            if doc.exists:
+                data = doc.to_dict()
+                # Remove Firestore metadata fields
+                data.pop('timestamp', None)
+                return data
+            return None
+            
+        except FirebaseError as e:
+            print(f"Firestore read error: {e}")
+            return None
+        except Exception as e:
+            print(f"Unexpected error reading from Firestore: {e}")
+            return None
+    
+    def save_classification(self, url: str, classification_data: Dict[str, Any]) -> bool:
+        """
+        Save classification data to Firestore.
+        
+        Args:
+            url: The URL that was classified
+            classification_data: The classification results
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # Add URL and timestamp to the data
+            data_to_save = classification_data.copy()
+            data_to_save['url'] = url
+            data_to_save['timestamp'] = datetime.utcnow()
+            
+            # Create document ID from URL
+            doc_id = self._create_doc_id(url)
+            doc_ref = self.db.collection(self.collection_name).document(doc_id)
+            
+            # Save to Firestore
+            doc_ref.set(data_to_save)
+            return True
+            
+        except FirebaseError as e:
+            print(f"Firestore write error: {e}")
+            return False
+        except Exception as e:
+            print(f"Unexpected error writing to Firestore: {e}")
+            return False
+    
+    def _create_doc_id(self, url: str) -> str:
+        """
+        Create a Firestore document ID from a URL.
+        Uses a simple hash to ensure consistent document IDs.
+        
+        Args:
+            url: The URL to create an ID for
+            
+        Returns:
+            A string suitable for use as a Firestore document ID
+        """
+        import hashlib
+        # Create a hash of the URL to use as document ID
+        url_hash = hashlib.md5(url.encode()).hexdigest()
+        return f"url_{url_hash}"
+    
+    def get_recent_classifications(self, limit: int = 10) -> list:
+        """
+        Get recent classifications from Firestore.
+        
+        Args:
+            limit: Maximum number of records to return
+            
+        Returns:
+            List of recent classification records
+        """
+        try:
+            docs = (self.db.collection(self.collection_name)
+                   .order_by('timestamp', direction=firestore.Query.DESCENDING)
+                   .limit(limit)
+                   .stream())
+            
+            results = []
+            for doc in docs:
+                data = doc.to_dict()
+                results.append(data)
+            
+            return results
+            
+        except FirebaseError as e:
+            print(f"Firestore query error: {e}")
+            return []
+        except Exception as e:
+            print(f"Unexpected error querying Firestore: {e}")
+            return []
+
+# Global Firebase service instance
+firebase_service = None
+
+def get_firebase_service() -> FirebaseService:
+    """Get or create the global Firebase service instance."""
+    global firebase_service
+    if firebase_service is None:
+        firebase_service = FirebaseService()
+    return firebase_service
