@@ -57,9 +57,14 @@ def classify():
         return jsonify({"error": "Missing URL"}), 400
 
     try:
+        print(f"Starting classification for URL: {url}")
         result = classify_url(url)
+        print(f"Classification completed successfully for: {url}")
         return jsonify(result)
     except Exception as e:
+        print(f"Error in classify endpoint: {str(e)}")
+        import traceback
+        print(f"Full traceback: {traceback.format_exc()}")
         return jsonify({"error": str(e)}), 500
 
 @app.route("/classify-bulk", methods=["POST"])
