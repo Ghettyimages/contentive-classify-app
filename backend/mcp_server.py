@@ -101,39 +101,60 @@ def get_recent_classifications():
         return jsonify({"error": str(e)}), 500
 
 def classify_url(url):
+    print(f"Starting classify_url function for: {url}")
+    
+    # Check OpenAI API key
+    openai_key = os.getenv("OPENAI_API_KEY")
+    if not openai_key:
+        raise ValueError("OPENAI_API_KEY environment variable is not set")
+    print("OpenAI API key is configured")
+    
     # Initialize Firebase service
     try:
         firebase_service = get_firebase_service()
+        print("Firebase service initialized successfully")
     except Exception as e:
         print(f"Firebase service initialization failed: {e}")
         firebase_service = None
     
     # Check if URL has already been classified and stored in Firestore
     if firebase_service:
-        cached_result = firebase_service.get_classification_by_url(url)
-        if cached_result:
-            print(f"Returning cached classification for: {url}")
-            return cached_result
+        try:
+            cached_result = firebase_service.get_classification_by_url(url)
+            if cached_result:
+                print(f"Returning cached classification for: {url}")
+                return cached_result
+        except Exception as e:
+            print(f"Error checking cache: {e}")
     
     # If not cached, proceed with classification
     print(f"Classifying URL (not cached): {url}")
     
     # Step 1: Try newspaper3k
     try:
+        print("Attempting to extract content with newspaper3k...")
         article = Article(url)
         article.download()
         article.parse()
         article_text = article.text.strip()
         if not article_text:
-            raise ValueError("Empty article text")
-    except:
+            raise ValueError("Empty article text from newspaper3k")
+        print(f"Successfully extracted {len(article_text)} characters with newspaper3k")
+    except Exception as e:
+        print(f"newspaper3k failed: {e}")
         # Step 2: Fallback with BeautifulSoup
-        resp = requests.get(url, timeout=10)
-        soup = BeautifulSoup(resp.content, "html.parser")
-        paragraphs = soup.find_all("p")
-        article_text = " ".join(p.get_text() for p in paragraphs).strip()
-        if not article_text:
-            raise ValueError("Fallback also returned empty content")
+        try:
+            print("Attempting fallback with BeautifulSoup...")
+            resp = requests.get(url, timeout=10)
+            soup = BeautifulSoup(resp.content, "html.parser")
+            paragraphs = soup.find_all("p")
+            article_text = " ".join(p.get_text() for p in paragraphs).strip()
+            if not article_text:
+                raise ValueError("Fallback also returned empty content")
+            print(f"Successfully extracted {len(article_text)} characters with BeautifulSoup")
+        except Exception as e2:
+            print(f"BeautifulSoup fallback also failed: {e2}")
+            raise ValueError(f"Failed to extract content from URL: {e2}")
 
     if len(article_text) > MAX_TOKENS * 4:
         article_text = article_text[:MAX_TOKENS * 4]
@@ -142,16 +163,22 @@ def classify_url(url):
 
 \"\"\"{article_text}\"\"\""""
 
-    response = client.chat.completions.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user_prompt}
-        ],
-        temperature=0.4,
-    )
-
-    content = response.choices[0].message.content.strip()
+    print("Sending request to OpenAI API...")
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.4,
+        )
+        print("OpenAI API request successful")
+        content = response.choices[0].message.content.strip()
+        print(f"Received response from OpenAI: {len(content)} characters")
+    except Exception as e:
+        print(f"OpenAI API request failed: {e}")
+        raise ValueError(f"OpenAI API error: {e}")
 
     # Parse JSON safely
     try:
