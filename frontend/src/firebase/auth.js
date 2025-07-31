@@ -17,12 +17,14 @@ import {
 
 // Your Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBx4nhEmWA4KtRAz2Dlv5ksHXAl28PD204h",
+  apiKey: "AIzaSyBYT9LWeL_7bsxRz3QpdZJ-YZQRDHqj6DE",
   authDomain: "signal-sync-c3681.firebaseapp.com",
+  databaseURL: "https://signal-sync-c3681-default-rtdb.firebaseio.com",
   projectId: "signal-sync-c3681",
-  storageBucket: "signal-sync-c3681.appspot.com",
-  messagingSenderId: "102367435033860368343",
-  appId: "1:102367435033860368343:web:your-app-id"
+  storageBucket: "signal-sync-c3681.firebasestorage.app",
+  messagingSenderId: "492313662329",
+  appId: "1:492313662329:web:439b6ea5e17b31ba7615a8",
+  measurementId: "G-34XPB0HHYP"
 };
 
 // Initialize Firebase
