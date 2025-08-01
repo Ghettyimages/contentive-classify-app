@@ -9,6 +9,7 @@ from openai import OpenAI
 from firebase_service import get_firebase_service
 import firebase_admin
 from firebase_admin import auth
+from merge_attribution_with_classification import merge_attribution_data
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -188,6 +189,49 @@ def _parse_number(value):
         return float(value)
     except (ValueError, TypeError):
         return None
+
+@app.route("/merge-attribution", methods=["POST"])
+def trigger_merge():
+    """Trigger the attribution-classification merge process."""
+    try:
+        # Verify Firebase token for admin access
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({"error": "Missing or invalid authorization header"}), 401
+        
+        token = auth_header.split('Bearer ')[1]
+        try:
+            decoded_token = auth.verify_id_token(token)
+            user_id = decoded_token['uid']
+            print(f"Merge triggered by user: {user_id}")
+        except Exception as e:
+            print(f"Token verification failed: {e}")
+            return jsonify({"error": "Invalid authentication token"}), 401
+        
+        # Run the merge process
+        print("Starting attribution-classification merge process...")
+        result = merge_attribution_data()
+        
+        if result['success']:
+            return jsonify({
+                "success": True,
+                "message": "Merge process completed successfully",
+                "statistics": result['statistics'],
+                "timestamp": result['timestamp']
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "error": result.get('error', 'Unknown error during merge'),
+                "statistics": result.get('statistics', {}),
+                "timestamp": result.get('timestamp')
+            }), 500
+            
+    except Exception as e:
+        print(f"Error in merge-attribution endpoint: {str(e)}")
+        import traceback
+        print(f"Full traceback: {traceback.format_exc()}")
+        return jsonify({"error": str(e)}), 500
 
 def classify_url(url):
     print(f"Starting classify_url function for: {url}")

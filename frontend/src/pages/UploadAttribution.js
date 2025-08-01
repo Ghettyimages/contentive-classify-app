@@ -115,6 +115,38 @@ const UploadAttribution = () => {
     }
   };
 
+  const handleMergeData = async () => {
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const token = await getIdToken();
+      const response = await axios.post(
+        'https://contentive-classify-app.onrender.com/merge-attribution',
+        {},
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      const { statistics } = response.data;
+      setSuccess(
+        `Merge completed! Processed ${statistics.successful_merges} merged records, ` +
+        `${statistics.attribution_only} attribution-only, ` +
+        `${statistics.classification_only} classification-only records.`
+      );
+    } catch (err) {
+      console.error('Merge error:', err);
+      setError(err.response?.data?.error || 'Error merging attribution data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getFieldValue = (row, field) => {
     return row[field] || row[field.toLowerCase()] || 'N/A';
   };
@@ -187,22 +219,41 @@ const UploadAttribution = () => {
             </div>
           )}
 
-          <button
-            onClick={handleSubmit}
-            disabled={!file || loading}
-            style={{
-              padding: "0.75rem 1.5rem",
-              backgroundColor: file ? "#007bff" : "#6c757d",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: file && !loading ? "pointer" : "not-allowed",
-              fontSize: "1rem",
-              opacity: loading ? 0.7 : 1
-            }}
-          >
-            {loading ? "Uploading..." : "Upload Attribution Data"}
-          </button>
+          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+            <button
+              onClick={handleSubmit}
+              disabled={!file || loading}
+              style={{
+                padding: "0.75rem 1.5rem",
+                backgroundColor: file ? "#007bff" : "#6c757d",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: file && !loading ? "pointer" : "not-allowed",
+                fontSize: "1rem",
+                opacity: loading ? 0.7 : 1
+              }}
+            >
+              {loading ? "Uploading..." : "Upload Attribution Data"}
+            </button>
+            
+            <button
+              onClick={handleMergeData}
+              disabled={loading}
+              style={{
+                padding: "0.75rem 1.5rem",
+                backgroundColor: "#28a745",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: !loading ? "pointer" : "not-allowed",
+                fontSize: "1rem",
+                opacity: loading ? 0.7 : 1
+              }}
+            >
+              {loading ? "Processing..." : "Merge with Classifications"}
+            </button>
+          </div>
         </div>
 
         {previewData.length > 0 && (
