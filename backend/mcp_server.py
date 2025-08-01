@@ -7,6 +7,8 @@ from bs4 import BeautifulSoup
 import requests
 from openai import OpenAI
 from firebase_service import get_firebase_service
+import firebase_admin
+from firebase_admin import auth
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -99,6 +101,93 @@ def get_recent_classifications():
         return jsonify({"results": results})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route("/upload-attribution", methods=["POST"])
+def upload_attribution():
+    """Upload attribution data from CSV."""
+    try:
+        # Verify Firebase token
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({"error": "Missing or invalid authorization header"}), 401
+        
+        token = auth_header.split('Bearer ')[1]
+        try:
+            decoded_token = auth.verify_id_token(token)
+            user_id = decoded_token['uid']
+        except Exception as e:
+            print(f"Token verification failed: {e}")
+            return jsonify({"error": "Invalid authentication token"}), 401
+        
+        # Get data from request
+        data = request.json.get('data', [])
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+        
+        # Validate and save each record
+        firebase_service = get_firebase_service()
+        saved_count = 0
+        errors = []
+        
+        for i, record in enumerate(data):
+            try:
+                # Validate required fields
+                url = record.get('url', '').strip()
+                if not url:
+                    errors.append(f"Row {i+1}: Missing required 'url' field")
+                    continue
+                
+                # Prepare attribution data
+                attribution_data = {
+                    'url': url,
+                    'user_id': user_id,
+                    'uploaded_at': firebase_service._get_timestamp(),
+                    'conversions': _parse_number(record.get('conversions')),
+                    'revenue': _parse_number(record.get('revenue')),
+                    'impressions': _parse_number(record.get('impressions')),
+                    'clicks': _parse_number(record.get('clicks')),
+                    'ctr': _parse_number(record.get('ctr')),
+                    'scroll_depth': _parse_number(record.get('scroll_depth')),
+                    'viewability': _parse_number(record.get('viewability')),
+                    'time_on_page': _parse_number(record.get('time_on_page')),
+                    'fill_rate': _parse_number(record.get('fill_rate'))
+                }
+                
+                # Save to Firestore
+                success = firebase_service.save_attribution_data(url, attribution_data)
+                if success:
+                    saved_count += 1
+                else:
+                    errors.append(f"Row {i+1}: Failed to save to database")
+                    
+            except Exception as e:
+                errors.append(f"Row {i+1}: {str(e)}")
+        
+        response = {
+            "message": f"Successfully uploaded {saved_count} attribution records",
+            "saved_count": saved_count,
+            "total_records": len(data)
+        }
+        
+        if errors:
+            response["errors"] = errors
+        
+        return jsonify(response)
+        
+    except Exception as e:
+        print(f"Error in upload_attribution endpoint: {str(e)}")
+        import traceback
+        print(f"Full traceback: {traceback.format_exc()}")
+        return jsonify({"error": str(e)}), 500
+
+def _parse_number(value):
+    """Parse a string value to number, return None if invalid."""
+    if not value or value == '':
+        return None
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return None
 
 def classify_url(url):
     print(f"Starting classify_url function for: {url}")

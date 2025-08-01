@@ -52,6 +52,15 @@ export const signOutUser = () => signOut(auth);
 
 export const onAuthStateChange = (callback) => onAuthStateChanged(auth, callback);
 
+// Get Firebase ID token for backend authentication
+export const getIdToken = async () => {
+  const user = auth.currentUser;
+  if (user) {
+    return await user.getIdToken();
+  }
+  return null;
+};
+
 // User management in Firestore
 export const createUserProfile = async (user) => {
   if (!user) return;

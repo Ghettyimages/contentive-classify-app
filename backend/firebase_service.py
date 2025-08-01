@@ -139,6 +139,65 @@ class FirebaseService:
             print(f"Unexpected error querying Firestore: {e}")
             return []
 
+    def save_attribution_data(self, url: str, attribution_data: Dict[str, Any]) -> bool:
+        """
+        Save attribution data to Firestore.
+        
+        Args:
+            url: The URL for the attribution data
+            attribution_data: The attribution data to save
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # Create document ID from URL
+            doc_id = self._create_doc_id(url)
+            doc_ref = self.db.collection('attribution_data').document(doc_id)
+            
+            # Save to Firestore
+            doc_ref.set(attribution_data)
+            print(f"Successfully saved attribution data for: {url}")
+            return True
+            
+        except FirebaseError as e:
+            print(f"Firestore write error for attribution data: {e}")
+            return False
+        except Exception as e:
+            print(f"Unexpected error writing attribution data to Firestore: {e}")
+            return False
+
+    def get_attribution_data_by_url(self, url: str) -> Optional[Dict[str, Any]]:
+        """
+        Get attribution data for a specific URL.
+        
+        Args:
+            url: The URL to get attribution data for
+            
+        Returns:
+            Attribution data dictionary or None if not found
+        """
+        try:
+            doc_id = self._create_doc_id(url)
+            doc_ref = self.db.collection('attribution_data').document(doc_id)
+            doc = doc_ref.get()
+            
+            if doc.exists:
+                data = doc.to_dict()
+                return data
+            return None
+            
+        except FirebaseError as e:
+            print(f"Firestore read error for attribution data: {e}")
+            return None
+        except Exception as e:
+            print(f"Unexpected error reading attribution data from Firestore: {e}")
+            return None
+
+    def _get_timestamp(self):
+        """Get current timestamp for Firestore."""
+        return datetime.utcnow()
+
 # Global Firebase service instance
 firebase_service = None
 

@@ -43,6 +43,36 @@ const Navbar = () => {
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
         {currentUser ? (
           <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <button
+                onClick={() => navigate('/')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#28a745',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem'
+                }}
+              >
+                Classify
+              </button>
+              <button
+                onClick={() => navigate('/signalsync/upload-attribution')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#17a2b8',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem'
+                }}
+              >
+                Upload Attribution
+              </button>
+            </div>
             <span style={{ color: '#666' }}>
               Welcome, {currentUser.displayName || currentUser.email}
             </span>

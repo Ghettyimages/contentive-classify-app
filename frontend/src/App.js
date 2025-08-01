@@ -6,6 +6,7 @@ import Navbar from "./components/Navbar";
 import Classification from "./components/Classification";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import UploadAttribution from "./pages/UploadAttribution";
 
 function App() {
   return (
@@ -19,6 +20,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Classification />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/signalsync/upload-attribution" 
+              element={
+                <ProtectedRoute>
+                  <UploadAttribution />
                 </ProtectedRoute>
               } 
             />
