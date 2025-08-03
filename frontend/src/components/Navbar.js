@@ -72,6 +72,20 @@ const Navbar = () => {
               >
                 Upload Attribution
               </button>
+              <button
+                onClick={() => navigate('/signalsync/dashboard')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#6f42c1',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem'
+                }}
+              >
+                Dashboard
+              </button>
             </div>
             <span style={{ color: '#666' }}>
               Welcome, {currentUser.displayName || currentUser.email}

@@ -84,6 +84,46 @@ def debug_env():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/merged-data", methods=["GET"])
+def get_merged_data():
+    """Get merged attribution and classification data."""
+    try:
+        # Verify Firebase token
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({"error": "Missing or invalid authorization header"}), 401
+        
+        token = auth_header.split('Bearer ')[1]
+        try:
+            decoded_token = auth.verify_id_token(token)
+            user_id = decoded_token['uid']
+        except Exception as e:
+            print(f"Token verification failed: {e}")
+            return jsonify({"error": "Invalid authentication token"}), 401
+        
+        # Get merged data from Firestore
+        firebase_service = get_firebase_service()
+        try:
+            docs = firebase_service.db.collection('merged_content_signals').stream()
+            results = []
+            
+            for doc in docs:
+                data = doc.to_dict()
+                results.append(data)
+            
+            return jsonify({
+                "results": results,
+                "total_count": len(results)
+            })
+            
+        except Exception as e:
+            print(f"Error fetching merged data: {e}")
+            return jsonify({"error": f"Error fetching data: {str(e)}"}), 500
+            
+    except Exception as e:
+        print(f"Error in merged-data endpoint: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
 @app.route("/test-auth", methods=["POST"])
 def test_auth():
     """Test endpoint to verify Firebase authentication."""

@@ -7,6 +7,7 @@ import Classification from "./components/Classification";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import UploadAttribution from "./pages/UploadAttribution";
+import DataDashboard from "./pages/DataDashboard";
 
 function App() {
   return (
@@ -28,6 +29,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <UploadAttribution />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/signalsync/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <DataDashboard />
                 </ProtectedRoute>
               } 
             />
