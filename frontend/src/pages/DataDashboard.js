@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getIdToken } from '../firebase/auth';
-import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
+import { getFirestore, collection, getDocs } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
-import axios from 'axios';
 
 // Firebase config (same as in auth.js)
 const firebaseConfig = {
@@ -129,7 +127,7 @@ const DataDashboard = () => {
       let bValue = getFieldValue(b, 'attribution', sortField) || getFieldValue(b, 'classification', sortField);
 
       // Convert to numbers for numeric fields
-      if (['ctr', 'conversions', 'viewability', 'scroll_depth', 'impressions', 'fill_rate'].includes(sortField)) {
+      if (['ctr', 'conversions', 'viewability', 'scroll_depth', 'impressions', 'fill_rate', 'revenue', 'clicks', 'time_on_page'].includes(sortField)) {
         aValue = parseFloat(aValue) || 0;
         bValue = parseFloat(bValue) || 0;
       }
@@ -159,7 +157,79 @@ const DataDashboard = () => {
     return Array.from(categories).sort();
   };
 
+  const exportToCSV = () => {
+    const headers = [
+      'URL',
+      'IAB Category',
+      'IAB Subcategory',
+      'Tone',
+      'Intent',
+      'Audience',
+      'Keywords',
+      'Conversions',
+      'Revenue',
+      'CTR (%)',
+      'Viewability (%)',
+      'Scroll Depth (%)',
+      'Impressions',
+      'Fill Rate (%)',
+      'Clicks',
+      'Time on Page',
+      'Data Status'
+    ];
+
+    const csvData = mergedData.map(item => [
+      item.url || 'N/A',
+      getFieldValue(item, 'classification', 'iab_category'),
+      getFieldValue(item, 'classification', 'iab_subcategory'),
+      getFieldValue(item, 'classification', 'tone'),
+      getFieldValue(item, 'classification', 'intent'),
+      getFieldValue(item, 'classification', 'audience'),
+      getFieldValue(item, 'classification', 'keywords'),
+      formatNumber(getFieldValue(item, 'attribution', 'conversions')),
+      formatNumber(getFieldValue(item, 'attribution', 'revenue')),
+      formatPercentage(getFieldValue(item, 'attribution', 'ctr')),
+      formatPercentage(getFieldValue(item, 'attribution', 'viewability')),
+      formatPercentage(getFieldValue(item, 'attribution', 'scroll_depth')),
+      formatNumber(getFieldValue(item, 'attribution', 'impressions')),
+      formatPercentage(getFieldValue(item, 'attribution', 'fill_rate')),
+      formatNumber(getFieldValue(item, 'attribution', 'clicks')),
+      formatNumber(getFieldValue(item, 'attribution', 'time_on_page')),
+      item.hasClassification && item.hasAttribution ? 'Complete' : 
+      item.hasClassification ? 'Classification Only' : 
+      item.hasAttribution ? 'Attribution Only' : 'No Data'
+    ]);
+
+    const csvContent = [headers, ...csvData]
+      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `merged_content_data_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const processedData = filterData(sortData(mergedData));
+
+  const columns = [
+    { key: 'url', label: 'URL', sortable: false },
+    { key: 'iab_category', label: 'IAB Category', sortable: true, prefix: 'classification' },
+    { key: 'tone', label: 'Tone', sortable: true, prefix: 'classification' },
+    { key: 'intent', label: 'Intent', sortable: true, prefix: 'classification' },
+    { key: 'audience', label: 'Audience', sortable: true, prefix: 'classification' },
+    { key: 'ctr', label: 'CTR', sortable: true, prefix: 'attribution', formatter: formatPercentage },
+    { key: 'conversions', label: 'Conversions', sortable: true, prefix: 'attribution', formatter: formatNumber },
+    { key: 'viewability', label: 'Viewability', sortable: true, prefix: 'attribution', formatter: formatPercentage },
+    { key: 'scroll_depth', label: 'Scroll Depth', sortable: true, prefix: 'attribution', formatter: formatPercentage },
+    { key: 'impressions', label: 'Impressions', sortable: true, prefix: 'attribution', formatter: formatNumber },
+    { key: 'fill_rate', label: 'Fill Rate', sortable: true, prefix: 'attribution', formatter: formatPercentage }
+  ];
 
   return (
     <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
@@ -259,6 +329,22 @@ const DataDashboard = () => {
             {loading ? "Loading..." : "Refresh Data"}
           </button>
           
+          <button
+            onClick={exportToCSV}
+            disabled={loading || mergedData.length === 0}
+            style={{
+              padding: "0.5rem 1rem",
+              backgroundColor: "#28a745",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: (loading || mergedData.length === 0) ? "not-allowed" : "pointer",
+              fontSize: "0.9rem"
+            }}
+          >
+            Export to CSV
+          </button>
+          
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
@@ -322,71 +408,50 @@ const DataDashboard = () => {
             }}>
               <thead>
                 <tr>
-                  <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left" }}>URL</th>
-                  <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left" }}>IAB Category</th>
-                  <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left" }}>Tone</th>
-                  <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left" }}>Intent</th>
-                  <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left" }}>Audience</th>
-                  <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left", cursor: "pointer" }}
-                      onClick={() => handleSort('ctr')}>
-                    CTR {sortField === 'ctr' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
-                  </th>
-                  <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left", cursor: "pointer" }}
-                      onClick={() => handleSort('conversions')}>
-                    Conversions {sortField === 'conversions' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
-                  </th>
-                  <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left", cursor: "pointer" }}
-                      onClick={() => handleSort('viewability')}>
-                    Viewability {sortField === 'viewability' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
-                  </th>
-                  <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left" }}>Scroll Depth</th>
-                  <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left" }}>Impressions</th>
-                  <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left" }}>Fill Rate</th>
+                  {columns.map((column) => (
+                    <th 
+                      key={column.key}
+                      style={{ 
+                        padding: "12px 8px", 
+                        borderBottom: "2px solid #ddd", 
+                        backgroundColor: "#f8f9fa", 
+                        textAlign: "left",
+                        cursor: column.sortable ? "pointer" : "default",
+                        userSelect: "none"
+                      }}
+                      onClick={() => column.sortable && handleSort(column.key)}
+                    >
+                      {column.label} 
+                      {column.sortable && sortField === column.key && (
+                        <span style={{ marginLeft: "4px" }}>
+                          {sortDirection === 'asc' ? '↑' : '↓'}
+                        </span>
+                      )}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {processedData.map((item, index) => (
                   <tr key={item.id || index} style={{ borderBottom: "1px solid #eee", ...getRowStyle(item) }}>
-                    <td style={{ 
-                      padding: "10px 8px", 
-                      borderRight: "1px solid #eee",
-                      maxWidth: "200px",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap"
-                    }}>
-                      {item.url}
-                    </td>
-                    <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
-                      {getFieldValue(item, 'classification', 'iab_category')}
-                    </td>
-                    <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
-                      {getFieldValue(item, 'classification', 'tone')}
-                    </td>
-                    <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
-                      {getFieldValue(item, 'classification', 'intent')}
-                    </td>
-                    <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
-                      {getFieldValue(item, 'classification', 'audience')}
-                    </td>
-                    <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
-                      {formatPercentage(getFieldValue(item, 'attribution', 'ctr'))}
-                    </td>
-                    <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
-                      {formatNumber(getFieldValue(item, 'attribution', 'conversions'))}
-                    </td>
-                    <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
-                      {formatPercentage(getFieldValue(item, 'attribution', 'viewability'))}
-                    </td>
-                    <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
-                      {formatPercentage(getFieldValue(item, 'attribution', 'scroll_depth'))}
-                    </td>
-                    <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
-                      {formatNumber(getFieldValue(item, 'attribution', 'impressions'))}
-                    </td>
-                    <td style={{ padding: "10px 8px" }}>
-                      {formatPercentage(getFieldValue(item, 'attribution', 'fill_rate'))}
-                    </td>
+                    {columns.map((column) => (
+                      <td 
+                        key={column.key}
+                        style={{ 
+                          padding: "10px 8px", 
+                          borderRight: column.key === 'fill_rate' ? "none" : "1px solid #eee",
+                          maxWidth: column.key === 'url' ? "200px" : "auto",
+                          overflow: column.key === 'url' ? "hidden" : "visible",
+                          textOverflow: column.key === 'url' ? "ellipsis" : "clip",
+                          whiteSpace: column.key === 'url' ? "nowrap" : "normal"
+                        }}
+                      >
+                        {column.formatter ? 
+                          column.formatter(getFieldValue(item, column.prefix, column.key)) :
+                          getFieldValue(item, column.prefix, column.key)
+                        }
+                      </td>
+                    ))}
                   </tr>
                 ))}
               </tbody>

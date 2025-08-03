@@ -240,6 +240,7 @@ def upload_attribution():
         # Validate and save each record
         firebase_service = get_firebase_service()
         saved_count = 0
+        classified_count = 0
         errors = []
         
         for i, record in enumerate(data):
@@ -249,6 +250,33 @@ def upload_attribution():
                 if not url:
                     errors.append(f"Row {i+1}: Missing required 'url' field")
                     continue
+                
+                # Check if classification exists for this URL and user
+                existing_classification = firebase_service.get_classification_by_url(url)
+                
+                # If no classification exists, classify the URL
+                if not existing_classification:
+                    try:
+                        print(f"Auto-classifying URL: {url}")
+                        classification_result = classify_url(url)
+                        
+                        if classification_result and 'error' not in classification_result:
+                            # Save classification with user_id
+                            classification_data = {
+                                **classification_result,
+                                'user_id': user_id,
+                                'timestamp': firebase_service._get_timestamp()
+                            }
+                            
+                            if firebase_service.save_classification(url, classification_data):
+                                classified_count += 1
+                                print(f"Successfully auto-classified: {url}")
+                            else:
+                                errors.append(f"Row {i+1}: Failed to save classification for: {url}")
+                        else:
+                            errors.append(f"Row {i+1}: Classification failed for: {url}")
+                    except Exception as e:
+                        errors.append(f"Row {i+1}: Error classifying URL {url}: {str(e)}")
                 
                 # Prepare attribution data
                 attribution_data = {
@@ -277,8 +305,9 @@ def upload_attribution():
                 errors.append(f"Row {i+1}: {str(e)}")
         
         response = {
-            "message": f"Successfully uploaded {saved_count} attribution records",
+            "message": f"Successfully uploaded {saved_count} attribution records and classified {classified_count} new URLs",
             "saved_count": saved_count,
+            "classified_count": classified_count,
             "total_records": len(data)
         }
         
