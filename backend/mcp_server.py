@@ -15,6 +15,18 @@ from merge_attribution_with_classification import merge_attribution_data
 app = Flask(__name__)
 CORS(app)
 
+# Initialize Firebase Admin SDK on startup
+print("🚀 Initializing Firebase Admin SDK on app startup...")
+try:
+    from firebase_service import get_firebase_service
+    # Initialize Firebase service
+    firebase_service = get_firebase_service()
+    print("✅ Firebase Admin SDK initialized successfully on startup")
+except Exception as e:
+    print(f"❌ Error initializing Firebase on startup: {e}")
+    import traceback
+    print(f"📋 Full traceback: {traceback.format_exc()}")
+
 # Set up OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 MAX_TOKENS = 3500
@@ -59,11 +71,15 @@ def debug_env():
         service_account = os.getenv("FIREBASE_SERVICE_ACCOUNT")
         openai_key = os.getenv("OPENAI_API_KEY")
         
+        # Check Firebase initialization
+        firebase_initialized = len(firebase_admin._apps) > 0 if hasattr(firebase_admin, '_apps') else False
+        
         return jsonify({
             "firebase_service_account_set": bool(service_account),
             "firebase_service_account_length": len(service_account) if service_account else 0,
             "openai_key_set": bool(openai_key),
-            "firebase_apps_initialized": len(firebase_admin._apps) if hasattr(firebase_admin, '_apps') else 0
+            "firebase_apps_initialized": len(firebase_admin._apps) if hasattr(firebase_admin, '_apps') else 0,
+            "firebase_initialized": firebase_initialized
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
