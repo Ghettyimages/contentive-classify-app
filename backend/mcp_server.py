@@ -52,6 +52,40 @@ Rules:
 def index():
     return "MCP Server is running."
 
+@app.route("/test-auth", methods=["POST"])
+def test_auth():
+    """Test endpoint to verify Firebase authentication."""
+    try:
+        # Verify Firebase token
+        auth_header = request.headers.get('Authorization')
+        print(f"Test - Auth header received: {auth_header[:50] if auth_header else 'None'}...")
+        
+        if not auth_header or not auth_header.startswith('Bearer '):
+            print("Test - Missing or invalid authorization header format")
+            return jsonify({"error": "Missing or invalid authorization header"}), 401
+        
+        token = auth_header.split('Bearer ')[1]
+        print(f"Test - Token extracted: {token[:20]}...")
+        
+        try:
+            decoded_token = auth.verify_id_token(token)
+            user_id = decoded_token['uid']
+            email = decoded_token.get('email', 'No email')
+            print(f"Test - Token verified successfully for user: {user_id} ({email})")
+            return jsonify({
+                "success": True,
+                "user_id": user_id,
+                "email": email,
+                "message": "Authentication successful"
+            })
+        except Exception as e:
+            print(f"Test - Token verification failed: {e}")
+            return jsonify({"error": f"Invalid authentication token: {str(e)}"}), 401
+            
+    except Exception as e:
+        print(f"Test - Error in test-auth endpoint: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
 @app.route("/classify", methods=["POST"])
 def classify():
     data = request.json

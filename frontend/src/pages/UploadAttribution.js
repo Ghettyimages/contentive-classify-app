@@ -166,6 +166,40 @@ const UploadAttribution = () => {
     }
   };
 
+  const handleTestAuth = async () => {
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      console.log('Testing authentication...');
+      const token = await getIdToken();
+      
+      if (!token) {
+        setError('No authentication token available. Please log in again.');
+        return;
+      }
+
+      const response = await axios.post(
+        'https://contentive-classify-app.onrender.com/test-auth',
+        {},
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      setSuccess(`Auth test successful! User: ${response.data.email}`);
+    } catch (err) {
+      console.error('Auth test error:', err);
+      setError(err.response?.data?.error || 'Authentication test failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getFieldValue = (row, field) => {
     return row[field] || row[field.toLowerCase()] || 'N/A';
   };
@@ -271,6 +305,23 @@ const UploadAttribution = () => {
               }}
             >
               {loading ? "Processing..." : "Merge with Classifications"}
+            </button>
+            
+            <button
+              onClick={handleTestAuth}
+              disabled={loading}
+              style={{
+                padding: "0.75rem 1.5rem",
+                backgroundColor: "#ffc107",
+                color: "black",
+                border: "none",
+                borderRadius: "4px",
+                cursor: !loading ? "pointer" : "not-allowed",
+                fontSize: "1rem",
+                opacity: loading ? 0.7 : 1
+              }}
+            >
+              Test Auth
             </button>
           </div>
         </div>
