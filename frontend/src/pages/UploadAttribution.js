@@ -86,7 +86,16 @@ const UploadAttribution = () => {
             });
 
           // Send to backend
+          console.log('Getting Firebase token for upload...');
           const token = await getIdToken();
+          console.log('Upload token received:', token ? 'Yes' : 'No');
+          
+          if (!token) {
+            setError('No authentication token available for upload. Please log in again.');
+            return;
+          }
+
+          console.log('Sending upload request...');
           const response = await axios.post(
             'https://contentive-classify-app.onrender.com/upload-attribution',
             { data },
@@ -121,7 +130,16 @@ const UploadAttribution = () => {
     setSuccess('');
 
     try {
+      console.log('Getting Firebase token...');
       const token = await getIdToken();
+      console.log('Token received:', token ? 'Yes' : 'No');
+      
+      if (!token) {
+        setError('No authentication token available. Please log in again.');
+        return;
+      }
+
+      console.log('Sending merge request...');
       const response = await axios.post(
         'https://contentive-classify-app.onrender.com/merge-attribution',
         {},
@@ -141,6 +159,7 @@ const UploadAttribution = () => {
       );
     } catch (err) {
       console.error('Merge error:', err);
+      console.error('Error response:', err.response?.data);
       setError(err.response?.data?.error || 'Error merging attribution data');
     } finally {
       setLoading(false);

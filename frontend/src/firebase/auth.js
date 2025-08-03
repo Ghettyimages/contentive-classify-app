@@ -55,9 +55,19 @@ export const onAuthStateChange = (callback) => onAuthStateChanged(auth, callback
 // Get Firebase ID token for backend authentication
 export const getIdToken = async () => {
   const user = auth.currentUser;
+  console.log('Current user:', user ? user.email : 'No user');
+  
   if (user) {
-    return await user.getIdToken();
+    try {
+      const token = await user.getIdToken();
+      console.log('Token generated successfully');
+      return token;
+    } catch (error) {
+      console.error('Error getting ID token:', error);
+      return null;
+    }
   }
+  console.log('No current user found');
   return null;
 };
 
