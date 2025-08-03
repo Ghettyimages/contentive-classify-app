@@ -52,6 +52,22 @@ Rules:
 def index():
     return "MCP Server is running."
 
+@app.route("/debug-env", methods=["GET"])
+def debug_env():
+    """Debug endpoint to check environment variables."""
+    try:
+        service_account = os.getenv("FIREBASE_SERVICE_ACCOUNT")
+        openai_key = os.getenv("OPENAI_API_KEY")
+        
+        return jsonify({
+            "firebase_service_account_set": bool(service_account),
+            "firebase_service_account_length": len(service_account) if service_account else 0,
+            "openai_key_set": bool(openai_key),
+            "firebase_apps_initialized": len(firebase_admin._apps) if hasattr(firebase_admin, '_apps') else 0
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route("/test-auth", methods=["POST"])
 def test_auth():
     """Test endpoint to verify Firebase authentication."""

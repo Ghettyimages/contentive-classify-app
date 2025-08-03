@@ -10,25 +10,50 @@ class FirebaseService:
     def __init__(self):
         """Initialize Firebase Admin SDK and Firestore client."""
         try:
+            print("🔧 Initializing Firebase service...")
+            
             # Check if Firebase app is already initialized
             if not firebase_admin._apps:
+                print("📋 No existing Firebase apps found, initializing...")
+                
                 # Initialize with service account key from environment
                 service_account_info = os.getenv("FIREBASE_SERVICE_ACCOUNT")
+                print(f"🔑 Environment variable found: {'Yes' if service_account_info else 'No'}")
+                
                 if service_account_info:
-                    # Parse the JSON service account info
-                    cred_dict = json.loads(service_account_info)
-                    cred = credentials.Certificate(cred_dict)
+                    print("📄 Parsing service account JSON...")
+                    try:
+                        # Parse the JSON service account info
+                        cred_dict = json.loads(service_account_info)
+                        print(f"✅ JSON parsed successfully. Project ID: {cred_dict.get('project_id', 'Unknown')}")
+                        cred = credentials.Certificate(cred_dict)
+                        print("🔐 Certificate created successfully")
+                    except json.JSONDecodeError as e:
+                        print(f"❌ JSON parsing error: {e}")
+                        raise
+                    except Exception as e:
+                        print(f"❌ Certificate creation error: {e}")
+                        raise
                 else:
+                    print("⚠️  No service account found, using default credentials")
                     # Fallback to default credentials (for local development)
                     cred = credentials.ApplicationDefault()
                 
+                print("🚀 Initializing Firebase Admin SDK...")
                 firebase_admin.initialize_app(cred)
+                print("✅ Firebase Admin SDK initialized successfully")
+            else:
+                print("✅ Firebase app already initialized")
             
+            print("🗄️  Initializing Firestore client...")
             self.db = firestore.client()
             self.collection_name = "classified_urls"
+            print("✅ Firebase service initialization complete")
             
         except Exception as e:
-            print(f"Firebase initialization error: {e}")
+            print(f"❌ Firebase initialization error: {e}")
+            import traceback
+            print(f"📋 Full traceback: {traceback.format_exc()}")
             raise
     
     def get_classification_by_url(self, url: str) -> Optional[Dict[str, Any]]:
