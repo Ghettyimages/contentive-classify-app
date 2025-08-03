@@ -1,13 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getIdToken } from '../firebase/auth';
+import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
+import { initializeApp } from 'firebase/app';
 import axios from 'axios';
+
+// Firebase config (same as in auth.js)
+const firebaseConfig = {
+  apiKey: "AIzaSyBYT9LWeL_7bsxRz3QpdZJ-YZQRDHqj6DE",
+  authDomain: "signal-sync-c3681.firebaseapp.com",
+  databaseURL: "https://signal-sync-c3681-default-rtdb.firebaseio.com",
+  projectId: "signal-sync-c3681",
+  storageBucket: "signal-sync-c3681.firebasestorage.app",
+  messagingSenderId: "492313662329",
+  appId: "1:492313662329:web:439b6ea5e17b31ba7615a8",
+  measurementId: "G-34XPB0HHYP"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 const DataDashboard = () => {
   const { currentUser } = useAuth();
   const [mergedData, setMergedData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [sortField, setSortField] = useState('');
+  const [sortDirection, setSortDirection] = useState('asc');
+  const [filterCategory, setFilterCategory] = useState('');
   const [stats, setStats] = useState({
     total: 0,
     merged: 0,
@@ -16,38 +37,45 @@ const DataDashboard = () => {
   });
 
   useEffect(() => {
-    loadMergedData();
-  }, []);
+    if (currentUser) {
+      loadMergedData();
+    }
+  }, [currentUser]);
 
   const loadMergedData = async () => {
     setLoading(true);
     setError('');
 
     try {
-      const token = await getIdToken();
-      const response = await axios.get(
-        'https://contentive-classify-app.onrender.com/merged-data',
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
+      // Fetch merged data from Firestore
+      const mergedCollection = collection(db, 'merged_content_signals');
+      const querySnapshot = await getDocs(mergedCollection);
+      
+      const data = [];
+      querySnapshot.forEach((doc) => {
+        const docData = doc.data();
+        data.push({
+          id: doc.id,
+          ...docData,
+          // Determine data availability
+          hasClassification: !!(docData.classification_iab_category || docData.classification_tone || docData.classification_intent),
+          hasAttribution: !!(docData.attribution_conversions || docData.attribution_ctr || docData.attribution_viewability)
+        });
+      });
 
-      setMergedData(response.data.results || []);
+      setMergedData(data);
       
       // Calculate stats
-      const data = response.data.results || [];
       setStats({
         total: data.length,
-        merged: data.filter(item => item.has_attribution_data && item.has_classification_data).length,
-        attributionOnly: data.filter(item => item.has_attribution_data && !item.has_classification_data).length,
-        classificationOnly: data.filter(item => !item.has_attribution_data && item.has_classification_data).length
+        merged: data.filter(item => item.hasClassification && item.hasAttribution).length,
+        attributionOnly: data.filter(item => item.hasAttribution && !item.hasClassification).length,
+        classificationOnly: data.filter(item => item.hasClassification && !item.hasAttribution).length
       });
 
     } catch (err) {
       console.error('Error loading merged data:', err);
-      setError(err.response?.data?.error || 'Error loading data');
+      setError('Error loading data from Firestore');
     } finally {
       setLoading(false);
     }
@@ -56,7 +84,7 @@ const DataDashboard = () => {
   const getFieldValue = (item, prefix, field) => {
     const key = `${prefix}_${field}`;
     const value = item[key];
-    if (value === null || value === undefined) return 'N/A';
+    if (value === null || value === undefined || value === '') return 'N/A';
     if (Array.isArray(value)) return value.join(', ');
     return value;
   };
@@ -72,6 +100,66 @@ const DataDashboard = () => {
     const num = parseFloat(value);
     return isNaN(num) ? value : `${num.toFixed(2)}%`;
   };
+
+  const getRowStyle = (item) => {
+    if (!item.hasClassification && !item.hasAttribution) {
+      return { backgroundColor: '#ffebee' }; // Light red for no data
+    } else if (!item.hasClassification) {
+      return { backgroundColor: '#ffebee' }; // Light red for no classification
+    } else if (!item.hasAttribution) {
+      return { backgroundColor: '#fff3e0' }; // Light yellow for no attribution
+    }
+    return {}; // Normal for merged data
+  };
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortData = (data) => {
+    if (!sortField) return data;
+
+    return [...data].sort((a, b) => {
+      let aValue = getFieldValue(a, 'attribution', sortField) || getFieldValue(a, 'classification', sortField);
+      let bValue = getFieldValue(b, 'attribution', sortField) || getFieldValue(b, 'classification', sortField);
+
+      // Convert to numbers for numeric fields
+      if (['ctr', 'conversions', 'viewability', 'scroll_depth', 'impressions', 'fill_rate'].includes(sortField)) {
+        aValue = parseFloat(aValue) || 0;
+        bValue = parseFloat(bValue) || 0;
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
+
+  const filterData = (data) => {
+    if (!filterCategory) return data;
+    return data.filter(item => {
+      const category = getFieldValue(item, 'classification', 'iab_category');
+      return category && category.toLowerCase().includes(filterCategory.toLowerCase());
+    });
+  };
+
+  const getUniqueCategories = () => {
+    const categories = new Set();
+    mergedData.forEach(item => {
+      const category = getFieldValue(item, 'classification', 'iab_category');
+      if (category && category !== 'N/A') {
+        categories.add(category);
+      }
+    });
+    return Array.from(categories).sort();
+  };
+
+  const processedData = filterData(sortData(mergedData));
 
   return (
     <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
@@ -152,7 +240,8 @@ const DataDashboard = () => {
           marginBottom: "2rem",
           display: "flex",
           gap: "1rem",
-          alignItems: "center"
+          alignItems: "center",
+          flexWrap: "wrap"
         }}>
           <button
             onClick={loadMergedData}
@@ -170,8 +259,24 @@ const DataDashboard = () => {
             {loading ? "Loading..." : "Refresh Data"}
           </button>
           
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            style={{
+              padding: "0.5rem",
+              borderRadius: "4px",
+              border: "1px solid #ddd",
+              fontSize: "0.9rem"
+            }}
+          >
+            <option value="">All Categories</option>
+            {getUniqueCategories().map(category => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
+          
           <span style={{ color: "#666", fontSize: "0.9rem" }}>
-            Last updated: {new Date().toLocaleString()}
+            Showing {processedData.length} of {mergedData.length} records
           </span>
         </div>
 
@@ -189,7 +294,17 @@ const DataDashboard = () => {
         )}
 
         {/* Data Table */}
-        {mergedData.length > 0 ? (
+        {loading ? (
+          <div style={{ 
+            backgroundColor: "#fff", 
+            padding: "2rem", 
+            borderRadius: "8px",
+            border: "1px solid #dee2e6",
+            textAlign: "center"
+          }}>
+            <div style={{ fontSize: "1.2rem", color: "#666" }}>Loading data...</div>
+          </div>
+        ) : processedData.length > 0 ? (
           <div style={{ 
             backgroundColor: "#fff", 
             padding: "2rem", 
@@ -202,24 +317,36 @@ const DataDashboard = () => {
             <table style={{
               width: "100%",
               borderCollapse: "collapse",
-              fontSize: "0.85rem",
+              fontSize: "0.8rem",
               border: "1px solid #ddd"
             }}>
               <thead>
                 <tr>
                   <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left" }}>URL</th>
-                  <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left" }}>Type</th>
-                  <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left" }}>Conversions</th>
-                  <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left" }}>Revenue</th>
-                  <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left" }}>CTR</th>
                   <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left" }}>IAB Category</th>
                   <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left" }}>Tone</th>
                   <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left" }}>Intent</th>
+                  <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left" }}>Audience</th>
+                  <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left", cursor: "pointer" }}
+                      onClick={() => handleSort('ctr')}>
+                    CTR {sortField === 'ctr' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
+                  </th>
+                  <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left", cursor: "pointer" }}
+                      onClick={() => handleSort('conversions')}>
+                    Conversions {sortField === 'conversions' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
+                  </th>
+                  <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left", cursor: "pointer" }}
+                      onClick={() => handleSort('viewability')}>
+                    Viewability {sortField === 'viewability' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
+                  </th>
+                  <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left" }}>Scroll Depth</th>
+                  <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left" }}>Impressions</th>
+                  <th style={{ padding: "12px 8px", borderBottom: "2px solid #ddd", backgroundColor: "#f8f9fa", textAlign: "left" }}>Fill Rate</th>
                 </tr>
               </thead>
               <tbody>
-                {mergedData.map((item, index) => (
-                  <tr key={index} style={{ borderBottom: "1px solid #eee" }}>
+                {processedData.map((item, index) => (
+                  <tr key={item.id || index} style={{ borderBottom: "1px solid #eee", ...getRowStyle(item) }}>
                     <td style={{ 
                       padding: "10px 8px", 
                       borderRight: "1px solid #eee",
@@ -231,30 +358,34 @@ const DataDashboard = () => {
                       {item.url}
                     </td>
                     <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
-                      {item.has_attribution_data && item.has_classification_data ? 
-                        <span style={{ color: "#2e7d32", fontWeight: "bold" }}>Merged</span> :
-                        item.has_attribution_data ? 
-                        <span style={{ color: "#f57c00" }}>Attribution</span> :
-                        <span style={{ color: "#c2185b" }}>Classification</span>
-                      }
-                    </td>
-                    <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
-                      {formatNumber(getFieldValue(item, 'attribution', 'conversions'))}
-                    </td>
-                    <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
-                      {formatNumber(getFieldValue(item, 'attribution', 'revenue'))}
-                    </td>
-                    <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
-                      {formatPercentage(getFieldValue(item, 'attribution', 'ctr'))}
-                    </td>
-                    <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
                       {getFieldValue(item, 'classification', 'iab_category')}
                     </td>
                     <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
                       {getFieldValue(item, 'classification', 'tone')}
                     </td>
-                    <td style={{ padding: "10px 8px" }}>
+                    <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
                       {getFieldValue(item, 'classification', 'intent')}
+                    </td>
+                    <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
+                      {getFieldValue(item, 'classification', 'audience')}
+                    </td>
+                    <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
+                      {formatPercentage(getFieldValue(item, 'attribution', 'ctr'))}
+                    </td>
+                    <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
+                      {formatNumber(getFieldValue(item, 'attribution', 'conversions'))}
+                    </td>
+                    <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
+                      {formatPercentage(getFieldValue(item, 'attribution', 'viewability'))}
+                    </td>
+                    <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
+                      {formatPercentage(getFieldValue(item, 'attribution', 'scroll_depth'))}
+                    </td>
+                    <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
+                      {formatNumber(getFieldValue(item, 'attribution', 'impressions'))}
+                    </td>
+                    <td style={{ padding: "10px 8px" }}>
+                      {formatPercentage(getFieldValue(item, 'attribution', 'fill_rate'))}
                     </td>
                   </tr>
                 ))}
@@ -270,7 +401,10 @@ const DataDashboard = () => {
             textAlign: "center",
             color: "#666"
           }}>
-            {loading ? "Loading data..." : "No merged data found. Try uploading attribution data and running the merge process."}
+            {mergedData.length === 0 ? 
+              "No merged data found. Try uploading attribution data and running the merge process." :
+              "No records match the current filter."
+            }
           </div>
         )}
       </div>
