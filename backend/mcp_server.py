@@ -109,13 +109,19 @@ def upload_attribution():
     try:
         # Verify Firebase token
         auth_header = request.headers.get('Authorization')
+        print(f"Auth header received: {auth_header[:50] if auth_header else 'None'}...")
+        
         if not auth_header or not auth_header.startswith('Bearer '):
+            print("Missing or invalid authorization header format")
             return jsonify({"error": "Missing or invalid authorization header"}), 401
         
         token = auth_header.split('Bearer ')[1]
+        print(f"Token extracted: {token[:20]}...")
+        
         try:
             decoded_token = auth.verify_id_token(token)
             user_id = decoded_token['uid']
+            print(f"Token verified successfully for user: {user_id}")
         except Exception as e:
             print(f"Token verification failed: {e}")
             return jsonify({"error": "Invalid authentication token"}), 401
@@ -196,16 +202,21 @@ def trigger_merge():
     try:
         # Verify Firebase token for admin access
         auth_header = request.headers.get('Authorization')
+        print(f"Merge - Auth header received: {auth_header[:50] if auth_header else 'None'}...")
+        
         if not auth_header or not auth_header.startswith('Bearer '):
+            print("Merge - Missing or invalid authorization header format")
             return jsonify({"error": "Missing or invalid authorization header"}), 401
         
         token = auth_header.split('Bearer ')[1]
+        print(f"Merge - Token extracted: {token[:20]}...")
+        
         try:
             decoded_token = auth.verify_id_token(token)
             user_id = decoded_token['uid']
-            print(f"Merge triggered by user: {user_id}")
+            print(f"Merge - Token verified successfully for user: {user_id}")
         except Exception as e:
-            print(f"Token verification failed: {e}")
+            print(f"Merge - Token verification failed: {e}")
             return jsonify({"error": "Invalid authentication token"}), 401
         
         # Run the merge process
