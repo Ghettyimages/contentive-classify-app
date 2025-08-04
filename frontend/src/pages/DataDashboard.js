@@ -54,6 +54,13 @@ const DataDashboard = () => {
       
       mergedSnapshot.forEach((doc) => {
         const docData = doc.data();
+        
+        // Debug first record to see structure
+        if (data.length === 0) {
+          console.log('First merged record structure:', docData);
+          console.log('Attribution fields in first record:', Object.keys(docData).filter(k => k.startsWith('attribution_')));
+        }
+        
         data.push({
           id: doc.id,
           ...docData,
@@ -127,6 +134,8 @@ const DataDashboard = () => {
     // Debug CTR values specifically
     if (field === 'ctr' && prefix === 'attribution') {
       console.log(`CTR value for ${item.url}:`, value, typeof value);
+      console.log(`CTR key: ${key}, exists: ${key in item}`);
+      console.log(`All attribution fields:`, Object.keys(item).filter(k => k.startsWith('attribution_')));
     }
     
     if (value === null || value === undefined || value === '') return 'N/A';
