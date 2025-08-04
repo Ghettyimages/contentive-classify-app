@@ -53,6 +53,14 @@ const DataDashboard = () => {
       const data = [];
       querySnapshot.forEach((doc) => {
         const docData = doc.data();
+        
+        // Debug: Log the first record to see available fields
+        if (data.length === 0) {
+          console.log('First merged record fields:', Object.keys(docData));
+          console.log('Attribution fields:', Object.keys(docData).filter(key => key.startsWith('attribution_')));
+          console.log('Classification fields:', Object.keys(docData).filter(key => key.startsWith('classification_')));
+        }
+        
         data.push({
           id: doc.id,
           ...docData,
@@ -230,11 +238,10 @@ const DataDashboard = () => {
 
   const processedData = filterData(sortData(mergedData));
 
-  // Base columns that are always shown
+  // Base columns that are always shown (collapsed view)
   const baseColumns = [
     { key: 'url', label: 'URL', sortable: false, isDirectField: true },
     { key: 'iab_category', label: 'IAB Category', sortable: true, prefix: 'classification' },
-    { key: 'iab_subcategory', label: 'IAB Subcategory', sortable: true, prefix: 'classification' },
     { key: 'tone', label: 'Tone', sortable: true, prefix: 'classification' },
     { key: 'intent', label: 'Intent', sortable: true, prefix: 'classification' },
     { key: 'audience', label: 'Audience', sortable: true, prefix: 'classification' },
@@ -248,6 +255,7 @@ const DataDashboard = () => {
 
   // Additional columns shown in expanded view
   const expandedColumns = [
+    { key: 'iab_subcategory', label: 'IAB Subcategory', sortable: true, prefix: 'classification' },
     { key: 'iab_secondary_category', label: 'Secondary IAB Category', sortable: true, prefix: 'classification' },
     { key: 'iab_secondary_subcategory', label: 'Secondary IAB Subcategory', sortable: true, prefix: 'classification' },
     { key: 'iab_code', label: 'IAB Code', sortable: true, prefix: 'classification' },
