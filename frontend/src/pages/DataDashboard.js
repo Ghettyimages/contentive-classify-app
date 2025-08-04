@@ -27,6 +27,7 @@ const DataDashboard = () => {
   const [sortField, setSortField] = useState('');
   const [sortDirection, setSortDirection] = useState('asc');
   const [filterCategory, setFilterCategory] = useState('');
+  const [showExpanded, setShowExpanded] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
     merged: 0,
@@ -162,6 +163,12 @@ const DataDashboard = () => {
       'URL',
       'IAB Category',
       'IAB Subcategory',
+      'Secondary IAB Category',
+      'Secondary IAB Subcategory',
+      'IAB Code',
+      'IAB Subcode',
+      'Secondary IAB Code',
+      'Secondary IAB Subcode',
       'Tone',
       'Intent',
       'Audience',
@@ -182,6 +189,12 @@ const DataDashboard = () => {
       item.url || 'N/A',
       getFieldValue(item, 'classification', 'iab_category'),
       getFieldValue(item, 'classification', 'iab_subcategory'),
+      getFieldValue(item, 'classification', 'iab_secondary_category'),
+      getFieldValue(item, 'classification', 'iab_secondary_subcategory'),
+      getFieldValue(item, 'classification', 'iab_code'),
+      getFieldValue(item, 'classification', 'iab_subcode'),
+      getFieldValue(item, 'classification', 'iab_secondary_code'),
+      getFieldValue(item, 'classification', 'iab_secondary_subcode'),
       getFieldValue(item, 'classification', 'tone'),
       getFieldValue(item, 'classification', 'intent'),
       getFieldValue(item, 'classification', 'audience'),
@@ -217,9 +230,11 @@ const DataDashboard = () => {
 
   const processedData = filterData(sortData(mergedData));
 
-  const columns = [
+  // Base columns that are always shown
+  const baseColumns = [
     { key: 'url', label: 'URL', sortable: false, isDirectField: true },
     { key: 'iab_category', label: 'IAB Category', sortable: true, prefix: 'classification' },
+    { key: 'iab_subcategory', label: 'IAB Subcategory', sortable: true, prefix: 'classification' },
     { key: 'tone', label: 'Tone', sortable: true, prefix: 'classification' },
     { key: 'intent', label: 'Intent', sortable: true, prefix: 'classification' },
     { key: 'audience', label: 'Audience', sortable: true, prefix: 'classification' },
@@ -230,6 +245,19 @@ const DataDashboard = () => {
     { key: 'impressions', label: 'Impressions', sortable: true, prefix: 'attribution', formatter: formatNumber },
     { key: 'fill_rate', label: 'Fill Rate', sortable: true, prefix: 'attribution', formatter: formatPercentage }
   ];
+
+  // Additional columns shown in expanded view
+  const expandedColumns = [
+    { key: 'iab_secondary_category', label: 'Secondary IAB Category', sortable: true, prefix: 'classification' },
+    { key: 'iab_secondary_subcategory', label: 'Secondary IAB Subcategory', sortable: true, prefix: 'classification' },
+    { key: 'iab_code', label: 'IAB Code', sortable: true, prefix: 'classification' },
+    { key: 'iab_subcode', label: 'IAB Subcode', sortable: true, prefix: 'classification' },
+    { key: 'iab_secondary_code', label: 'Secondary IAB Code', sortable: true, prefix: 'classification' },
+    { key: 'iab_secondary_subcode', label: 'Secondary IAB Subcode', sortable: true, prefix: 'classification' }
+  ];
+
+  // Combine columns based on expanded state
+  const columns = showExpanded ? [...baseColumns, ...expandedColumns] : baseColumns;
 
   return (
     <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
@@ -400,6 +428,40 @@ const DataDashboard = () => {
           }}>
             <h3 style={{ marginTop: 0, color: "#333" }}>Merged Data Records</h3>
             
+            {/* Helper text and expand toggle */}
+            <div style={{ 
+              marginBottom: "1rem", 
+              display: "flex", 
+              justifyContent: "space-between", 
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "1rem"
+            }}>
+              <p style={{ 
+                color: "#666", 
+                fontSize: "0.9rem", 
+                margin: 0,
+                fontStyle: "italic"
+              }}>
+                Only primary IAB category shown. Export for full classification metadata.
+              </p>
+              
+              <button
+                onClick={() => setShowExpanded(!showExpanded)}
+                style={{
+                  padding: "0.5rem 1rem",
+                  backgroundColor: showExpanded ? "#dc3545" : "#17a2b8",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  fontSize: "0.9rem"
+                }}
+              >
+                {showExpanded ? "Collapse View" : "Expand View"}
+              </button>
+            </div>
+            
             <table style={{
               width: "100%",
               borderCollapse: "collapse",
@@ -439,7 +501,7 @@ const DataDashboard = () => {
                         key={column.key}
                         style={{ 
                           padding: "10px 8px", 
-                          borderRight: column.key === 'fill_rate' ? "none" : "1px solid #eee",
+                          borderRight: column.key === columns[columns.length - 1].key ? "none" : "1px solid #eee",
                           maxWidth: column.key === 'url' ? "200px" : "auto",
                           overflow: column.key === 'url' ? "hidden" : "visible",
                           textOverflow: column.key === 'url' ? "ellipsis" : "clip",
