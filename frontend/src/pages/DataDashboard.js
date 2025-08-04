@@ -46,14 +46,14 @@ const DataDashboard = () => {
     setError('');
 
     try {
+      const data = [];
+      
       // Fetch merged data from Firestore
       const mergedCollection = collection(db, 'merged_content_signals');
-      const querySnapshot = await getDocs(mergedCollection);
+      const mergedSnapshot = await getDocs(mergedCollection);
       
-      const data = [];
-      querySnapshot.forEach((doc) => {
+      mergedSnapshot.forEach((doc) => {
         const docData = doc.data();
-        
         data.push({
           id: doc.id,
           ...docData,
@@ -61,6 +61,45 @@ const DataDashboard = () => {
           hasClassification: !!(docData.classification_iab_category || docData.classification_tone || docData.classification_intent),
           hasAttribution: !!(docData.attribution_conversions || docData.attribution_ctr || docData.attribution_viewability)
         });
+      });
+
+      // Fetch classification-only data (from single classification tool)
+      const classificationCollection = collection(db, 'classified_urls');
+      const classificationSnapshot = await getDocs(classificationCollection);
+      
+      classificationSnapshot.forEach((doc) => {
+        const docData = doc.data();
+        
+        // Check if this URL is already in merged data
+        const existingIndex = data.findIndex(item => item.url === docData.url);
+        
+        if (existingIndex === -1) {
+          // This is a classification-only record not in merged data
+          data.push({
+            id: doc.id,
+            url: docData.url,
+            ...docData,
+            // Add classification prefix to match merged data structure
+            classification_iab_category: docData.iab_category,
+            classification_iab_subcategory: docData.iab_subcategory,
+            classification_iab_code: docData.iab_code,
+            classification_iab_subcode: docData.iab_subcode,
+            classification_iab_secondary_category: docData.iab_secondary_category,
+            classification_iab_secondary_code: docData.iab_secondary_code,
+            classification_iab_secondary_subcategory: docData.iab_secondary_subcategory,
+            classification_iab_secondary_subcode: docData.iab_secondary_subcode,
+            classification_tone: docData.tone,
+            classification_intent: docData.intent,
+            classification_audience: docData.audience,
+            classification_keywords: docData.keywords,
+            classification_buying_intent: docData.buying_intent,
+            classification_ad_suggestions: docData.ad_suggestions,
+            classification_timestamp: docData.timestamp,
+            // Determine data availability
+            hasClassification: true,
+            hasAttribution: false
+          });
+        }
       });
 
       setMergedData(data);
