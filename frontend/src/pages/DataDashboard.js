@@ -218,7 +218,7 @@ const DataDashboard = () => {
   const processedData = filterData(sortData(mergedData));
 
   const columns = [
-    { key: 'url', label: 'URL', sortable: false },
+    { key: 'url', label: 'URL', sortable: false, isDirectField: true },
     { key: 'iab_category', label: 'IAB Category', sortable: true, prefix: 'classification' },
     { key: 'tone', label: 'Tone', sortable: true, prefix: 'classification' },
     { key: 'intent', label: 'Intent', sortable: true, prefix: 'classification' },
@@ -446,9 +446,11 @@ const DataDashboard = () => {
                           whiteSpace: column.key === 'url' ? "nowrap" : "normal"
                         }}
                       >
-                        {column.formatter ? 
-                          column.formatter(getFieldValue(item, column.prefix, column.key)) :
-                          getFieldValue(item, column.prefix, column.key)
+                        {column.isDirectField ? 
+                          (item[column.key] || 'N/A') :
+                          column.formatter ? 
+                            column.formatter(getFieldValue(item, column.prefix, column.key)) :
+                            getFieldValue(item, column.prefix, column.key)
                         }
                       </td>
                     ))}
