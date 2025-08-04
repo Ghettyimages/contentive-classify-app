@@ -54,13 +54,6 @@ const DataDashboard = () => {
       querySnapshot.forEach((doc) => {
         const docData = doc.data();
         
-        // Debug: Log the first record to see available fields
-        if (data.length === 0) {
-          console.log('First merged record fields:', Object.keys(docData));
-          console.log('Attribution fields:', Object.keys(docData).filter(key => key.startsWith('attribution_')));
-          console.log('Classification fields:', Object.keys(docData).filter(key => key.startsWith('classification_')));
-        }
-        
         data.push({
           id: doc.id,
           ...docData,
@@ -91,6 +84,12 @@ const DataDashboard = () => {
   const getFieldValue = (item, prefix, field) => {
     const key = `${prefix}_${field}`;
     const value = item[key];
+    
+    // Debug CTR values specifically
+    if (field === 'ctr' && prefix === 'attribution') {
+      console.log(`CTR value for ${item.url}:`, value, typeof value);
+    }
+    
     if (value === null || value === undefined || value === '') return 'N/A';
     if (Array.isArray(value)) return value.join(', ');
     return value;
