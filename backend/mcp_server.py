@@ -304,11 +304,22 @@ def upload_attribution():
             except Exception as e:
                 errors.append(f"Row {i+1}: {str(e)}")
         
+        # Auto-trigger merge process after successful upload
+        merge_result = None
+        try:
+            print("🔄 Auto-triggering merge process after upload...")
+            merge_result = merge_attribution_data()
+            print(f"✅ Auto-merge completed: {merge_result.get('success', False)}")
+        except Exception as e:
+            print(f"❌ Auto-merge failed: {e}")
+            # Don't fail the upload if merge fails
+        
         response = {
-            "message": f"Successfully uploaded {saved_count} attribution records and classified {classified_count} new URLs",
+            "message": f"Successfully uploaded {saved_count} attribution records and classified {classified_count} new URLs. Auto-merge completed.",
             "saved_count": saved_count,
             "classified_count": classified_count,
-            "total_records": len(data)
+            "total_records": len(data),
+            "auto_merge": merge_result is not None and merge_result.get('success', False)
         }
         
         if errors:

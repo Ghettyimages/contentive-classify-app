@@ -107,7 +107,8 @@ const UploadAttribution = () => {
             }
           );
 
-          setSuccess(`Successfully uploaded ${data.length} attribution records!`);
+          const responseMessage = response.data.message || `Successfully uploaded ${data.length} attribution records!`;
+          setSuccess(responseMessage);
           setFile(null);
           setPreviewData([]);
         } catch (err) {
@@ -124,47 +125,7 @@ const UploadAttribution = () => {
     }
   };
 
-  const handleMergeData = async () => {
-    setLoading(true);
-    setError('');
-    setSuccess('');
 
-    try {
-      console.log('Getting Firebase token...');
-      const token = await getIdToken();
-      console.log('Token received:', token ? 'Yes' : 'No');
-      
-      if (!token) {
-        setError('No authentication token available. Please log in again.');
-        return;
-      }
-
-      console.log('Sending merge request...');
-      const response = await axios.post(
-        'https://contentive-classify-app.onrender.com/merge-attribution',
-        {},
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-
-      const { statistics } = response.data;
-      setSuccess(
-        `Merge completed! Processed ${statistics.successful_merges} merged records, ` +
-        `${statistics.attribution_only} attribution-only, ` +
-        `${statistics.classification_only} classification-only records.`
-      );
-    } catch (err) {
-      console.error('Merge error:', err);
-      console.error('Error response:', err.response?.data);
-      setError(err.response?.data?.error || 'Error merging attribution data');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleTestAuth = async () => {
     setLoading(true);
@@ -290,22 +251,7 @@ const UploadAttribution = () => {
               {loading ? "Uploading..." : "Upload Attribution Data"}
             </button>
             
-            <button
-              onClick={handleMergeData}
-              disabled={loading}
-              style={{
-                padding: "0.75rem 1.5rem",
-                backgroundColor: "#28a745",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                cursor: !loading ? "pointer" : "not-allowed",
-                fontSize: "1rem",
-                opacity: loading ? 0.7 : 1
-              }}
-            >
-              {loading ? "Processing..." : "Merge with Classifications"}
-            </button>
+
             
             <button
               onClick={handleTestAuth}
@@ -389,7 +335,8 @@ const UploadAttribution = () => {
         }}>
           <h4 style={{ marginTop: 0, color: "#0056b3" }}>Expected CSV Format</h4>
           <p style={{ color: "#0056b3", marginBottom: "1rem" }}>
-            Your CSV should include these columns (URL is required, others are optional):
+            Your CSV should include these columns (URL is required, others are optional). 
+            <strong>New URLs will be automatically classified, and CTR will be calculated if missing.</strong>
           </p>
           <ul style={{ color: "#0056b3", margin: 0 }}>
             <li><strong>url</strong> - The webpage URL (required)</li>
