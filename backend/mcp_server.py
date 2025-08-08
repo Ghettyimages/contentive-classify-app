@@ -335,7 +335,7 @@ def upload_attribution():
 
 def _parse_number(value):
     """Parse a string value to number, return None if invalid."""
-    if not value or value == '':
+    if value == '' or value is None:
         return None
     try:
         return float(value)
