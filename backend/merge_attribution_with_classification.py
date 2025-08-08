@@ -195,30 +195,7 @@ class AttributionClassificationMerger:
             for field in attribution_fields:
                 if field in attribution_record:
                     merged_record[f'attribution_{field}'] = attribution_record[field]
-            
-            # Handle CTR calculation if missing or invalid
-            uploaded_ctr = attribution_record.get('ctr')
-            clicks = attribution_record.get('clicks')
-            impressions = attribution_record.get('impressions')
-            
-            # Check if CTR is missing, empty, or invalid
-            ctr_is_valid = (uploaded_ctr is not None and 
-                           uploaded_ctr != '' and 
-                           isinstance(uploaded_ctr, (int, float)) and 
-                           not (isinstance(uploaded_ctr, float) and uploaded_ctr.is_integer() and uploaded_ctr == 0))
-            
-            if not ctr_is_valid and clicks is not None and impressions is not None:
-                try:
-                    clicks_val = float(clicks)
-                    impressions_val = float(impressions)
-                    
-                    if impressions_val > 0:
-                        calculated_ctr = (clicks_val / impressions_val) * 100
-                        merged_record['attribution_ctr'] = calculated_ctr
-                        print(f"📊 Calculated CTR for {url[:50]}...: {calculated_ctr:.2f}% (clicks: {clicks_val}, impressions: {impressions_val})")
-                except (ValueError, TypeError):
-                    # If conversion fails, keep original value (will be None/empty)
-                    pass
+            # Removed CTR calculation logic; only raw CSV value is used
         
         # Add classification fields
         if classification_record:
