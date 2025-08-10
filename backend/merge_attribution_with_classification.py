@@ -195,6 +195,9 @@ class AttributionClassificationMerger:
             for field in attribution_fields:
                 if field in attribution_record:
                     merged_record[f'attribution_{field}'] = attribution_record[field]
+                    # Debug logging for CTR field
+                    if field == 'ctr':
+                        print(f"🔍 Merge Debug - URL: {url[:50]}... CTR value: {attribution_record[field]} ({type(attribution_record[field])})")
             # Removed CTR calculation logic; only raw CSV value is used
         
         # Add classification fields
