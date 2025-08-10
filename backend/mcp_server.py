@@ -283,6 +283,7 @@ def upload_attribution():
                 raw_ctr = record.get('ctr')
                 parsed_ctr = _parse_number(raw_ctr)
                 print(f"🔍 CTR Debug - URL: {url[:50]}... Raw CTR: '{raw_ctr}' ({type(raw_ctr)}), Parsed CTR: {parsed_ctr} ({type(parsed_ctr)})")
+                print(f"🔍 Full record for debugging: {record}")
                 
                 attribution_data = {
                     'url': url,
@@ -344,6 +345,11 @@ def _parse_number(value):
     
     if value == '' or value is None:
         print(f"  → Returning None (empty or None)")
+        return None
+    
+    # Handle string representations of null/None that might come from JSON
+    if isinstance(value, str) and value.lower() in ['null', 'none', 'nan']:
+        print(f"  → Returning None (string representation of null)")
         return None
     
     try:

@@ -42,7 +42,13 @@ const UploadAttribution = () => {
             const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
             const row = {};
             headers.forEach((header, index) => {
-              row[header] = values[index] || '';
+              const value = values[index] || '';
+              // Convert empty strings to null for numeric fields
+              if (['ctr', 'conversions', 'revenue', 'impressions', 'clicks', 'scroll_depth', 'viewability', 'time_on_page', 'fill_rate'].includes(header.toLowerCase())) {
+                row[header] = value === '' ? null : value;
+              } else {
+                row[header] = value;
+              }
             });
             return row;
           });
@@ -80,7 +86,13 @@ const UploadAttribution = () => {
               const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
               const row = {};
               headers.forEach((header, index) => {
-                row[header] = values[index] || '';
+                const value = values[index] || '';
+                // Convert empty strings to null for numeric fields
+                if (['ctr', 'conversions', 'revenue', 'impressions', 'clicks', 'scroll_depth', 'viewability', 'time_on_page', 'fill_rate'].includes(header.toLowerCase())) {
+                  row[header] = value === '' ? null : value;
+                } else {
+                  row[header] = value;
+                }
               });
               return row;
             });
