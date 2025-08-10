@@ -279,6 +279,11 @@ def upload_attribution():
                         errors.append(f"Row {i+1}: Error classifying URL {url}: {str(e)}")
                 
                 # Prepare attribution data
+                # Debug CTR parsing
+                raw_ctr = record.get('ctr')
+                parsed_ctr = _parse_number(raw_ctr)
+                print(f"🔍 CTR Debug - URL: {url[:50]}... Raw CTR: '{raw_ctr}' ({type(raw_ctr)}), Parsed CTR: {parsed_ctr} ({type(parsed_ctr)})")
+                
                 attribution_data = {
                     'url': url,
                     'user_id': user_id,
@@ -287,7 +292,7 @@ def upload_attribution():
                     'revenue': _parse_number(record.get('revenue')),
                     'impressions': _parse_number(record.get('impressions')),
                     'clicks': _parse_number(record.get('clicks')),
-                    'ctr': _parse_number(record.get('ctr')),
+                    'ctr': parsed_ctr,
                     'scroll_depth': _parse_number(record.get('scroll_depth')),
                     'viewability': _parse_number(record.get('viewability')),
                     'time_on_page': _parse_number(record.get('time_on_page')),
@@ -335,11 +340,18 @@ def upload_attribution():
 
 def _parse_number(value):
     """Parse a string value to number, return None if invalid."""
+    print(f"🔍 _parse_number called with: '{value}' ({type(value)})")
+    
     if value == '' or value is None:
+        print(f"  → Returning None (empty or None)")
         return None
+    
     try:
-        return float(value)
-    except (ValueError, TypeError):
+        result = float(value)
+        print(f"  → Successfully parsed to: {result} ({type(result)})")
+        return result
+    except (ValueError, TypeError) as e:
+        print(f"  → Parse failed with error: {e}")
         return None
 
 @app.route("/merge-attribution", methods=["POST"])
