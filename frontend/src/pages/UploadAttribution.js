@@ -13,52 +13,101 @@ const UploadAttribution = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  const parseCSVForPreview = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const csv = e.target.result;
+          const lines = csv.split('\n');
+          const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+          
+          const data = lines.slice(1, 6) // First 5 rows for preview
+            .filter(line => line.trim())
+            .map(line => {
+              const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+              const row = {};
+              headers.forEach((header, index) => {
+                const value = values[index] || '';
+                const normalizedHeader = header.toLowerCase();
+                
+                // Convert empty strings to null for numeric fields
+                if (['ctr', 'conversions', 'revenue', 'impressions', 'clicks', 'scroll_depth', 'viewability', 'time_on_page', 'fill_rate'].includes(normalizedHeader)) {
+                  row[normalizedHeader] = value === '' ? null : value;
+                } else {
+                  row[normalizedHeader] = value;
+                }
+              });
+              return row;
+            });
+          
+          resolve(data);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsText(file);
+    });
+  };
+
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
-    if (!selectedFile) return;
-
-    if (selectedFile.type !== 'text/csv' && !selectedFile.name.endsWith('.csv')) {
+    if (selectedFile && selectedFile.type === 'text/csv') {
+      setFile(selectedFile);
+      setError('');
+      setSuccess('');
+      
+      // Parse CSV for preview
+      parseCSVForPreview(selectedFile)
+        .then(data => {
+          setPreviewData(data);
+        })
+        .catch(err => {
+          setError('Error parsing CSV file. Please check the format.');
+        });
+    } else {
       setError('Please select a valid CSV file');
-      return;
+      setFile(null);
     }
-
-    setFile(selectedFile);
-    setError('');
-    setSuccess('');
-    parseCSV(selectedFile);
   };
 
   const parseCSV = (file) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const csv = e.target.result;
-        const lines = csv.split('\n');
-        const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-        
-        const data = lines.slice(1, 6) // First 5 rows for preview
-          .filter(line => line.trim())
-          .map(line => {
-            const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
-            const row = {};
-            headers.forEach((header, index) => {
-              const value = values[index] || '';
-              // Convert empty strings to null for numeric fields
-              if (['ctr', 'conversions', 'revenue', 'impressions', 'clicks', 'scroll_depth', 'viewability', 'time_on_page', 'fill_rate'].includes(header.toLowerCase())) {
-                row[header] = value === '' ? null : value;
-              } else {
-                row[header] = value;
-              }
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const csv = e.target.result;
+          const lines = csv.split('\n');
+          const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+          
+          const data = lines.slice(1) // All rows except header
+            .filter(line => line.trim())
+            .map(line => {
+              const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+              const row = {};
+              headers.forEach((header, index) => {
+                const value = values[index] || '';
+                const normalizedHeader = header.toLowerCase();
+                
+                // Convert empty strings to null for numeric fields
+                if (['ctr', 'conversions', 'revenue', 'impressions', 'clicks', 'scroll_depth', 'viewability', 'time_on_page', 'fill_rate'].includes(normalizedHeader)) {
+                  row[normalizedHeader] = value === '' ? null : value;
+                } else {
+                  row[normalizedHeader] = value;
+                }
+              });
+              return row;
             });
-            return row;
-          });
-
-        setPreviewData(data);
-      } catch (err) {
-        setError('Error parsing CSV file. Please check the format.');
-      }
-    };
-    reader.readAsText(file);
+          
+          resolve(data);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsText(file);
+    });
   };
 
   const handleSubmit = async () => {
@@ -72,67 +121,38 @@ const UploadAttribution = () => {
     setSuccess('');
 
     try {
-      // Read the entire file
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const csv = e.target.result;
-          const lines = csv.split('\n');
-          const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-          
-          const data = lines.slice(1) // All rows except header
-            .filter(line => line.trim())
-            .map(line => {
-              const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
-              const row = {};
-              headers.forEach((header, index) => {
-                const value = values[index] || '';
-                // Convert empty strings to null for numeric fields
-                if (['ctr', 'conversions', 'revenue', 'impressions', 'clicks', 'scroll_depth', 'viewability', 'time_on_page', 'fill_rate'].includes(header.toLowerCase())) {
-                  row[header] = value === '' ? null : value;
-                } else {
-                  row[header] = value;
-                }
-              });
-              return row;
-            });
+      const data = await parseCSV(file);
 
-          // Send to backend
-          console.log('Getting Firebase token for upload...');
-          const token = await getIdToken();
-          console.log('Upload token received:', token ? 'Yes' : 'No');
-          
-          if (!token) {
-            setError('No authentication token available for upload. Please log in again.');
-            return;
+      // Send to backend
+      console.log('Getting Firebase token for upload...');
+      const token = await getIdToken();
+      console.log('Upload token received:', token ? 'Yes' : 'No');
+      
+      if (!token) {
+        setError('No authentication token available for upload. Please log in again.');
+        return;
+      }
+
+      console.log('Sending upload request...');
+      const response = await axios.post(
+        'https://contentive-classify-app.onrender.com/upload-attribution',
+        { data },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           }
-
-          console.log('Sending upload request...');
-          const response = await axios.post(
-            'https://contentive-classify-app.onrender.com/upload-attribution',
-            { data },
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              }
-            }
-          );
-
-          const responseMessage = response.data.message || `Successfully uploaded ${data.length} attribution records!`;
-          setSuccess(responseMessage);
-          setFile(null);
-          setPreviewData([]);
-        } catch (err) {
-          console.error('Upload error:', err);
-          setError(err.response?.data?.error || 'Error uploading attribution data');
-        } finally {
-          setLoading(false);
         }
-      };
-      reader.readAsText(file);
+      );
+
+      const responseMessage = response.data.message || `Successfully uploaded ${data.length} attribution records!`;
+      setSuccess(responseMessage);
+      setFile(null);
+      setPreviewData([]);
     } catch (err) {
-      setError('Error processing file');
+      console.error('Upload error:', err);
+      setError(err.response?.data?.error || 'Error uploading attribution data');
+    } finally {
       setLoading(false);
     }
   };
@@ -174,7 +194,9 @@ const UploadAttribution = () => {
   };
 
   const getFieldValue = (row, field) => {
-    return row[field] || row[field.toLowerCase()] || 'N/A';
+    // Try the normalized lowercase field name first, then fallback to original field name
+    const normalizedField = field.toLowerCase();
+    return row[normalizedField] || row[field] || 'N/A';
   };
 
   return (
