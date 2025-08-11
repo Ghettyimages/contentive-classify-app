@@ -73,8 +73,8 @@ const UploadAttribution = () => {
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          const csv = e.target.result;
-          const lines = csv.split('\n');
+          const text = e.target.result;
+          const lines = text.split('\n');
           const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
           
           console.log('📊 CSV Headers:', headers);
@@ -93,7 +93,7 @@ const UploadAttribution = () => {
                 
                 // Debug CTR values specifically
                 if (normalizedHeader === 'ctr') {
-                  console.log(`📊 Row ${rowIndex + 1} CTR: Raw='${value}', Final='${row[normalizedHeader]}'`);
+                  console.log(`📊 Row ${rowIndex + 1} CTR: Raw='${value}', Final='${row[normalizedHeader]}', Type='${typeof row[normalizedHeader]}'`);
                 }
               });
               return row;
@@ -128,6 +128,9 @@ const UploadAttribution = () => {
       data.slice(0, 3).forEach((row, index) => {
         console.log(`📊 Row ${index + 1}: CTR='${row.ctr}' (${typeof row.ctr})`);
       });
+
+      // Log the exact request body
+      console.log('📊 Full request body being sent:', JSON.stringify({ data }, null, 2));
 
       // Send to backend
       console.log('Getting Firebase token for upload...');

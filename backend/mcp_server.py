@@ -233,6 +233,10 @@ def upload_attribution():
             return jsonify({"error": "Invalid authentication token"}), 401
         
         # Get data from request
+        print(f"🔍 Raw request data: {request.get_data()}")
+        print(f"🔍 Request content type: {request.content_type}")
+        print(f"🔍 Request headers: {dict(request.headers)}")
+        
         data = request.json.get('data', [])
         if not data:
             return jsonify({"error": "No data provided"}), 400
@@ -241,6 +245,7 @@ def upload_attribution():
         if data:
             print(f"📊 Sample record structure: {list(data[0].keys())}")
             print(f"📊 Sample CTR value: '{data[0].get('ctr', 'NOT_FOUND')}' ({type(data[0].get('ctr'))})")
+            print(f"📊 Full first record for debugging: {data[0]}")
         
         # Validate and save each record
         firebase_service = get_firebase_service()
