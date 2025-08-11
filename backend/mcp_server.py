@@ -237,6 +237,11 @@ def upload_attribution():
         if not data:
             return jsonify({"error": "No data provided"}), 400
         
+        print(f"📊 Received {len(data)} records from CSV upload")
+        if data:
+            print(f"📊 Sample record structure: {list(data[0].keys())}")
+            print(f"📊 Sample CTR value: '{data[0].get('ctr', 'NOT_FOUND')}' ({type(data[0].get('ctr'))})")
+        
         # Validate and save each record
         firebase_service = get_firebase_service()
         saved_count = 0
@@ -347,9 +352,9 @@ def _parse_number(value):
         print(f"  → Returning None (empty or None)")
         return None
     
-    # Handle string representations of null/None that might come from JSON
-    if isinstance(value, str) and value.lower() in ['null', 'none', 'nan']:
-        print(f"  → Returning None (string representation of null)")
+    # Handle string "None" or "null" that might come from CSV
+    if isinstance(value, str) and value.lower() in ['none', 'null', 'nan']:
+        print(f"  → Returning None (string '{value}')")
         return None
     
     try:

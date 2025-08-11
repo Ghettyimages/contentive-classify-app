@@ -77,21 +77,29 @@ const UploadAttribution = () => {
           const lines = csv.split('\n');
           const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
           
+          console.log('📊 CSV Headers:', headers);
+          
           const data = lines.slice(1) // All rows except header
             .filter(line => line.trim())
-            .map(line => {
+            .map((line, rowIndex) => {
               const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
               const row = {};
               headers.forEach((header, index) => {
-                const value = values[index] || '';
+                const value = values[index];
                 const normalizedHeader = header.toLowerCase();
                 
-                // Keep empty strings as empty strings - don't convert to null
-                row[normalizedHeader] = value;
+                // Handle empty cells - keep as empty string, don't convert to null
+                row[normalizedHeader] = value || '';
+                
+                // Debug CTR values specifically
+                if (normalizedHeader === 'ctr') {
+                  console.log(`📊 Row ${rowIndex + 1} CTR: Raw='${value}', Final='${row[normalizedHeader]}'`);
+                }
               });
               return row;
             });
           
+          console.log('📊 Parsed CSV data sample:', data.slice(0, 2));
           resolve(data);
         } catch (error) {
           reject(error);
@@ -114,6 +122,12 @@ const UploadAttribution = () => {
 
     try {
       const data = await parseCSV(file);
+
+      // Debug: Check what we're about to send
+      console.log('📊 About to send to backend:');
+      data.slice(0, 3).forEach((row, index) => {
+        console.log(`📊 Row ${index + 1}: CTR='${row.ctr}' (${typeof row.ctr})`);
+      });
 
       // Send to backend
       console.log('Getting Firebase token for upload...');
