@@ -31,12 +31,8 @@ const UploadAttribution = () => {
                 const value = values[index] || '';
                 const normalizedHeader = header.toLowerCase();
                 
-                // Convert empty strings to null for numeric fields
-                if (['ctr', 'conversions', 'revenue', 'impressions', 'clicks', 'scroll_depth', 'viewability', 'time_on_page', 'fill_rate'].includes(normalizedHeader)) {
-                  row[normalizedHeader] = value === '' ? null : value;
-                } else {
-                  row[normalizedHeader] = value;
-                }
+                // Keep empty strings as empty strings - don't convert to null
+                row[normalizedHeader] = value;
               });
               return row;
             });
@@ -90,12 +86,8 @@ const UploadAttribution = () => {
                 const value = values[index] || '';
                 const normalizedHeader = header.toLowerCase();
                 
-                // Convert empty strings to null for numeric fields
-                if (['ctr', 'conversions', 'revenue', 'impressions', 'clicks', 'scroll_depth', 'viewability', 'time_on_page', 'fill_rate'].includes(normalizedHeader)) {
-                  row[normalizedHeader] = value === '' ? null : value;
-                } else {
-                  row[normalizedHeader] = value;
-                }
+                // Keep empty strings as empty strings - don't convert to null
+                row[normalizedHeader] = value;
               });
               return row;
             });
