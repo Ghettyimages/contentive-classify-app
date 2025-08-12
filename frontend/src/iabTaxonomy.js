@@ -4,16 +4,17 @@ export const IAB_LABELS = {
   IAB1: "Arts & Entertainment",
   IAB2: "Automotive",
   IAB8: "Food & Drink",
-  IAB14: "Sports",
+  IAB9: "Sports",
+  IAB14: "Sports", // depending on taxonomy version mapping
   // Subcategories
+  "IAB9-7": "Basketball",
+  "IAB9-17": "Football",
   "IAB14-17": "Football",
   "IAB14-6": "Baseball",
   "IAB8-5": "Cooking & Recipes",
 };
 
-/** Returns a label like "IAB14 — Sports" or the code if unknown. */
+/** Returns the plain label (e.g., "Sports") for a code, or empty string if unknown. */
 export function labelForCode(code) {
-  if (!code) return "";
-  const label = IAB_LABELS[code];
-  return label ? `${code} — ${label}` : code;
+  return IAB_LABELS[code] || "";
 }
