@@ -246,6 +246,10 @@ def upload_attribution():
             print(f"📊 Sample record structure: {list(data[0].keys())}")
             print(f"📊 Sample CTR value: '{data[0].get('ctr', 'NOT_FOUND')}' ({type(data[0].get('ctr'))})")
             print(f"📊 Full first record for debugging: {data[0]}")
+            # Check for CTR column specifically
+            ctr_values = [record.get('ctr') for record in data[:5]]
+            print(f"🔍 First 5 CTR values: {ctr_values}")
+            print(f"🔍 CTR value types: {[type(v) for v in ctr_values]}")
         
         # Validate and save each record
         firebase_service = get_firebase_service()
