@@ -20,8 +20,8 @@ const SegmentBuilder = () => {
     return formatDate(d);
   });
   const [segmentEnd, setSegmentEnd] = useState(() => formatDate(new Date()));
-  const [includeIabInput, setIncludeIabInput] = useState('');
-  const [excludeIabInput, setExcludeIabInput] = useState('');
+  const [includeIab, setIncludeIab] = useState([]); // array of codes
+  const [excludeIab, setExcludeIab] = useState([]); // array of codes
   const [kpiCtr, setKpiCtr] = useState('');
   const [kpiViewability, setKpiViewability] = useState('');
   const [kpiScrollDepth, setKpiScrollDepth] = useState('');
@@ -34,12 +34,14 @@ const SegmentBuilder = () => {
   const [previewCount, setPreviewCount] = useState(0);
   const [exportFormat, setExportFormat] = useState('csv');
   const [error, setError] = useState('');
+  const [iabOptions, setIabOptions] = useState([]); // union of category and subcategory codes available
 
   const tokenHeader = () => ({ Authorization: `Bearer ${window.localStorage.getItem('fb_id_token') || ''}` });
 
   useEffect(() => {
     if (currentUser) {
       loadSegments();
+      loadIabOptions();
     }
   }, [currentUser]);
 
@@ -52,9 +54,31 @@ const SegmentBuilder = () => {
     }
   };
 
+  const loadIabOptions = async () => {
+    try {
+      // Fetch a sample of merged data to derive available codes
+      const params = new URLSearchParams();
+      params.set('fallback', '1');
+      params.set('limit', '1000');
+      const res = await axios.get(`${API_BASE_URL}/merged-data?${params.toString()}`, { headers: tokenHeader() });
+      const rows = res.data?.results || [];
+      const setCodes = new Set();
+      rows.forEach(r => {
+        const code = r?.classification_iab_code || r?.iab_code;
+        const sub  = r?.classification_iab_subcode || r?.iab_subcode;
+        if (code && typeof code === 'string') setCodes.add(code);
+        if (sub && typeof sub === 'string') setCodes.add(sub);
+      });
+      setIabOptions(Array.from(setCodes).sort());
+    } catch (e) {
+      console.error('Error loading IAB options', e);
+      setIabOptions([]);
+    }
+  };
+
   const buildSegmentRules = () => {
-    const include_iab = includeIabInput.split(',').map(s => s.trim()).filter(Boolean);
-    const exclude_iab = excludeIabInput.split(',').map(s => s.trim()).filter(Boolean);
+    const include_iab = includeIab;
+    const exclude_iab = excludeIab;
     const kpi_filters = {};
     if (kpiCtr !== '') kpi_filters.ctr = { gte: parseFloat(kpiCtr) };
     if (kpiViewability !== '') kpi_filters.viewability = { gte: parseFloat(kpiViewability) };
@@ -161,12 +185,38 @@ const SegmentBuilder = () => {
               <input type="date" value={segmentEnd} onChange={(e) => setSegmentEnd(e.target.value)} style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: 4 }} />
             </div>
             <div>
-              <label style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>Include IAB (comma-separated codes)</label>
-              <input type="text" value={includeIabInput} onChange={(e) => setIncludeIabInput(e.target.value)} placeholder="e.g., IAB9,IAB18" style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: 4 }} />
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>Include IAB (multi-select)</label>
+              <select
+                multiple
+                size={6}
+                value={includeIab}
+                onChange={(e) => {
+                  const values = Array.from(e.target.selectedOptions).map(o => o.value);
+                  setIncludeIab(values);
+                }}
+                style={{ width: '100%', padding: '0.25rem', border: '1px solid #ddd', borderRadius: 4 }}
+              >
+                {iabOptions.map(code => (
+                  <option key={code} value={code}>{code}</option>
+                ))}
+              </select>
             </div>
             <div>
-              <label style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>Exclude IAB (comma-separated codes)</label>
-              <input type="text" value={excludeIabInput} onChange={(e) => setExcludeIabInput(e.target.value)} placeholder="e.g., IAB25" style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: 4 }} />
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>Exclude IAB (multi-select)</label>
+              <select
+                multiple
+                size={6}
+                value={excludeIab}
+                onChange={(e) => {
+                  const values = Array.from(e.target.selectedOptions).map(o => o.value);
+                  setExcludeIab(values);
+                }}
+                style={{ width: '100%', padding: '0.25rem', border: '1px solid #ddd', borderRadius: 4 }}
+              >
+                {iabOptions.map(code => (
+                  <option key={code} value={code}>{code}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>Sort By</label>
