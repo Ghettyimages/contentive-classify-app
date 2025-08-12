@@ -5,6 +5,9 @@ import { API_BASE_URL } from '../config';
 import { auth } from '../firebase/auth';
 import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { labelForCode as labelFromMap } from '../iabTaxonomy';
+import SavedSegmentsDropdown from '../components/SavedSegmentsDropdown';
+import { InlineAlert } from '../components/Alerts';
+import { slog, serror } from '../utils/log';
 
 const formatDate = (date) => date.toISOString().slice(0, 10);
 
@@ -15,6 +18,7 @@ const SegmentBuilder = () => {
   // Saved segments state
   const [segments, setSegments] = useState([]);
   const [selectedSegmentId, setSelectedSegmentId] = useState('');
+  const [savedSegmentsCache, setSavedSegmentsCache] = useState([]);
 
   // Builder state
   const [segmentName, setSegmentName] = useState('');
@@ -274,10 +278,11 @@ const SegmentBuilder = () => {
         server_timestamp: serverTimestamp(),
       };
       const colRef = collection(db, 'users', user.uid, 'segments');
-      await addDoc(colRef, payload);
+      const docRef = await addDoc(colRef, payload);
+      slog('Saved segment', { id: docRef.id, ...payload });
       alert('Segment saved.');
     } catch (e) {
-      console.error('Save to Firestore failed', e);
+      serror('Save to Firestore failed', e);
       alert('Failed to save segment.');
     }
   };
@@ -509,14 +514,46 @@ const SegmentBuilder = () => {
         <div style={{ backgroundColor: '#fff', padding: '1rem', borderRadius: 8, border: '1px solid #dee2e6' }}>
           <h3 style={{ marginTop: 0 }}>Saved Segments</h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <select value={selectedSegmentId} onChange={(e) => setSelectedSegmentId(e.target.value)} style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}>
-              <option value="">Select Saved Segment...</option>
-              {segments.map(s => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
+            <SavedSegmentsDropdown
+              value={selectedSegmentId}
+              onChange={(id) => {
+                setSelectedSegmentId(id);
+                const seg = savedSegmentsCache.find(s => s.id === id);
+                if (seg) {
+                  setIncludeIab(seg.include_codes || []);
+                  setExcludeIab(seg.exclude_codes || []);
+                }
+              }}
+              onLoaded={(rows) => setSavedSegmentsCache(rows)}
+            />
             <button onClick={async () => { if (!selectedSegmentId) return; const res = await axios.get(`${API_BASE_URL}/segments/${selectedSegmentId}/preview?limit=100`, { headers: tokenHeader() }); setPreviewRows(res.data?.rows || []); setPreviewCount(res.data?.count || 0); }} style={{ padding: '0.5rem 1rem', backgroundColor: '#6f42c1', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9rem' }}>Preview</button>
             <button onClick={loadSegments} style={{ padding: '0.5rem 1rem', backgroundColor: '#ffc107', color: 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9rem' }}>Refresh</button>
+          </div>
+          <div style={{ marginTop: 10 }}>
+            {/* Export example with explanation of disabled state */}
+            {(() => {
+              const REQUIRED_METRICS = ['attribution_conversions','attribution_ctr','attribution_viewability','attribution_scroll_depth','attribution_impressions','attribution_fill_rate'];
+              const rows = previewRows;
+              const issues = [];
+              if (!Array.isArray(rows) || rows.length === 0) issues.push('No rows to export. Apply filters or load data.');
+              const missing = [];
+              for (const m of REQUIRED_METRICS) {
+                const allMissing = rows.length > 0 && rows.every(r => r[m] === undefined || r[m] === null || r[m] === '');
+                if (allMissing) missing.push(m.replace('attribution_',''));
+              }
+              if (missing.length) issues.push(`Missing required metric(s): ${missing.join(', ')}`);
+              const disabled = issues.length > 0;
+              return (
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <button type="button" disabled={disabled} onClick={() => {/* reuse existing export if any */}}>Export</button>
+                  {disabled && (
+                    <InlineAlert>
+                      <strong>Export unavailable:</strong> {issues.join(' • ')}
+                    </InlineAlert>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
