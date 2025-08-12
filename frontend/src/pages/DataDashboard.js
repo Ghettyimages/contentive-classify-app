@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { API_BASE_URL } from '../config';
+// Optional label helper
+// import { labelForCode } from '../iabTaxonomy';
 
 // Helper to format date YYYY-MM-DD
 const formatDate = (date) => date.toISOString().slice(0, 10);
@@ -17,6 +19,8 @@ const DataDashboard = () => {
   const [exportFormat, setExportFormat] = useState('csv');
   const [stats, setStats] = useState({ total: 0, merged: 0, attributionOnly: 0, classificationOnly: 0 });
   const [counts, setCounts] = useState({ attribution_count: 0, classified_count: 0, merged_count: 0 });
+  const [selectedIabCode, setSelectedIabCode] = useState('');
+  const [selectedIabSubcode, setSelectedIabSubcode] = useState('');
 
   useEffect(() => {
     if (currentUser) {
@@ -208,6 +212,41 @@ const DataDashboard = () => {
 
   const processedData = mergedData;
 
+  // Available IAB codes and subcodes from current data
+  const availableIabCodes = useMemo(() => {
+    const set = new Set();
+    for (const r of processedData) {
+      const code = r?.classification_iab_code || r?.iab_code;
+      if (code && typeof code === 'string' && !code.includes('-')) set.add(code);
+    }
+    return Array.from(set).sort();
+  }, [processedData]);
+
+  const availableIabSubcodes = useMemo(() => {
+    const set = new Set();
+    for (const r of processedData) {
+      const sub = r?.classification_iab_subcode || r?.iab_subcode;
+      if (!sub || typeof sub !== 'string') continue;
+      if (selectedIabCode) {
+        if (sub.startsWith(`${selectedIabCode}-`)) set.add(sub);
+      } else {
+        set.add(sub);
+      }
+    }
+    return Array.from(set).sort();
+  }, [processedData, selectedIabCode]);
+
+  // Filter rows by IAB selections
+  const filteredRows = useMemo(() => {
+    return processedData.filter((r) => {
+      const code = r?.classification_iab_code || r?.iab_code || '';
+      const sub = r?.classification_iab_subcode || r?.iab_subcode || '';
+      if (selectedIabCode && code !== selectedIabCode) return false;
+      if (selectedIabSubcode && sub !== selectedIabSubcode) return false;
+      return true;
+    });
+  }, [processedData, selectedIabCode, selectedIabSubcode]);
+
   const baseColumns = [
     { key: 'url', label: 'URL', sortable: false, isDirectField: true },
     { key: 'date_added', label: 'Date Added', sortable: true, isDirectField: false, formatter: (v) => {
@@ -284,6 +323,40 @@ const DataDashboard = () => {
         <div style={{ backgroundColor: "#f8f9fa", padding: "1rem", borderRadius: "8px", marginBottom: "2rem", display: "flex", gap: "1rem", alignItems: "center", flexWrap: "wrap" }}>
           <button onClick={loadMergedData} disabled={loading} style={{ padding: "0.5rem 1rem", backgroundColor: "#007bff", color: "white", border: "none", borderRadius: "4px", cursor: loading ? "not-allowed" : "pointer", fontSize: "0.9rem" }}>{loading ? "Loading..." : "Refresh Data"}</button>
 
+          {/* IAB Filters */}
+          <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <span>IAB Category</span>
+            <select
+              value={selectedIabCode}
+              onChange={(e) => {
+                const next = e.target.value;
+                setSelectedIabCode(next);
+                if (next && selectedIabSubcode && !selectedIabSubcode.startsWith(`${next}-`)) {
+                  setSelectedIabSubcode('');
+                }
+              }}
+            >
+              <option value="">All</option>
+              {availableIabCodes.map((code) => (
+                <option key={code} value={code}>{code /* or labelForCode(code) */}</option>
+              ))}
+            </select>
+          </label>
+
+          <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <span>IAB Subcategory</span>
+            <select
+              value={selectedIabSubcode}
+              onChange={(e) => setSelectedIabSubcode(e.target.value)}
+              disabled={availableIabSubcodes.length === 0}
+            >
+              <option value="">All</option>
+              {availableIabSubcodes.map((sub) => (
+                <option key={sub} value={sub}>{sub /* or labelForCode(sub) */}</option>
+              ))}
+            </select>
+          </label>
+
           <button onClick={exportToCSV} disabled={loading || mergedData.length === 0} style={{ padding: "0.5rem 1rem", backgroundColor: "#28a745", color: "white", border: "none", borderRadius: "4px", cursor: (loading || mergedData.length === 0) ? "not-allowed" : "pointer", fontSize: "0.9rem" }}>Export to CSV</button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -310,7 +383,7 @@ const DataDashboard = () => {
           <div style={{ backgroundColor: "#fff", padding: "2rem", borderRadius: "8px", border: "1px solid #dee2e6", textAlign: "center" }}>
             <div style={{ fontSize: "1.2rem", color: "#666" }}>Loading data...</div>
           </div>
-        ) : processedData.length > 0 ? (
+        ) : filteredRows.length > 0 ? (
           <div style={{ backgroundColor: "#fff", padding: "2rem", borderRadius: "8px", border: "1px solid #dee2e6", overflowX: "auto" }}>
             <h3 style={{ marginTop: 0, color: "#333" }}>Merged Data Records</h3>
             <div style={{ marginBottom: "1rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
@@ -329,7 +402,7 @@ const DataDashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {processedData.map((item, index) => (
+                {filteredRows.map((item, index) => (
                   <tr key={item.id || index} style={{ borderBottom: "1px solid #eee", ...getRowStyle(item) }}>
                     {columns.map((column) => (
                       <td key={column.key} style={{ padding: "10px 8px", borderRight: column.key === columns[columns.length - 1].key ? "none" : "1px solid #eee", maxWidth: column.key === 'url' ? "200px" : "auto", overflow: column.key === 'url' ? "hidden" : "visible", textOverflow: column.key === 'url' ? "ellipsis" : "clip", whiteSpace: column.key === 'url' ? "nowrap" : "normal" }}>
