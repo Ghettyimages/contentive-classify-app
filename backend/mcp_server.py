@@ -1,5 +1,7 @@
 import os
 import json
+from datetime import datetime, timedelta
+from urllib.parse import urlparse
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from newspaper import Article
@@ -60,6 +62,23 @@ Rules:
 - Return strict JSON only — no comments, markdown, or extra text
 """
 
+def normalize_url(url: str) -> str:
+    """Normalize URLs for consistent matching: lowercase, strip query/hash, drop trailing slash (except root)."""
+    try:
+        parsed = urlparse(url.strip())
+        scheme = (parsed.scheme or 'http').lower()
+        netloc = (parsed.netloc or '').lower()
+        path = (parsed.path or '')
+        # Drop query and fragment
+        path = path.split('#')[0]
+        # Remove trailing slash except if path is just '/'
+        if path.endswith('/') and path != '/':
+            path = path[:-1]
+        normalized = f"{scheme}://{netloc}{path}"
+        return normalized
+    except Exception:
+        return (url or '').strip().lower()
+
 @app.route("/")
 def index():
     return "MCP Server is running."
@@ -86,13 +105,13 @@ def debug_env():
 
 @app.route("/merged-data", methods=["GET"])
 def get_merged_data():
-    """Get merged attribution and classification data."""
+    """Get merged attribution and classification data with optional date range and KPI sorting."""
     try:
         # Verify Firebase token
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
             return jsonify({"error": "Missing or invalid authorization header"}), 401
-        
+
         token = auth_header.split('Bearer ')[1]
         try:
             decoded_token = auth.verify_id_token(token)
@@ -100,26 +119,71 @@ def get_merged_data():
         except Exception as e:
             print(f"Token verification failed: {e}")
             return jsonify({"error": "Invalid authentication token"}), 401
-        
-        # Get merged data from Firestore
+
+        # Parse query params
+        start_str = request.args.get('start')  # YYYY-MM-DD
+        end_str = request.args.get('end')      # YYYY-MM-DD
+        sort_param = request.args.get('sort')
+        order = request.args.get('order', 'desc').lower()
+
+        now = datetime.utcnow()
+        if not start_str and not end_str:
+            # Default: last 30 days
+            default_start = (now - timedelta(days=30)).strftime('%Y-%m-%d')
+            default_end = now.strftime('%Y-%m-%d')
+            start_str, end_str = default_start, default_end
+
+        def to_iso_bounds(date_str: str, is_start: bool) -> str:
+            return f"{date_str}T00:00:00Z" if is_start else f"{date_str}T23:59:59Z"
+
+        start_iso = to_iso_bounds(start_str, True) if start_str else None
+        end_iso = to_iso_bounds(end_str, False) if end_str else None
+
+        # Fetch from Firestore with basic date filtering when possible
         firebase_service = get_firebase_service()
+        coll = firebase_service.db.collection('merged_content_signals')
+        query = coll
+        if start_iso:
+            query = query.where('upload_date', '>=', start_iso)
+        if end_iso:
+            query = query.where('upload_date', '<=', end_iso)
+
         try:
-            docs = firebase_service.db.collection('merged_content_signals').stream()
+            docs = query.stream()
             results = []
-            
             for doc in docs:
                 data = doc.to_dict()
                 results.append(data)
-            
+
+            # Server-side sorting
+            sort_map = {
+                'click_through_rate': 'attribution_ctr',
+                'conversions': 'attribution_conversions',
+                'viewability': 'attribution_viewability',
+                'scroll_depth': 'attribution_scroll_depth',
+                'impressions': 'attribution_impressions',
+                'fill_rate': 'attribution_fill_rate',
+            }
+            sort_field = sort_map.get(sort_param or 'conversions', 'attribution_conversions')
+            reverse = (order != 'asc')
+
+            def extract_numeric(v):
+                try:
+                    return float(v)
+                except Exception:
+                    return float('-inf') if reverse else float('inf')
+
+            results.sort(key=lambda r: extract_numeric(r.get(sort_field)), reverse=reverse)
+
+            print(f"/merged-data: returned {len(results)} records, date filter: start={start_str}, end={end_str}")
             return jsonify({
                 "results": results,
                 "total_count": len(results)
             })
-            
         except Exception as e:
             print(f"Error fetching merged data: {e}")
             return jsonify({"error": f"Error fetching data: {str(e)}"}), 500
-            
+
     except Exception as e:
         print(f"Error in merged-data endpoint: {str(e)}")
         return jsonify({"error": str(e)}), 500
@@ -275,6 +339,7 @@ def upload_attribution():
                             classification_data = {
                                 **classification_result,
                                 'user_id': user_id,
+                                'url_normalized': normalize_url(url),
                                 'timestamp': firebase_service._get_timestamp()
                             }
                             
@@ -295,9 +360,14 @@ def upload_attribution():
                 print(f"🔍 CTR Debug - URL: {url[:50]}... Raw CTR: '{raw_ctr}' ({type(raw_ctr)}), Parsed CTR: {parsed_ctr} ({type(parsed_ctr)})")
                 print(f"🔍 Full record for debugging: {record}")
                 
+                # Build versioned attribution record
+                upload_date_iso = datetime.utcnow().isoformat() + 'Z'
                 attribution_data = {
                     'url': url,
+                    'url_normalized': normalize_url(url),
                     'user_id': user_id,
+                    'uid': user_id,
+                    'upload_date': upload_date_iso,
                     'uploaded_at': firebase_service._get_timestamp(),
                     'conversions': _parse_number(record.get('conversions')),
                     'revenue': _parse_number(record.get('revenue')),
@@ -310,12 +380,12 @@ def upload_attribution():
                     'fill_rate': _parse_number(record.get('fill_rate'))
                 }
                 
-                # Save to Firestore
-                success = firebase_service.save_attribution_data(url, attribution_data)
-                if success:
+                # Save to Firestore as a NEW document (versioned)
+                try:
+                    firebase_service.db.collection('attribution_data').add(attribution_data)
                     saved_count += 1
-                else:
-                    errors.append(f"Row {i+1}: Failed to save to database")
+                except Exception as e:
+                    errors.append(f"Row {i+1}: Failed to save to database: {e}")
                     
             except Exception as e:
                 errors.append(f"Row {i+1}: {str(e)}")
@@ -324,7 +394,7 @@ def upload_attribution():
         merge_result = None
         try:
             print("🔄 Auto-triggering merge process after upload...")
-            merge_result = merge_attribution_data()
+            merge_result = merge_attribution_data(user_id=user_id)
             print(f"✅ Auto-merge completed: {merge_result.get('success', False)}")
         except Exception as e:
             print(f"❌ Auto-merge failed: {e}")
@@ -395,7 +465,7 @@ def trigger_merge():
         
         # Run the merge process
         print("Starting attribution-classification merge process...")
-        result = merge_attribution_data()
+        result = merge_attribution_data(user_id=user_id)
         
         if result['success']:
             return jsonify({
@@ -505,7 +575,11 @@ def classify_url(url):
         # Store the result in Firestore if service is available
         if firebase_service:
             try:
-                firebase_service.save_classification(url, classification_result)
+                classification_result_with_meta = {
+                    **classification_result,
+                    'url_normalized': normalize_url(url)
+                }
+                firebase_service.save_classification(url, classification_result_with_meta)
                 print(f"Successfully saved classification to Firestore for: {url}")
             except Exception as e:
                 print(f"Failed to save classification to Firestore: {e}")

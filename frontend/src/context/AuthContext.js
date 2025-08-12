@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { 
   onAuthStateChange, 
-  createUserProfile 
+  createUserProfile, 
+  auth
 } from '../firebase/auth';
 
 const AuthContext = createContext();
@@ -24,8 +25,15 @@ export const AuthProvider = ({ children }) => {
         // Create user profile in Firestore if it doesn't exist
         await createUserProfile(user);
         setCurrentUser(user);
+        try {
+          const token = await user.getIdToken();
+          window.localStorage.setItem('fb_id_token', token);
+        } catch (e) {
+          console.error('Failed to cache ID token', e);
+        }
       } else {
         setCurrentUser(null);
+        window.localStorage.removeItem('fb_id_token');
       }
       setLoading(false);
     });

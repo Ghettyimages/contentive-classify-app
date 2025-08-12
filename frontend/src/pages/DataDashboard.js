@@ -1,23 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
-import { initializeApp } from 'firebase/app';
+import axios from 'axios';
+import { API_BASE_URL } from '../config';
 
-// Firebase config (same as in auth.js)
-const firebaseConfig = {
-  apiKey: "AIzaSyBYT9LWeL_7bsxRz3QpdZJ-YZQRDHqj6DE",
-  authDomain: "signal-sync-c3681.firebaseapp.com",
-  databaseURL: "https://signal-sync-c3681-default-rtdb.firebaseio.com",
-  projectId: "signal-sync-c3681",
-  storageBucket: "signal-sync-c3681.firebasestorage.app",
-  messagingSenderId: "492313662329",
-  appId: "1:492313662329:web:439b6ea5e17b31ba7615a8",
-  measurementId: "G-34XPB0HHYP"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Helper to format date YYYY-MM-DD
+const formatDate = (date) => date.toISOString().slice(0, 10);
 
 const DataDashboard = () => {
   const { currentUser } = useAuth();
@@ -28,6 +15,12 @@ const DataDashboard = () => {
   const [sortDirection, setSortDirection] = useState('asc');
   const [filterCategory, setFilterCategory] = useState('');
   const [showExpanded, setShowExpanded] = useState(false);
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return formatDate(d);
+  });
+  const [endDate, setEndDate] = useState(() => formatDate(new Date()));
   const [stats, setStats] = useState({
     total: 0,
     merged: 0,
@@ -41,73 +34,31 @@ const DataDashboard = () => {
     }
   }, [currentUser]);
 
-  const loadMergedData = async () => {
+  const loadMergedData = async (opts = {}) => {
     setLoading(true);
     setError('');
 
     try {
-      const data = [];
-      
-      // Fetch merged data from Firestore
-      const mergedCollection = collection(db, 'merged_content_signals');
-      const mergedSnapshot = await getDocs(mergedCollection);
-      
-      mergedSnapshot.forEach((doc) => {
-        const docData = doc.data();
-        
-        // Debug first record to see structure
-        if (data.length === 0) {
-          console.log('First merged record structure:', docData);
-          console.log('Attribution fields in first record:', Object.keys(docData).filter(k => k.startsWith('attribution_')));
-        }
-        
-        data.push({
-          id: doc.id,
-          ...docData,
-          // Determine data availability
-          hasClassification: !!(docData.classification_iab_category || docData.classification_tone || docData.classification_intent),
-          hasAttribution: !!(docData.attribution_conversions || docData.attribution_ctr || docData.attribution_viewability)
-        });
+      // Build query string
+      const params = new URLSearchParams();
+      const start = opts.startDate ?? startDate;
+      const end = opts.endDate ?? endDate;
+      if (start) params.set('start', start);
+      if (end) params.set('end', end);
+      if (sortField) params.set('sort', mapSortKey(sortField));
+      if (sortDirection) params.set('order', sortDirection);
+
+      const response = await axios.get(`${API_BASE_URL}/merged-data?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${window.localStorage.getItem('fb_id_token') || ''}` }
       });
 
-      // Fetch classification-only data (from single classification tool)
-      const classificationCollection = collection(db, 'classified_urls');
-      const classificationSnapshot = await getDocs(classificationCollection);
-      
-      classificationSnapshot.forEach((doc) => {
-        const docData = doc.data();
-        
-        // Check if this URL is already in merged data
-        const existingIndex = data.findIndex(item => item.url === docData.url);
-        
-        if (existingIndex === -1) {
-          // This is a classification-only record not in merged data
-          data.push({
-            id: doc.id,
-            url: docData.url,
-            ...docData,
-            // Add classification prefix to match merged data structure
-            classification_iab_category: docData.iab_category,
-            classification_iab_subcategory: docData.iab_subcategory,
-            classification_iab_code: docData.iab_code,
-            classification_iab_subcode: docData.iab_subcode,
-            classification_iab_secondary_category: docData.iab_secondary_category,
-            classification_iab_secondary_code: docData.iab_secondary_code,
-            classification_iab_secondary_subcategory: docData.iab_secondary_subcategory,
-            classification_iab_secondary_subcode: docData.iab_secondary_subcode,
-            classification_tone: docData.tone,
-            classification_intent: docData.intent,
-            classification_audience: docData.audience,
-            classification_keywords: docData.keywords,
-            classification_buying_intent: docData.buying_intent,
-            classification_ad_suggestions: docData.ad_suggestions,
-            classification_timestamp: docData.timestamp,
-            // Determine data availability
-            hasClassification: true,
-            hasAttribution: false
-          });
-        }
-      });
+      const results = response.data?.results || [];
+
+      const data = results.map((docData) => ({
+        ...docData,
+        hasClassification: !!(docData.classification_iab_category || docData.classification_tone || docData.classification_intent),
+        hasAttribution: !!(docData.attribution_conversions || docData.attribution_ctr || docData.attribution_viewability)
+      }));
 
       setMergedData(data);
       
@@ -121,10 +72,23 @@ const DataDashboard = () => {
 
     } catch (err) {
       console.error('Error loading merged data:', err);
-      setError('Error loading data from Firestore');
+      setError('Error loading data');
     } finally {
       setLoading(false);
     }
+  };
+
+  const mapSortKey = (field) => {
+    // Map UI fields to backend sort param
+    const map = {
+      ctr: 'click_through_rate',
+      conversions: 'conversions',
+      viewability: 'viewability',
+      scroll_depth: 'scroll_depth',
+      impressions: 'impressions',
+      fill_rate: 'fill_rate',
+    };
+    return map[field] || 'conversions';
   };
 
   const getFieldValue = (item, prefix, field) => {
@@ -166,13 +130,17 @@ const DataDashboard = () => {
     return {}; // Normal for merged data
   };
 
-  const handleSort = (field) => {
+  const handleSort = async (field) => {
+    let nextDirection = 'asc';
     if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      nextDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+      setSortDirection(nextDirection);
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      nextDirection = 'asc';
+      setSortDirection(nextDirection);
     }
+    await loadMergedData({});
   };
 
   const sortData = (data) => {
@@ -283,7 +251,7 @@ const DataDashboard = () => {
     document.body.removeChild(link);
   };
 
-  const processedData = filterData(sortData(mergedData));
+  const processedData = filterData(mergedData);
 
   // Base columns that are always shown (collapsed view)
   const baseColumns = [
@@ -411,6 +379,26 @@ const DataDashboard = () => {
           >
             {loading ? "Loading..." : "Refresh Data"}
           </button>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            <span>to</span>
+            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            <button
+              onClick={() => loadMergedData({ startDate, endDate })}
+              disabled={loading}
+              style={{
+                padding: "0.5rem 1rem",
+                backgroundColor: "#6c757d",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: loading ? "not-allowed" : "pointer",
+                fontSize: "0.9rem"
+              }}
+            >
+              Apply
+            </button>
+          </div>
           
           <button
             onClick={exportToCSV}
