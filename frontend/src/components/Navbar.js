@@ -86,6 +86,20 @@ const Navbar = () => {
               >
                 Dashboard
               </button>
+              <button
+                onClick={() => navigate('/signalsync/segments')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#343a40',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem'
+                }}
+              >
+                Segments
+              </button>
             </div>
             <span style={{ color: '#666' }}>
               Welcome, {currentUser.displayName || currentUser.email}

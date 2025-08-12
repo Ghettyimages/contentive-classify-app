@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import UploadAttribution from "./pages/UploadAttribution";
 import DataDashboard from "./pages/DataDashboard";
+import SegmentBuilder from "./pages/SegmentBuilder";
 
 function App() {
   return (
@@ -37,6 +38,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <DataDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/signalsync/segments" 
+              element={
+                <ProtectedRoute>
+                  <SegmentBuilder />
                 </ProtectedRoute>
               } 
             />
