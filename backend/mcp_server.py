@@ -1,6 +1,7 @@
 import os
 import json
 from datetime import datetime, timedelta
+from datetime import timezone
 from urllib.parse import urlparse
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS, cross_origin
@@ -110,6 +111,10 @@ def normalize_url(raw: str) -> str:
         return normalized
     except Exception:
         return (raw or '').strip().lower()
+
+def now_iso_utc() -> str:
+    """Return current time as ISO-8601 UTC with trailing Z."""
+    return datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
 
 def _verify_and_get_user_id() -> str:
     auth_header = request.headers.get('Authorization')
@@ -760,8 +765,23 @@ def upload_attribution():
                 print(f"🔍 CTR Debug - URL: {url[:50]}... Raw CTR: {raw_ctr} ({type(raw_ctr)}), Parsed CTR: {parsed_ctr} ({type(parsed_ctr)})")
                 print(f"🔍 Full record for debugging: {record}")
                 
-                # Build versioned attribution record
-                upload_date_iso = datetime.utcnow().isoformat() + 'Z'
+                # Determine upload_date: honor valid CSV value, else now
+                csv_upload_date = record.get('upload_date') or record.get('UploadDate') or record.get('uploaded_at')
+                upload_date_iso = None
+                if csv_upload_date:
+                    try:
+                        # Normalize Z to +00:00 for fromisoformat
+                        candidate = str(csv_upload_date).replace('Z', '+00:00')
+                        datetime.fromisoformat(candidate)
+                        # If parse succeeds, keep original form but ensure trailing Z
+                        upload_date_iso = str(csv_upload_date)
+                        if upload_date_iso.endswith('+00:00'):
+                            upload_date_iso = upload_date_iso.replace('+00:00', 'Z')
+                    except Exception:
+                        upload_date_iso = None
+                if not upload_date_iso:
+                    upload_date_iso = now_iso_utc()
+
                 attribution_data = {
                     'url': url,
                     'url_normalized': normalize_url(url),

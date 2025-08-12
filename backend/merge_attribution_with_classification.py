@@ -14,7 +14,7 @@ Usage:
 
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List
 from firebase_service import get_firebase_service
 import firebase_admin
@@ -192,12 +192,13 @@ class AttributionClassificationMerger:
         if not attribution_record and not classification_record:
             return None
         
+        merged_ts = now_iso_utc()
         merged_record = {
             'uid': attribution_record.get('uid') if attribution_record else None,
             'url': url,
             'url_normalized': url_normalized,
-            'upload_date': attribution_record.get('upload_date') if attribution_record else None,
-            'merged_at': datetime.utcnow().isoformat() + 'Z',
+            'upload_date': (attribution_record.get('upload_date') if attribution_record and attribution_record.get('upload_date') else merged_ts),
+            'merged_at': merged_ts,
             'has_attribution_data': bool(attribution_record),
             'has_classification_data': bool(classification_record)
         }

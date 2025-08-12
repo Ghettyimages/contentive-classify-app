@@ -155,7 +155,7 @@ const DataDashboard = () => {
   };
 
   const exportToCSV = () => {
-    const headers = ['URL','IAB Category','IAB Subcategory','Secondary IAB Category','Secondary IAB Subcategory','IAB Code','IAB Subcode','Secondary IAB Code','Secondary IAB Subcode','Tone','Intent','Audience','Keywords','Conversions','Revenue','CTR (%)','Viewability (%)','Scroll Depth (%)','Impressions','Fill Rate (%)','Clicks','Time on Page','Data Status'];
+    const headers = ['URL','IAB Category','IAB Subcategory','Secondary IAB Category','Secondary IAB Subcategory','IAB Code','IAB Subcode','Secondary IAB Code','Secondary IAB Subcode','Tone','Intent','Audience','Keywords','Conversions','Revenue','CTR (%)','Viewability (%)','Scroll Depth (%)','Impressions','Fill Rate (%)','Clicks','Time on Page','Data Status','upload_date','merged_at'];
     const csvData = mergedData.map(item => [
       item.url || 'N/A',
       getFieldValue(item, 'classification', 'iab_category'),
@@ -179,7 +179,9 @@ const DataDashboard = () => {
       formatPercentage(getFieldValue(item, 'attribution', 'fill_rate')),
       formatNumber(getFieldValue(item, 'attribution', 'clicks')),
       formatNumber(getFieldValue(item, 'attribution', 'time_on_page')),
-      item.hasClassification && item.hasAttribution ? 'Complete' : item.hasClassification ? 'Classification Only' : item.hasAttribution ? 'Attribution Only' : 'No Data'
+      item.hasClassification && item.hasAttribution ? 'Complete' : item.hasClassification ? 'Classification Only' : item.hasAttribution ? 'Attribution Only' : 'No Data',
+      item.upload_date || '',
+      item.merged_at || ''
     ]);
     const csvContent = [headers, ...csvData].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -208,6 +210,11 @@ const DataDashboard = () => {
 
   const baseColumns = [
     { key: 'url', label: 'URL', sortable: false, isDirectField: true },
+    { key: 'date_added', label: 'Date Added', sortable: true, isDirectField: false, formatter: (v) => {
+      if (!v || v === 'N/A') return 'N/A';
+      const d = new Date(v);
+      return isNaN(d.getTime()) ? v : d.toLocaleString();
+    } },
     { key: 'iab_category', label: 'IAB Category', sortable: true, prefix: 'classification' },
     { key: 'tone', label: 'Tone', sortable: true, prefix: 'classification' },
     { key: 'intent', label: 'Intent', sortable: true, prefix: 'classification' },
@@ -231,6 +238,15 @@ const DataDashboard = () => {
   ];
 
   const columns = showExpanded ? [...baseColumns, ...expandedColumns] : baseColumns;
+
+  const getDisplayValue = (item, column) => {
+    if (column.isDirectField) return item[column.key] || 'N/A';
+    if (column.key === 'date_added') {
+      const iso = item.merged_at || item.upload_date || 'N/A';
+      return column.formatter ? column.formatter(iso) : iso;
+    }
+    return column.formatter ? column.formatter(getFieldValue(item, column.prefix, column.key)) : getFieldValue(item, column.prefix, column.key);
+  };
 
   return (
     <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
@@ -317,7 +333,7 @@ const DataDashboard = () => {
                   <tr key={item.id || index} style={{ borderBottom: "1px solid #eee", ...getRowStyle(item) }}>
                     {columns.map((column) => (
                       <td key={column.key} style={{ padding: "10px 8px", borderRight: column.key === columns[columns.length - 1].key ? "none" : "1px solid #eee", maxWidth: column.key === 'url' ? "200px" : "auto", overflow: column.key === 'url' ? "hidden" : "visible", textOverflow: column.key === 'url' ? "ellipsis" : "clip", whiteSpace: column.key === 'url' ? "nowrap" : "normal" }}>
-                        {column.isDirectField ? (item[column.key] || 'N/A') : column.formatter ? column.formatter(getFieldValue(item, column.prefix, column.key)) : getFieldValue(item, column.prefix, column.key)}
+                        {getDisplayValue(item, column)}
                       </td>
                     ))}
                   </tr>
