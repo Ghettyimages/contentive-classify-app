@@ -14,12 +14,6 @@ const DataDashboard = () => {
   const [sortField, setSortField] = useState('');
   const [sortDirection, setSortDirection] = useState('asc');
   const [showExpanded, setShowExpanded] = useState(false);
-  const [startDate, setStartDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 30);
-    return formatDate(d);
-  });
-  const [endDate, setEndDate] = useState(() => formatDate(new Date()));
   const [exportFormat, setExportFormat] = useState('csv');
   const [stats, setStats] = useState({ total: 0, merged: 0, attributionOnly: 0, classificationOnly: 0 });
   const [counts, setCounts] = useState({ attribution_count: 0, classified_count: 0, merged_count: 0 });
@@ -42,19 +36,17 @@ const DataDashboard = () => {
     }
   };
 
-  const loadMergedData = async (opts = {}) => {
+  const loadMergedData = async () => {
     setLoading(true);
     setError('');
 
     try {
-      // Build query string
+      // Build query string without date filters, enable fallback
       const params = new URLSearchParams();
-      const start = opts.startDate ?? startDate;
-      const end = opts.endDate ?? endDate;
-      if (start) params.set('start', start);
-      if (end) params.set('end', end);
       if (sortField) params.set('sort', mapSortKey(sortField));
       if (sortDirection) params.set('order', sortDirection);
+      params.set('fallback', '1');
+      params.set('limit', '200');
 
       const response = await axios.get(`${API_BASE_URL}/merged-data?${params.toString()}`, { headers: tokenHeader() });
       const results = response.data?.results || [];
@@ -71,7 +63,6 @@ const DataDashboard = () => {
         attributionOnly: data.filter(item => item.hasAttribution && !item.hasClassification).length,
         classificationOnly: data.filter(item => item.hasClassification && !item.hasAttribution).length
       });
-      // refresh counts too
       loadCounts();
 
     } catch (err) {
@@ -94,19 +85,14 @@ const DataDashboard = () => {
     return map[field] || 'conversions';
   };
 
-  const buildQueryParams = () => {
+  const handleExportActivation = async () => {
+    // Build export query without date filters
     const params = new URLSearchParams();
-    if (startDate) params.set('start', startDate);
-    if (endDate) params.set('end', endDate);
     if (sortField) params.set('sort_by', mapSortKey(sortField));
     if (sortDirection) params.set('order', sortDirection);
-    return params;
-  };
-
-  const handleExportActivation = async () => {
-    const params = buildQueryParams();
     params.set('format', exportFormat);
     params.set('limit', '20000');
+
     const token = window.localStorage.getItem('fb_id_token') || '';
     const url = `${API_BASE_URL}/export-activation?${params.toString()}`;
     try {
@@ -165,7 +151,7 @@ const DataDashboard = () => {
       nextDirection = 'asc';
       setSortDirection(nextDirection);
     }
-    await loadMergedData({});
+    await loadMergedData();
   };
 
   const exportToCSV = () => {
@@ -281,17 +267,11 @@ const DataDashboard = () => {
 
         <div style={{ backgroundColor: "#f8f9fa", padding: "1rem", borderRadius: "8px", marginBottom: "2rem", display: "flex", gap: "1rem", alignItems: "center", flexWrap: "wrap" }}>
           <button onClick={loadMergedData} disabled={loading} style={{ padding: "0.5rem 1rem", backgroundColor: "#007bff", color: "white", border: "none", borderRadius: "4px", cursor: loading ? "not-allowed" : "pointer", fontSize: "0.9rem" }}>{loading ? "Loading..." : "Refresh Data"}</button>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-            <span>to</span>
-            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-            <button onClick={() => loadMergedData({ startDate, endDate })} disabled={loading} style={{ padding: "0.5rem 1rem", backgroundColor: "#6c757d", color: "white", border: "none", borderRadius: "4px", cursor: loading ? "not-allowed" : "pointer", fontSize: "0.9rem" }}>Apply</button>
-          </div>
 
           <button onClick={exportToCSV} disabled={loading || mergedData.length === 0} style={{ padding: "0.5rem 1rem", backgroundColor: "#28a745", color: "white", border: "none", borderRadius: "4px", cursor: (loading || mergedData.length === 0) ? "not-allowed" : "pointer", fontSize: "0.9rem" }}>Export to CSV</button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <select value={exportFormat} onChange={(e) => setExportFormat(e.target.value)} style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid ' + '#ddd' }}>
+            <select value={exportFormat} onChange={(e) => setExportFormat(e.target.value)} style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}>
               <option value="csv">CSV</option>
               <option value="json">JSON</option>
             </select>
