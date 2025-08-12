@@ -21,6 +21,7 @@ const DataDashboard = () => {
     return formatDate(d);
   });
   const [endDate, setEndDate] = useState(() => formatDate(new Date()));
+  const [exportFormat, setExportFormat] = useState('csv');
   const [stats, setStats] = useState({
     total: 0,
     merged: 0,
@@ -89,6 +90,42 @@ const DataDashboard = () => {
       fill_rate: 'fill_rate',
     };
     return map[field] || 'conversions';
+  };
+
+  const buildQueryParams = () => {
+    const params = new URLSearchParams();
+    if (startDate) params.set('start', startDate);
+    if (endDate) params.set('end', endDate);
+    if (sortField) params.set('sort_by', mapSortKey(sortField));
+    if (sortDirection) params.set('order', sortDirection);
+    return params;
+  };
+
+  const handleExportActivation = async () => {
+    const params = buildQueryParams();
+    params.set('format', exportFormat);
+    params.set('limit', '20000');
+    const token = window.localStorage.getItem('fb_id_token') || '';
+    const url = `${API_BASE_URL}/export-activation?${params.toString()}`;
+    try {
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error(`Export failed: ${response.status}`);
+      const blob = await response.blob();
+      const dlUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = dlUrl;
+      const ext = exportFormat === 'json' ? 'json' : 'csv';
+      link.download = `activation_export_${new Date().toISOString().slice(0,10)}.${ext}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(dlUrl);
+    } catch (e) {
+      console.error('Export error', e);
+      setError('Export failed');
+    }
   };
 
   const getFieldValue = (item, prefix, field) => {
@@ -415,6 +452,35 @@ const DataDashboard = () => {
           >
             Export to CSV
           </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <select
+              value={exportFormat}
+              onChange={(e) => setExportFormat(e.target.value)}
+              style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+            >
+              <option value="csv">CSV</option>
+              <option value="json">JSON</option>
+            </select>
+            <button
+              onClick={handleExportActivation}
+              disabled={loading}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: '#343a40',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                fontSize: '0.9rem'
+              }}
+            >
+              Export for Activation
+            </button>
+            <span style={{ color: '#666', fontSize: '0.85rem', fontStyle: 'italic' }}>
+              Exports rows using your current filters & sort.
+            </span>
+          </div>
           
           <select
             value={filterCategory}
