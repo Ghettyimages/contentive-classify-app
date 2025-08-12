@@ -19,6 +19,22 @@ from typing import Dict, Any, Optional, List
 from firebase_service import get_firebase_service
 import firebase_admin
 from firebase_admin import firestore
+from urllib.parse import urlparse
+
+
+def normalize_url(url: str) -> str:
+    """Normalize URLs for consistent matching: lowercase, strip query/hash, drop trailing slash (except root)."""
+    try:
+        parsed = urlparse((url or '').strip())
+        scheme = (parsed.scheme or 'http').lower()
+        netloc = (parsed.netloc or '').lower()
+        path = (parsed.path or '')
+        path = path.split('#')[0]
+        if path.endswith('/') and path != '/':
+            path = path[:-1]
+        return f"{scheme}://{netloc}{path}"
+    except Exception:
+        return (url or '').strip().lower()
 
 
 class AttributionClassificationMerger:
@@ -26,10 +42,15 @@ class AttributionClassificationMerger:
     Handles merging of attribution data with classification data from Firestore.
     """
     
-    def __init__(self):
-        """Initialize the merger with Firebase service."""
+    def __init__(self, user_id: Optional[str] = None):
+        """Initialize the merger with Firebase service.
+
+        Args:
+            user_id: If provided, restrict merging to attribution records for this user (uid).
+        """
         self.firebase_service = get_firebase_service()
         self.db = self.firebase_service.db
+        self.user_id = user_id
         
         # Collection names
         self.attribution_collection = 'attribution_data'
@@ -58,7 +79,7 @@ class AttributionClassificationMerger:
         print(f"📊 Collections: {self.attribution_collection} + {self.classification_collection} → {self.merged_collection}")
         
         try:
-            # Get all attribution data
+            # Get all attribution data (optionally user-scoped)
             attribution_data = self._get_all_attribution_data()
             self.stats['total_attribution_records'] = len(attribution_data)
             print(f"📈 Found {len(attribution_data)} attribution records")
@@ -68,17 +89,40 @@ class AttributionClassificationMerger:
             self.stats['total_classification_records'] = len(classification_data)
             print(f"🏷️  Found {len(classification_data)} classification records")
             
-            # Create lookup dictionaries for efficient matching
-            attribution_lookup = {record['url']: record for record in attribution_data}
-            classification_lookup = {record['url']: record for record in classification_data}
-            
-            # Get all unique URLs
-            all_urls = set(attribution_lookup.keys()) | set(classification_lookup.keys())
-            print(f"🔗 Processing {len(all_urls)} unique URLs")
-            
-            # Process each URL
-            for url in all_urls:
-                self._process_url_merge(url, attribution_lookup, classification_lookup)
+            # Create classification lookup by normalized URL
+            classification_lookup = {}
+            for record in classification_data:
+                url_norm = record.get('url_normalized') or normalize_url(record.get('url', ''))
+                if url_norm:
+                    classification_lookup[url_norm] = record
+
+            print(f"🔗 Processing {len(attribution_data)} attribution versions (per upload)")
+
+            # Process each attribution document as its own version
+            for attribution_record in attribution_data:
+                try:
+                    url = attribution_record.get('url', '')
+                    url_norm = attribution_record.get('url_normalized') or normalize_url(url)
+                    classification_record = classification_lookup.get(url_norm)
+                    merged_record = self._create_merged_record(url, url_norm, attribution_record, classification_record)
+                    if merged_record:
+                        success = self._save_merged_record(merged_record)
+                        if success:
+                            if classification_record:
+                                self.stats['successful_merges'] += 1
+                                print(f"✅ Merged: {url[:50]}... ({attribution_record.get('upload_date', 'no-date')})")
+                            else:
+                                self.stats['attribution_only'] += 1
+                                print(f"📊 Attribution only: {url[:50]}... ({attribution_record.get('upload_date', 'no-date')})")
+                        else:
+                            self.stats['errors'] += 1
+                            print(f"❌ Failed to save merged record for: {url[:50]}...")
+                    else:
+                        self.stats['skipped'] += 1
+                        print(f"⏭️  Skipped: {url[:50]}...")
+                except Exception as e:
+                    self.stats['errors'] += 1
+                    print(f"❌ Error processing attribution doc: {e}")
             
             # Print final statistics
             self._print_merge_statistics()
@@ -105,14 +149,18 @@ class AttributionClassificationMerger:
     def _get_all_attribution_data(self) -> List[Dict[str, Any]]:
         """Get all attribution data from Firestore."""
         try:
-            docs = self.db.collection(self.attribution_collection).stream()
+            coll = self.db.collection(self.attribution_collection)
+            if self.user_id:
+                query = coll.where('uid', '==', self.user_id)
+            else:
+                query = coll
+            docs = query.stream()
             attribution_data = []
             
             for doc in docs:
                 data = doc.to_dict()
                 data['_id'] = doc.id
-                attribution_data.append(data)
-            
+                
             print(f"✅ Retrieved {len(attribution_data)} attribution records")
             return attribution_data
             
@@ -138,48 +186,18 @@ class AttributionClassificationMerger:
             print(f"❌ Error retrieving classification data: {e}")
             return []
     
-    def _process_url_merge(self, url: str, attribution_lookup: Dict, classification_lookup: Dict):
-        """Process merge for a single URL."""
-        try:
-            attribution_record = attribution_lookup.get(url)
-            classification_record = classification_lookup.get(url)
-            
-            # Create merged record
-            merged_record = self._create_merged_record(url, attribution_record, classification_record)
-            
-            if merged_record:
-                # Save to merged collection
-                success = self._save_merged_record(url, merged_record)
-                if success:
-                    if attribution_record and classification_record:
-                        self.stats['successful_merges'] += 1
-                        print(f"✅ Merged: {url[:50]}...")
-                    elif attribution_record:
-                        self.stats['attribution_only'] += 1
-                        print(f"📊 Attribution only: {url[:50]}...")
-                    elif classification_record:
-                        self.stats['classification_only'] += 1
-                        print(f"🏷️  Classification only: {url[:50]}...")
-                else:
-                    self.stats['errors'] += 1
-                    print(f"❌ Failed to save merged record for: {url[:50]}...")
-            else:
-                self.stats['skipped'] += 1
-                print(f"⏭️  Skipped: {url[:50]}...")
-                
-        except Exception as e:
-            self.stats['errors'] += 1
-            print(f"❌ Error processing URL {url[:50]}...: {e}")
-    
-    def _create_merged_record(self, url: str, attribution_record: Optional[Dict], 
-                            classification_record: Optional[Dict]) -> Optional[Dict]:
+    def _create_merged_record(self, url: str, url_normalized: str, attribution_record: Optional[Dict], 
+                              classification_record: Optional[Dict]) -> Optional[Dict]:
         """Create a merged record from attribution and classification data."""
         if not attribution_record and not classification_record:
             return None
         
         merged_record = {
+            'uid': attribution_record.get('uid') if attribution_record else None,
             'url': url,
-            'merged_at': datetime.utcnow(),
+            'url_normalized': url_normalized,
+            'upload_date': attribution_record.get('upload_date') if attribution_record else None,
+            'merged_at': datetime.utcnow().isoformat() + 'Z',
             'has_attribution_data': bool(attribution_record),
             'has_classification_data': bool(classification_record)
         }
@@ -216,15 +234,10 @@ class AttributionClassificationMerger:
         
         return merged_record
     
-    def _save_merged_record(self, url: str, merged_record: Dict[str, Any]) -> bool:
-        """Save merged record to Firestore."""
+    def _save_merged_record(self, merged_record: Dict[str, Any]) -> bool:
+        """Save merged record to Firestore with auto-generated document ID (versioned history)."""
         try:
-            # Create document ID from URL (same method as firebase_service)
-            doc_id = self.firebase_service._create_doc_id(url)
-            doc_ref = self.db.collection(self.merged_collection).document(doc_id)
-            
-            # Use set() for upsert behavior (no duplicates)
-            doc_ref.set(merged_record)
+            self.db.collection(self.merged_collection).add(merged_record)
             return True
             
         except Exception as e:
@@ -254,14 +267,14 @@ class AttributionClassificationMerger:
         print("="*60)
 
 
-def merge_attribution_data() -> Dict[str, Any]:
+def merge_attribution_data(user_id: Optional[str] = None) -> Dict[str, Any]:
     """
     Convenience function to run the merge process.
     
     Returns:
         Dictionary with merge results and statistics
     """
-    merger = AttributionClassificationMerger()
+    merger = AttributionClassificationMerger(user_id=user_id)
     return merger.merge_attribution_data()
 
 

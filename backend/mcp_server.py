@@ -1,7 +1,9 @@
 import os
 import json
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+from datetime import datetime, timedelta
+from urllib.parse import urlparse
+from flask import Flask, request, jsonify, Response
+from flask_cors import CORS, cross_origin
 from newspaper import Article
 from bs4 import BeautifulSoup
 import requests
@@ -60,6 +62,113 @@ Rules:
 - Return strict JSON only — no comments, markdown, or extra text
 """
 
+def normalize_url(url: str) -> str:
+    """Normalize URLs for consistent matching: lowercase, strip query/hash, drop trailing slash (except root)."""
+    try:
+        parsed = urlparse(url.strip())
+        scheme = (parsed.scheme or 'http').lower()
+        netloc = (parsed.netloc or '').lower()
+        path = (parsed.path or '')
+        # Drop query and fragment
+        path = path.split('#')[0]
+        # Remove trailing slash except if path is just '/'
+        if path.endswith('/') and path != '/':
+            path = path[:-1]
+        normalized = f"{scheme}://{netloc}{path}"
+        return normalized
+    except Exception:
+        return (url or '').strip().lower()
+
+def _verify_and_get_user_id() -> str:
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        raise PermissionError('Missing or invalid authorization header')
+    token = auth_header.split('Bearer ')[1]
+    decoded_token = auth.verify_id_token(token)
+    return decoded_token['uid']
+
+def _map_sort_param(sort_param: str) -> str:
+    sort_map = {
+        'click_through_rate': 'attribution_ctr',
+        'ctr': 'attribution_ctr',
+        'conversions': 'attribution_conversions',
+        'viewability': 'attribution_viewability',
+        'scroll_depth': 'attribution_scroll_depth',
+        'impressions': 'attribution_impressions',
+        'fill_rate': 'attribution_fill_rate',
+    }
+    return sort_map.get((sort_param or '').lower(), 'attribution_conversions')
+
+def _extract_numeric(value, reverse: bool):
+    try:
+        return float(value)
+    except Exception:
+        return float('-inf') if reverse else float('inf')
+
+def _activation_fields(record: dict) -> dict:
+    return {
+        'url': record.get('url'),
+        'iab_code': record.get('classification_iab_code'),
+        'iab_subcode': record.get('classification_iab_subcode'),
+        'iab_secondary_code': record.get('classification_iab_secondary_code'),
+        'iab_secondary_subcode': record.get('classification_iab_secondary_subcode'),
+        'tone': record.get('classification_tone'),
+        'intent': record.get('classification_intent'),
+        'conversions': record.get('attribution_conversions'),
+        'ctr': record.get('attribution_ctr'),
+        'viewability': record.get('attribution_viewability'),
+        'scroll_depth': record.get('attribution_scroll_depth'),
+        'impressions': record.get('attribution_impressions'),
+        'fill_rate': record.get('attribution_fill_rate'),
+        'last_updated': record.get('merged_at') or record.get('classification_timestamp') or record.get('uploaded_at'),
+    }
+
+def _fetch_merged_with_filters(start_str: str, end_str: str, include_iab: list, exclude_iab: list, sort_param: str, order: str, limit: int) -> list:
+    firebase_service = get_firebase_service()
+    coll = firebase_service.db.collection('merged_content_signals')
+
+    # Date range defaults
+    now = datetime.utcnow()
+    if not start_str and not end_str:
+        start_str = (now - timedelta(days=30)).strftime('%Y-%m-%d')
+        end_str = now.strftime('%Y-%m-%d')
+
+    def to_iso_bounds(date_str: str, is_start: bool) -> str:
+        return f"{date_str}T00:00:00Z" if is_start else f"{date_str}T23:59:59Z"
+
+    start_iso = to_iso_bounds(start_str, True) if start_str else None
+    end_iso = to_iso_bounds(end_str, False) if end_str else None
+
+    query = coll
+    if start_iso:
+        query = query.where('upload_date', '>=', start_iso)
+    if end_iso:
+        query = query.where('upload_date', '<=', end_iso)
+
+    docs = query.stream()
+    records = [doc.to_dict() for doc in docs]
+
+    # IAB include/exclude in-memory filtering
+    def matches_iab(rec: dict) -> bool:
+        primary = (rec.get('classification_iab_code') or '')
+        secondary = (rec.get('classification_iab_secondary_code') or '')
+        if include_iab:
+            if not (primary in include_iab or secondary in include_iab):
+                return False
+        if exclude_iab:
+            if primary in exclude_iab or secondary in exclude_iab:
+                return False
+        return True
+
+    if include_iab or exclude_iab:
+        records = [r for r in records if matches_iab(r)]
+
+    # Sort
+    field = _map_sort_param(sort_param)
+    reverse = (order or 'desc').lower() != 'asc'
+    records.sort(key=lambda r: _extract_numeric(r.get(field), reverse), reverse=reverse)
+    return records[:limit]
+
 @app.route("/")
 def index():
     return "MCP Server is running."
@@ -86,13 +195,13 @@ def debug_env():
 
 @app.route("/merged-data", methods=["GET"])
 def get_merged_data():
-    """Get merged attribution and classification data."""
+    """Get merged attribution and classification data with optional date range and KPI sorting."""
     try:
         # Verify Firebase token
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
             return jsonify({"error": "Missing or invalid authorization header"}), 401
-        
+
         token = auth_header.split('Bearer ')[1]
         try:
             decoded_token = auth.verify_id_token(token)
@@ -100,29 +209,281 @@ def get_merged_data():
         except Exception as e:
             print(f"Token verification failed: {e}")
             return jsonify({"error": "Invalid authentication token"}), 401
-        
-        # Get merged data from Firestore
+
+        # Parse query params
+        start_str = request.args.get('start')  # YYYY-MM-DD
+        end_str = request.args.get('end')      # YYYY-MM-DD
+        sort_param = request.args.get('sort')
+        order = request.args.get('order', 'desc').lower()
+
+        now = datetime.utcnow()
+        if not start_str and not end_str:
+            # Default: last 30 days
+            default_start = (now - timedelta(days=30)).strftime('%Y-%m-%d')
+            default_end = now.strftime('%Y-%m-%d')
+            start_str, end_str = default_start, default_end
+
+        def to_iso_bounds(date_str: str, is_start: bool) -> str:
+            return f"{date_str}T00:00:00Z" if is_start else f"{date_str}T23:59:59Z"
+
+        start_iso = to_iso_bounds(start_str, True) if start_str else None
+        end_iso = to_iso_bounds(end_str, False) if end_str else None
+
+        # Fetch from Firestore with basic date filtering when possible
         firebase_service = get_firebase_service()
+        coll = firebase_service.db.collection('merged_content_signals')
+        query = coll
+        if start_iso:
+            query = query.where('upload_date', '>=', start_iso)
+        if end_iso:
+            query = query.where('upload_date', '<=', end_iso)
+
         try:
-            docs = firebase_service.db.collection('merged_content_signals').stream()
+            docs = query.stream()
             results = []
-            
             for doc in docs:
                 data = doc.to_dict()
                 results.append(data)
-            
+
+            # Server-side sorting
+            sort_map = {
+                'click_through_rate': 'attribution_ctr',
+                'conversions': 'attribution_conversions',
+                'viewability': 'attribution_viewability',
+                'scroll_depth': 'attribution_scroll_depth',
+                'impressions': 'attribution_impressions',
+                'fill_rate': 'attribution_fill_rate',
+            }
+            sort_field = sort_map.get(sort_param or 'conversions', 'attribution_conversions')
+            reverse = (order != 'asc')
+
+            def extract_numeric(v):
+                try:
+                    return float(v)
+                except Exception:
+                    return float('-inf') if reverse else float('inf')
+
+            results.sort(key=lambda r: extract_numeric(r.get(sort_field)), reverse=reverse)
+
+            print(f"/merged-data: returned {len(results)} records, date filter: start={start_str}, end={end_str}")
             return jsonify({
                 "results": results,
                 "total_count": len(results)
             })
-            
         except Exception as e:
             print(f"Error fetching merged data: {e}")
             return jsonify({"error": f"Error fetching data: {str(e)}"}), 500
-            
+
     except Exception as e:
         print(f"Error in merged-data endpoint: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
+@app.route("/export-activation", methods=["GET"])
+@cross_origin(origins=["https://contentivemedia.com"])  # Allow this explicit origin
+def export_activation():
+    try:
+        # Auth
+        user_id = _verify_and_get_user_id()
+
+        # Params
+        start_str = request.args.get('start')
+        end_str = request.args.get('end')
+        sort_by = request.args.get('sort_by') or request.args.get('sort') or 'conversions'
+        order = request.args.get('order', 'desc')
+        limit = min(int(request.args.get('limit', 5000)), 20000)
+        fmt = (request.args.get('format') or 'csv').lower()
+        include_iab = [s.strip() for s in (request.args.get('include_iab') or '').split(',') if s.strip()]
+        exclude_iab = [s.strip() for s in (request.args.get('exclude_iab') or '').split(',') if s.strip()]
+
+        records = _fetch_merged_with_filters(start_str, end_str, include_iab, exclude_iab, sort_by, order, limit)
+        rows = [_activation_fields(r) for r in records]
+        print(f"/export-activation -> rows={len(rows)} format={fmt}")
+
+        if fmt == 'json':
+            return jsonify({
+                'rows': rows,
+                'count': len(rows)
+            })
+        # CSV
+        headers = [
+            'url', 'iab_code', 'iab_subcode', 'iab_secondary_code', 'iab_secondary_subcode',
+            'tone', 'intent', 'conversions', 'ctr', 'viewability', 'scroll_depth', 'impressions', 'fill_rate', 'last_updated'
+        ]
+        def to_csv_line(values):
+            def esc(v):
+                s = '' if v is None else str(v)
+                s = s.replace('"', '""')
+                return f'"{s}"'
+            return ','.join(esc(v) for v in values)
+
+        csv_lines = [','.join(headers)]
+        for row in rows:
+            csv_lines.append(to_csv_line([row.get(h) for h in headers]))
+        csv_data = '\n'.join(csv_lines)
+        return Response(csv_data, mimetype='text/csv', headers={
+            'Content-Disposition': f'attachment; filename=activation_export_{datetime.utcnow().date().isoformat()}.csv'
+        })
+    except PermissionError as pe:
+        return jsonify({'error': str(pe)}), 401
+    except Exception as e:
+        print(f"Error in export-activation: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# --------------- Segments Endpoints ---------------
+
+def _rules_to_params(rules: dict):
+    start, end = None, None
+    if rules.get('date_range') and isinstance(rules['date_range'], (list, tuple)) and len(rules['date_range']) == 2:
+        start, end = rules['date_range']
+    include_iab = rules.get('include_iab') or []
+    exclude_iab = rules.get('exclude_iab') or []
+    sort_by = rules.get('sort_by') or 'conversions'
+    order = rules.get('order') or 'desc'
+    # KPI thresholds
+    kpi_filters = rules.get('kpi_filters') or {}
+    return start, end, include_iab, exclude_iab, sort_by, order, kpi_filters
+
+def _apply_kpi_filters(records: list, kpi_filters: dict) -> list:
+    field_map = {
+        'ctr': 'attribution_ctr',
+        'viewability': 'attribution_viewability',
+        'scroll_depth': 'attribution_scroll_depth',
+        'conversions': 'attribution_conversions',
+        'impressions': 'attribution_impressions',
+        'fill_rate': 'attribution_fill_rate',
+    }
+    def pass_filters(r: dict) -> bool:
+        for k, cond in kpi_filters.items():
+            field = field_map.get(k)
+            if not field:
+                continue
+            val = r.get(field)
+            try:
+                valf = float(val) if val is not None else None
+            except Exception:
+                valf = None
+            if valf is None:
+                return False
+            if 'gte' in cond and not (valf >= float(cond['gte'])):
+                return False
+            if 'lte' in cond and not (valf <= float(cond['lte'])):
+                return False
+        return True
+    return [r for r in records if pass_filters(r)]
+
+@app.route('/segments', methods=['POST'])
+@cross_origin(origins=["https://contentivemedia.com"])  # Allow explicit origin
+def create_segment():
+    try:
+        user_id = _verify_and_get_user_id()
+        payload = request.get_json(force=True) or {}
+        name = (payload.get('name') or '').strip()
+        rules = payload.get('rules') or {}
+        if not name:
+            return jsonify({'error': 'name is required'}), 400
+        now = datetime.utcnow()
+        doc = {
+            'name': name,
+            'owner_uid': user_id,
+            'created_at': now,
+            'updated_at': now,
+            'rules': rules
+        }
+        db = get_firebase_service().db
+        ref = db.collection('segments').add(doc)
+        seg_id = ref[1].id if isinstance(ref, tuple) else ref.id
+        return jsonify({'id': seg_id, **doc}), 201
+    except PermissionError as pe:
+        return jsonify({'error': str(pe)}), 401
+    except Exception as e:
+        print(f"Error creating segment: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/segments', methods=['GET'])
+def list_segments():
+    try:
+        user_id = _verify_and_get_user_id()
+        db = get_firebase_service().db
+        docs = db.collection('segments').where('owner_uid', '==', user_id).stream()
+        segments = []
+        for d in docs:
+            data = d.to_dict()
+            data['id'] = d.id
+            segments.append(data)
+        return jsonify({'segments': segments, 'count': len(segments)})
+    except PermissionError as pe:
+        return jsonify({'error': str(pe)}), 401
+    except Exception as e:
+        print(f"Error listing segments: {e}")
+        return jsonify({'error': str(e)}), 500
+
+def _get_segment_owned(seg_id: str, owner_uid: str) -> dict:
+    db = get_firebase_service().db
+    doc = db.collection('segments').document(seg_id).get()
+    if not doc.exists:
+        raise ValueError('segment not found')
+    data = doc.to_dict()
+    if data.get('owner_uid') != owner_uid:
+        raise PermissionError('forbidden')
+    return data
+
+def _fetch_records_for_segment(rules: dict, limit: int) -> list:
+    start, end, include_iab, exclude_iab, sort_by, order, kpi_filters = _rules_to_params(rules)
+    records = _fetch_merged_with_filters(start, end, include_iab, exclude_iab, sort_by, order, limit)
+    if kpi_filters:
+        records = _apply_kpi_filters(records, kpi_filters)
+    return records[:limit]
+
+@app.route('/segments/<seg_id>/preview', methods=['GET'])
+def preview_segment(seg_id):
+    try:
+        user_id = _verify_and_get_user_id()
+        limit = min(int(request.args.get('limit', 100)), 20000)
+        seg = _get_segment_owned(seg_id, user_id)
+        records = _fetch_records_for_segment(seg.get('rules') or {}, limit)
+        rows = [_activation_fields(r) for r in records]
+        return jsonify({'rows': rows, 'count': len(rows)})
+    except PermissionError as pe:
+        return jsonify({'error': str(pe)}), 401
+    except Exception as e:
+        print(f"Error previewing segment: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/segments/<seg_id>/export', methods=['GET'])
+@cross_origin(origins=["https://contentivemedia.com"])  # Allow explicit origin
+def export_segment(seg_id):
+    try:
+        user_id = _verify_and_get_user_id()
+        limit = min(int(request.args.get('limit', 20000)), 20000)
+        fmt = (request.args.get('format') or 'csv').lower()
+        seg = _get_segment_owned(seg_id, user_id)
+        records = _fetch_records_for_segment(seg.get('rules') or {}, limit)
+        rows = [_activation_fields(r) for r in records]
+        print(f"/segments/{seg_id}/export -> rows={len(rows)} format={fmt}")
+        if fmt == 'json':
+            return jsonify({'rows': rows, 'count': len(rows)})
+        headers = [
+            'url', 'iab_code', 'iab_subcode', 'iab_secondary_code', 'iab_secondary_subcode',
+            'tone', 'intent', 'conversions', 'ctr', 'viewability', 'scroll_depth', 'impressions', 'fill_rate', 'last_updated'
+        ]
+        def to_csv_line(values):
+            def esc(v):
+                s = '' if v is None else str(v)
+                s = s.replace('"', '""')
+                return f'"{s}"'
+            return ','.join(esc(v) for v in values)
+        csv_lines = [','.join(headers)]
+        for row in rows:
+            csv_lines.append(to_csv_line([row.get(h) for h in headers]))
+        csv_data = '\n'.join(csv_lines)
+        return Response(csv_data, mimetype='text/csv', headers={
+            'Content-Disposition': f'attachment; filename=segment_{seg_id}_export_{datetime.utcnow().date().isoformat()}.csv'
+        })
+    except PermissionError as pe:
+        return jsonify({'error': str(pe)}), 401
+    except Exception as e:
+        print(f"Error exporting segment: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route("/test-auth", methods=["POST"])
 def test_auth():
@@ -290,6 +651,7 @@ def upload_attribution():
                             classification_data = {
                                 **classification_result,
                                 'user_id': user_id,
+                                'url_normalized': normalize_url(url),
                                 'timestamp': firebase_service._get_timestamp()
                             }
                             
@@ -310,9 +672,14 @@ def upload_attribution():
                 print(f"🔍 CTR Debug - URL: {url[:50]}... Raw CTR: {raw_ctr} ({type(raw_ctr)}), Parsed CTR: {parsed_ctr} ({type(parsed_ctr)})")
                 print(f"🔍 Full record for debugging: {record}")
                 
+                # Build versioned attribution record
+                upload_date_iso = datetime.utcnow().isoformat() + 'Z'
                 attribution_data = {
                     'url': url,
+                    'url_normalized': normalize_url(url),
                     'user_id': user_id,
+                    'uid': user_id,
+                    'upload_date': upload_date_iso,
                     'uploaded_at': firebase_service._get_timestamp(),
                     'conversions': _parse_number(record.get('conversions')),
                     'revenue': _parse_number(record.get('revenue')),
@@ -325,12 +692,12 @@ def upload_attribution():
                     'fill_rate': _parse_number(record.get('fill_rate'))
                 }
                 
-                # Save to Firestore
-                success = firebase_service.save_attribution_data(url, attribution_data)
-                if success:
+                # Save to Firestore as a NEW document (versioned)
+                try:
+                    firebase_service.db.collection('attribution_data').add(attribution_data)
                     saved_count += 1
-                else:
-                    errors.append(f"Row {i+1}: Failed to save to database")
+                except Exception as e:
+                    errors.append(f"Row {i+1}: Failed to save to database: {e}")
                     
             except Exception as e:
                 errors.append(f"Row {i+1}: {str(e)}")
@@ -339,7 +706,7 @@ def upload_attribution():
         merge_result = None
         try:
             print("🔄 Auto-triggering merge process after upload...")
-            merge_result = merge_attribution_data()
+            merge_result = merge_attribution_data(user_id=user_id)
             print(f"✅ Auto-merge completed: {merge_result.get('success', False)}")
         except Exception as e:
             print(f"❌ Auto-merge failed: {e}")
@@ -410,7 +777,7 @@ def trigger_merge():
         
         # Run the merge process
         print("Starting attribution-classification merge process...")
-        result = merge_attribution_data()
+        result = merge_attribution_data(user_id=user_id)
         
         if result['success']:
             return jsonify({
@@ -520,7 +887,11 @@ def classify_url(url):
         # Store the result in Firestore if service is available
         if firebase_service:
             try:
-                firebase_service.save_classification(url, classification_result)
+                classification_result_with_meta = {
+                    **classification_result,
+                    'url_normalized': normalize_url(url)
+                }
+                firebase_service.save_classification(url, classification_result_with_meta)
                 print(f"Successfully saved classification to Firestore for: {url}")
             except Exception as e:
                 print(f"Failed to save classification to Firestore: {e}")
@@ -531,4 +902,5 @@ def classify_url(url):
         raise ValueError("Failed to parse GPT response as valid JSON:\n" + content)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+    port = int(os.getenv("PORT", "5000"))
+    app.run(host="0.0.0.0", port=port)

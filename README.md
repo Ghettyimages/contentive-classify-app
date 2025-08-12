@@ -55,6 +55,9 @@ This will start:
 - `POST /classify` - Classify a single URL
 - `POST /classify-bulk` - Classify multiple URLs
 - `GET /recent-classifications` - Get recent classifications from Firestore
+- `POST /upload-attribution` - Upload attribution CSV data (requires Firebase ID token)
+- `POST /merge-attribution` - Trigger merge of attribution and classification data (requires Firebase ID token)
+- `GET /merged-data` - Fetch merged attribution + classification records (requires Firebase ID token)
 
 ## 📱 Features
 
