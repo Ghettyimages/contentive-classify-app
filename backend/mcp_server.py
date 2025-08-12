@@ -292,7 +292,7 @@ def upload_attribution():
                 # Debug CTR parsing
                 raw_ctr = record.get('ctr')
                 parsed_ctr = _parse_number(raw_ctr)
-                print(f"🔍 CTR Debug - URL: {url[:50]}... Raw CTR: '{raw_ctr}' ({type(raw_ctr)}), Parsed CTR: {parsed_ctr} ({type(parsed_ctr)})")
+                print(f"🔍 CTR Debug - URL: {url[:50]}... Raw CTR: {raw_ctr} ({type(raw_ctr)}), Parsed CTR: {parsed_ctr} ({type(parsed_ctr)})")
                 print(f"🔍 Full record for debugging: {record}")
                 
                 attribution_data = {

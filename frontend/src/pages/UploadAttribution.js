@@ -88,8 +88,8 @@ const UploadAttribution = () => {
                 const value = values[index];
                 const normalizedHeader = header.toLowerCase();
                 
-                // Handle empty cells - preserve 0 values, only convert undefined/null to empty string
-                row[normalizedHeader] = value !== undefined && value !== null ? value : '';
+                // Handle empty cells - convert empty strings to null, preserve 0 values
+                row[normalizedHeader] = (value !== undefined && value !== null && value !== '') ? value : null;
                 
                 // Debug CTR values specifically
                 if (normalizedHeader === 'ctr') {
