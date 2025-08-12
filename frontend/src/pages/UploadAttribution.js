@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { getIdToken } from '../firebase/auth';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 
 const UploadAttribution = () => {
   const { currentUser } = useAuth();
@@ -144,7 +145,7 @@ const UploadAttribution = () => {
 
       console.log('Sending upload request...');
       const response = await axios.post(
-        'https://contentive-classify-app.onrender.com/upload-attribution',
+        `${API_BASE_URL}/upload-attribution`,
         { data },
         {
           headers: {
@@ -183,7 +184,7 @@ const UploadAttribution = () => {
       }
 
       const response = await axios.post(
-        'https://contentive-classify-app.onrender.com/test-auth',
+        `${API_BASE_URL}/test-auth`,
         {},
         {
           headers: {
