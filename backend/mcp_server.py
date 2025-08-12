@@ -250,6 +250,17 @@ def upload_attribution():
             ctr_values = [record.get('ctr') for record in data[:5]]
             print(f"🔍 First 5 CTR values: {ctr_values}")
             print(f"🔍 CTR value types: {[type(v) for v in ctr_values]}")
+            
+            # Additional debugging - check if CTR column exists
+            if data:
+                first_record = data[0]
+                print(f"🔍 All keys in first record: {list(first_record.keys())}")
+                print(f"🔍 CTR key exists: {'ctr' in first_record}")
+                print(f"🔍 CTR key (case-insensitive): {[k for k in first_record.keys() if k.lower() == 'ctr']}")
+                print(f"🔍 Raw CTR value: {repr(first_record.get('ctr'))}")
+                print(f"🔍 Request JSON keys: {list(request.json.keys())}")
+                print(f"🔍 Request JSON data type: {type(request.json.get('data'))}")
+                print(f"🔍 Request JSON data length: {len(request.json.get('data', []))}")
         
         # Validate and save each record
         firebase_service = get_firebase_service()
