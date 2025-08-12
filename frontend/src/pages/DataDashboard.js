@@ -22,14 +22,25 @@ const DataDashboard = () => {
   const [endDate, setEndDate] = useState(() => formatDate(new Date()));
   const [exportFormat, setExportFormat] = useState('csv');
   const [stats, setStats] = useState({ total: 0, merged: 0, attributionOnly: 0, classificationOnly: 0 });
+  const [counts, setCounts] = useState({ attribution_count: 0, classified_count: 0, merged_count: 0 });
 
   useEffect(() => {
     if (currentUser) {
       loadMergedData();
+      loadCounts();
     }
   }, [currentUser]);
 
   const tokenHeader = () => ({ Authorization: `Bearer ${window.localStorage.getItem('fb_id_token') || ''}` });
+
+  const loadCounts = async () => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/counts`, { headers: tokenHeader() });
+      setCounts(res.data || { attribution_count: 0, classified_count: 0, merged_count: 0 });
+    } catch (e) {
+      console.error('Counts error', e);
+    }
+  };
 
   const loadMergedData = async (opts = {}) => {
     setLoading(true);
@@ -60,6 +71,8 @@ const DataDashboard = () => {
         attributionOnly: data.filter(item => item.hasAttribution && !item.hasClassification).length,
         classificationOnly: data.filter(item => item.hasClassification && !item.hasAttribution).length
       });
+      // refresh counts too
+      loadCounts();
 
     } catch (err) {
       console.error('Error loading merged data:', err);
@@ -194,6 +207,17 @@ const DataDashboard = () => {
     document.body.removeChild(link);
   };
 
+  const runMergeNow = async () => {
+    try {
+      await axios.post(`${API_BASE_URL}/merge-attribution`, {}, { headers: tokenHeader() });
+      await loadCounts();
+      await loadMergedData();
+    } catch (e) {
+      console.error('Merge now failed', e);
+      setError('Merge failed');
+    }
+  };
+
   const processedData = mergedData;
 
   const baseColumns = [
@@ -240,6 +264,11 @@ const DataDashboard = () => {
             <h3 style={{ margin: "0 0 0.5rem 0", color: "#2e7d32" }}>Merged Records</h3>
             <p style={{ fontSize: "2rem", margin: 0, fontWeight: "bold", color: "#2e7d32" }}>{stats.merged}</p>
           </div>
+          <div style={{ backgroundColor: "#eef7ff", padding: "1.5rem", borderRadius: "8px", textAlign: "center" }}>
+            <h3 style={{ margin: 0, color: "#0d6efd" }}>Counts (90d)</h3>
+            <p style={{ margin: '0.25rem 0', color: '#0d6efd' }}>Attribution: {counts.attribution_count}</p>
+            <p style={{ margin: '0.25rem 0', color: '#0d6efd' }}>Merged: {counts.merged_count}</p>
+          </div>
           <div style={{ backgroundColor: "#fff3e0", padding: "1.5rem", borderRadius: "8px", textAlign: "center" }}>
             <h3 style={{ margin: "0 0 0.5rem 0", color: "#f57c00" }}>Attribution Only</h3>
             <p style={{ fontSize: "2rem", margin: 0, fontWeight: "bold", color: "#f57c00" }}>{stats.attributionOnly}</p>
@@ -269,6 +298,12 @@ const DataDashboard = () => {
             <button onClick={handleExportActivation} disabled={loading} style={{ padding: '0.5rem 1rem', backgroundColor: '#343a40', color: 'white', border: 'none', borderRadius: '4px', cursor: loading ? 'not-allowed' : 'pointer', fontSize: '0.9rem' }}>Export for Activation</button>
             <span style={{ color: '#666', fontSize: '0.85rem', fontStyle: 'italic' }}>Exports rows using your current filters & sort.</span>
           </div>
+
+          {(counts.merged_count === 0 && counts.attribution_count > 0) && (
+            <button onClick={runMergeNow} style={{ padding: '0.5rem 1rem', backgroundColor: '#ff5722', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: '0.9rem' }}>
+              Run Merge Now
+            </button>
+          )}
         </div>
 
         {error && (

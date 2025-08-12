@@ -62,22 +62,54 @@ Rules:
 - Return strict JSON only — no comments, markdown, or extra text
 """
 
-def normalize_url(url: str) -> str:
-    """Normalize URLs for consistent matching: lowercase, strip query/hash, drop trailing slash (except root)."""
+def normalize_url(raw: str) -> str:
+    """
+    Robust URL normalization for consistent matching.
+    - If scheme-less (e.g., 'www.site.com/page'), prepend https:// and re-parse
+    - Lowercase host; preserve original path case
+    - Drop query and fragment
+    - Trim trailing slash unless path == '/'
+    - Return 'https://host/path' (or 'http://' if original had http)
+
+    Examples (sanity checks):
+      # assert normalize_url('https://www.site.com/page?x=1') == 'https://www.site.com/page'
+      # assert normalize_url('http://www.site.com/page/#frag') == 'http://www.site.com/page'
+      # assert normalize_url('www.site.com/page') == 'https://www.site.com/page'
+      # assert normalize_url('SITE.com/Page/') == 'https://site.com/Page'
+      # assert normalize_url('https://site.com') == 'https://site.com'
+    """
     try:
-        parsed = urlparse(url.strip())
-        scheme = (parsed.scheme or 'http').lower()
-        netloc = (parsed.netloc or '').lower()
-        path = (parsed.path or '')
-        # Drop query and fragment
-        path = path.split('#')[0]
-        # Remove trailing slash except if path is just '/'
+        if raw is None:
+            return ''
+        s = raw.strip()
+        parsed = urlparse(s)
+        scheme = parsed.scheme.lower() if parsed.scheme else ''
+        netloc = parsed.netloc
+        path = parsed.path or ''
+
+        # Handle scheme-less inputs like 'www.site.com/page'
+        if not netloc and path and ('.' in path) and (' ' not in path):
+            # Split first segment as host
+            parts = path.split('/', 1)
+            host = parts[0]
+            rest_path = '/' + parts[1] if len(parts) > 1 else ''
+            netloc = host
+            path = rest_path
+            scheme = scheme or 'https'
+        else:
+            scheme = scheme or 'https'
+
+        # Normalize host casing
+        host_lower = (netloc or '').lower()
+        # Drop query/fragment
+        # Keep original path case; remove trailing slash except root
         if path.endswith('/') and path != '/':
             path = path[:-1]
-        normalized = f"{scheme}://{netloc}{path}"
+
+        normalized = f"{scheme}://{host_lower}{path}"
         return normalized
     except Exception:
-        return (url or '').strip().lower()
+        return (raw or '').strip().lower()
 
 def _verify_and_get_user_id() -> str:
     auth_header = request.headers.get('Authorization')
@@ -195,7 +227,9 @@ def debug_env():
 
 @app.route("/merged-data", methods=["GET"])
 def get_merged_data():
-    """Get merged attribution and classification data with optional date range and KPI sorting."""
+    """Get merged attribution and classification data with optional date range and KPI sorting.
+    Default: last 30 days by merged_at. Optional fallback=1 returns latest N without date filter when no results.
+    """
     try:
         # Verify Firebase token
         auth_header = request.headers.get('Authorization')
@@ -215,10 +249,12 @@ def get_merged_data():
         end_str = request.args.get('end')      # YYYY-MM-DD
         sort_param = request.args.get('sort')
         order = request.args.get('order', 'desc').lower()
+        fallback = request.args.get('fallback', '0') == '1'
+        limit = int(request.args.get('limit', 200))
 
         now = datetime.utcnow()
         if not start_str and not end_str:
-            # Default: last 30 days
+            # Default: last 30 days by merged_at
             default_start = (now - timedelta(days=30)).strftime('%Y-%m-%d')
             default_end = now.strftime('%Y-%m-%d')
             start_str, end_str = default_start, default_end
@@ -229,23 +265,31 @@ def get_merged_data():
         start_iso = to_iso_bounds(start_str, True) if start_str else None
         end_iso = to_iso_bounds(end_str, False) if end_str else None
 
-        # Fetch from Firestore with basic date filtering when possible
         firebase_service = get_firebase_service()
         coll = firebase_service.db.collection('merged_content_signals')
-        query = coll
-        if start_iso:
-            query = query.where('upload_date', '>=', start_iso)
-        if end_iso:
-            query = query.where('upload_date', '<=', end_iso)
+
+        def run_query(with_filter: bool):
+            q = coll
+            if with_filter:
+                if start_iso:
+                    q = q.where('merged_at', '>=', start_iso)
+                if end_iso:
+                    q = q.where('merged_at', '<=', end_iso)
+            docs = q.stream()
+            records = [d.to_dict() for d in docs]
+            return records
 
         try:
-            docs = query.stream()
-            results = []
-            for doc in docs:
-                data = doc.to_dict()
-                results.append(data)
+            results = run_query(with_filter=True)
+            if not results and fallback:
+                # fallback to latest N by merged_at
+                q = coll
+                docs = q.stream()
+                all_records = [d.to_dict() for d in docs]
+                all_records.sort(key=lambda r: r.get('merged_at', ''), reverse=True)
+                results = all_records[:limit]
 
-            # Server-side sorting
+            # Server-side sorting by KPI
             sort_map = {
                 'click_through_rate': 'attribution_ctr',
                 'conversions': 'attribution_conversions',
@@ -265,11 +309,8 @@ def get_merged_data():
 
             results.sort(key=lambda r: extract_numeric(r.get(sort_field)), reverse=reverse)
 
-            print(f"/merged-data: returned {len(results)} records, date filter: start={start_str}, end={end_str}")
-            return jsonify({
-                "results": results,
-                "total_count": len(results)
-            })
+            print(f"/merged-data: returned {len(results)} records, start={start_str}, end={end_str}, fallback={fallback}")
+            return jsonify({ "results": results, "total_count": len(results) })
         except Exception as e:
             print(f"Error fetching merged data: {e}")
             return jsonify({"error": f"Error fetching data: {str(e)}"}), 500
@@ -483,6 +524,53 @@ def export_segment(seg_id):
         return jsonify({'error': str(pe)}), 401
     except Exception as e:
         print(f"Error exporting segment: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/counts', methods=['GET'])
+def get_counts():
+    """Return per-uid counts across collections with optional date filters (start/end).
+    Counts: attribution_count (by upload_date when present), classified_count (total), merged_count (by merged_at when present).
+    """
+    try:
+        user_id = _verify_and_get_user_id()
+        start_str = request.args.get('start')
+        end_str = request.args.get('end')
+        def to_iso_bounds(date_str: str, is_start: bool) -> str:
+            return f"{date_str}T00:00:00Z" if is_start else f"{date_str}T23:59:59Z"
+        start_iso = to_iso_bounds(start_str, True) if start_str else None
+        end_iso = to_iso_bounds(end_str, False) if end_str else None
+
+        db = get_firebase_service().db
+
+        # Attribution count (uid scoped, optional date on upload_date)
+        q_attr = db.collection('attribution_data').where('uid', '==', user_id)
+        if start_iso:
+            q_attr = q_attr.where('upload_date', '>=', start_iso)
+        if end_iso:
+            q_attr = q_attr.where('upload_date', '<=', end_iso)
+        attribution_count = sum(1 for _ in q_attr.stream())
+
+        # Classified count (not always stored per uid reliably) — count total
+        q_cls = db.collection('classified_urls').stream()
+        classified_count = sum(1 for _ in q_cls)
+
+        # Merged count (uid may not be stored on all docs; filter by date on merged_at)
+        q_mrg = db.collection('merged_content_signals')
+        if start_iso:
+            q_mrg = q_mrg.where('merged_at', '>=', start_iso)
+        if end_iso:
+            q_mrg = q_mrg.where('merged_at', '<=', end_iso)
+        merged_count = sum(1 for _ in q_mrg.stream())
+
+        return jsonify({
+            'attribution_count': attribution_count,
+            'classified_count': classified_count,
+            'merged_count': merged_count
+        })
+    except PermissionError as pe:
+        return jsonify({'error': str(pe)}), 401
+    except Exception as e:
+        print(f"Error in /counts: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route("/test-auth", methods=["POST"])
