@@ -2,11 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { API_BASE_URL } from '../config';
+import { auth } from '../firebase/auth';
+import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const formatDate = (date) => date.toISOString().slice(0, 10);
 
 const SegmentBuilder = () => {
   const { currentUser } = useAuth();
+  const db = getFirestore();
 
   // Saved segments state
   const [segments, setSegments] = useState([]);
@@ -35,6 +38,8 @@ const SegmentBuilder = () => {
   const [exportFormat, setExportFormat] = useState('csv');
   const [error, setError] = useState('');
   const [iabOptions, setIabOptions] = useState([]); // union of category and subcategory codes available
+  const [sourceRows, setSourceRows] = useState([]); // raw merged rows fetched for local preview
+  const [isApplied, setIsApplied] = useState(false);
 
   const tokenHeader = () => ({ Authorization: `Bearer ${window.localStorage.getItem('fb_id_token') || ''}` });
 
@@ -42,6 +47,7 @@ const SegmentBuilder = () => {
     if (currentUser) {
       loadSegments();
       loadIabOptions();
+      loadSourceRows();
     }
   }, [currentUser]);
 
@@ -76,6 +82,19 @@ const SegmentBuilder = () => {
     }
   };
 
+  const loadSourceRows = async () => {
+    try {
+      const params = new URLSearchParams();
+      params.set('fallback', '1');
+      params.set('limit', '2000');
+      const res = await axios.get(`${API_BASE_URL}/merged-data?${params.toString()}`, { headers: tokenHeader() });
+      setSourceRows(res.data?.results || []);
+    } catch (e) {
+      console.error('Error loading source rows', e);
+      setSourceRows([]);
+    }
+  };
+
   const buildSegmentRules = () => {
     const include_iab = includeIab;
     const exclude_iab = excludeIab;
@@ -94,6 +113,127 @@ const SegmentBuilder = () => {
       sort_by: segmentSortBy,
       order: segmentOrder
     };
+  };
+
+  const rowMatchesIab = (row, codes) => {
+    if (!codes?.length) return true;
+    const cTop = row?.classification_iab_code || row?.iab_code;
+    const cSub = row?.classification_iab_subcode || row?.iab_subcode;
+    const arrays = [];
+    const rowCodes = new Set([cTop, cSub, ...arrays].filter(Boolean));
+    for (const code of codes) {
+      if (rowCodes.has(code)) return true;
+    }
+    return false;
+  };
+
+  const rowExcludedByIab = (row, codes) => {
+    if (!codes?.length) return false;
+    const cTop = row?.classification_iab_code || row?.iab_code;
+    const cSub = row?.classification_iab_subcode || row?.iab_subcode;
+    const arrays = [];
+    const rowCodes = new Set([cTop, cSub, ...arrays].filter(Boolean));
+    for (const code of codes) {
+      if (rowCodes.has(code)) return true;
+    }
+    return false;
+  };
+
+  const applyOtherFilters = (row) => {
+    // Date range on upload_date/merged_at if provided
+    const start = segmentStart ? new Date(segmentStart + 'T00:00:00Z') : null;
+    const end = segmentEnd ? new Date(segmentEnd + 'T23:59:59Z') : null;
+    const iso = row.merged_at || row.upload_date;
+    if (iso && (start || end)) {
+      const d = new Date(iso);
+      if (start && d < start) return false;
+      if (end && d > end) return false;
+    }
+    // KPI minimums
+    const num = (v) => (v == null ? null : Number(v));
+    const ctr = num(row.attribution_ctr);
+    const view = num(row.attribution_viewability);
+    const scroll = num(row.attribution_scroll_depth);
+    const conv = num(row.attribution_conversions);
+    const impr = num(row.attribution_impressions);
+    const fill = num(row.attribution_fill_rate);
+    if (kpiCtr && !(ctr >= parseFloat(kpiCtr))) return false;
+    if (kpiViewability && !(view >= parseFloat(kpiViewability))) return false;
+    if (kpiScrollDepth && !(scroll >= parseFloat(kpiScrollDepth))) return false;
+    if (kpiConversions && !(conv >= parseFloat(kpiConversions))) return false;
+    if (kpiImpressions && !(impr >= parseFloat(kpiImpressions))) return false;
+    if (kpiFillRate && !(fill >= parseFloat(kpiFillRate))) return false;
+    return true;
+  };
+
+  const onApply = () => {
+    try {
+      const filtered = sourceRows.filter((r) => {
+        if (!rowMatchesIab(r, includeIab)) return false;
+        if (rowExcludedByIab(r, excludeIab)) return false;
+        if (!applyOtherFilters(r)) return false;
+        return true;
+      });
+      setPreviewRows(filtered);
+      setPreviewCount(filtered.length);
+      setIsApplied(true);
+    } catch (e) {
+      console.error('Apply failed', e);
+      setPreviewRows([]);
+      setPreviewCount(0);
+      setIsApplied(false);
+    }
+  };
+
+  const onClear = () => {
+    setPreviewRows([]);
+    setPreviewCount(0);
+    setIsApplied(false);
+  };
+
+  const onSaveClient = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        alert('Please sign in to save segments.');
+        return;
+      }
+      if (!segmentName.trim()) {
+        alert('Please enter a segment name.');
+        return;
+      }
+      if (!isApplied) {
+        alert('Click Apply to generate a preview before saving.');
+        return;
+      }
+      const sampleUrls = previewRows.slice(0, 50).map(r => r.url).filter(Boolean);
+      const payload = {
+        name: segmentName.trim(),
+        include_codes: includeIab,
+        exclude_codes: excludeIab,
+        filters: {
+          date_range: [segmentStart, segmentEnd],
+          kpi: {
+            ctr: kpiCtr || null,
+            viewability: kpiViewability || null,
+            scroll_depth: kpiScrollDepth || null,
+            conversions: kpiConversions || null,
+            impressions: kpiImpressions || null,
+            fill_rate: kpiFillRate || null,
+          }
+        },
+        total_urls: previewRows.length,
+        sample_urls: sampleUrls,
+        created_at: new Date().toISOString(),
+        server_timestamp: serverTimestamp(),
+      };
+      const colRef = collection(db, 'users', user.uid, 'segments');
+      await addDoc(colRef, payload);
+      alert('Segment saved.');
+    } catch (e) {
+      console.error('Save to Firestore failed', e);
+      alert('Failed to save segment.');
+    }
   };
 
   const handleSegmentPreview = async () => {
@@ -267,58 +407,59 @@ const SegmentBuilder = () => {
           </div>
 
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', flexWrap: 'wrap' }}>
-            <button onClick={handleSegmentPreview} style={{ padding: '0.5rem 1rem', backgroundColor: '#6f42c1', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Preview</button>
-            <button onClick={handleSegmentSave} style={{ padding: '0.5rem 1rem', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Save Segment</button>
-            <select value={exportFormat} onChange={(e) => setExportFormat(e.target.value)} style={{ padding: '0.5rem', borderRadius: 4, border: '1px solid #ddd' }}>
-              <option value="csv">CSV</option>
-              <option value="json">JSON</option>
-            </select>
-            <button onClick={handleSegmentExport} disabled={!selectedSegmentId} style={{ padding: '0.5rem 1rem', backgroundColor: '#20c997', color: 'white', border: 'none', borderRadius: 4, cursor: selectedSegmentId ? 'pointer' : 'not-allowed' }}>Export Saved Segment</button>
+              <button onClick={onApply} style={{ padding: '0.5rem 1rem', backgroundColor: '#6f42c1', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Apply</button>
+              <button onClick={onClear} style={{ padding: '0.5rem 1rem', backgroundColor: '#adb5bd', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Clear</button>
+              <button onClick={onSaveClient} disabled={!segmentName.trim() || !isApplied} style={{ padding: '0.5rem 1rem', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: 4, cursor: (!segmentName.trim() || !isApplied) ? 'not-allowed' : 'pointer' }}>Save</button>
+              <select value={exportFormat} onChange={(e) => setExportFormat(e.target.value)} style={{ padding: '0.5rem', borderRadius: 4, border: '1px solid #ddd' }}>
+                <option value="csv">CSV</option>
+                <option value="json">JSON</option>
+              </select>
+              <button onClick={handleSegmentExport} disabled={!selectedSegmentId} style={{ padding: '0.5rem 1rem', backgroundColor: '#20c997', color: 'white', border: 'none', borderRadius: 4, cursor: selectedSegmentId ? 'pointer' : 'not-allowed' }}>Export Saved Segment</button>
+            </div>
+
+            {error && (
+              <div style={{ background: '#f8d7da', color: '#721c24', padding: '0.75rem', borderRadius: 4, border: '1px solid #f5c6cb', marginTop: '1rem' }}>{error}</div>
+            )}
+
+            {isApplied && (
+              <div style={{ marginTop: '1rem' }}>
+              <strong>Preview ({previewCount} rows)</strong>
+                <div style={{ fontSize: '0.85rem', marginTop: '0.5rem', overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #eee' }}>
+                    <thead>
+                      <tr>
+                        {['url','iab_code','iab_subcode','iab_secondary_code','iab_secondary_subcode','tone','intent','conversions','ctr','viewability','scroll_depth','impressions','fill_rate','last_updated'].map(h => (
+                          <th key={h} style={{ padding: '8px', background: '#f8f9fa', borderBottom: '1px solid #eee', textAlign: 'left' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {previewRows.slice(0, 100).map((r, i) => (
+                        <tr key={i} style={{ borderBottom: '1px solid #f2f2f2' }}>
+                          <td style={{ padding: '8px' }}>{r.url}</td>
+                          <td style={{ padding: '8px' }}>{r.iab_code || r.classification_iab_code}</td>
+                          <td style={{ padding: '8px' }}>{r.iab_subcode || r.classification_iab_subcode}</td>
+                          <td style={{ padding: '8px' }}>{r.iab_secondary_code || r.classification_iab_secondary_code}</td>
+                          <td style={{ padding: '8px' }}>{r.iab_secondary_subcode || r.classification_iab_secondary_subcode}</td>
+                          <td style={{ padding: '8px' }}>{r.tone || r.classification_tone}</td>
+                          <td style={{ padding: '8px' }}>{r.intent || r.classification_intent}</td>
+                          <td style={{ padding: '8px' }}>{r.attribution_conversions}</td>
+                          <td style={{ padding: '8px' }}>{r.attribution_ctr}</td>
+                          <td style={{ padding: '8px' }}>{r.attribution_viewability}</td>
+                          <td style={{ padding: '8px' }}>{r.attribution_scroll_depth}</td>
+                          <td style={{ padding: '8px' }}>{r.attribution_impressions}</td>
+                          <td style={{ padding: '8px' }}>{r.attribution_fill_rate}</td>
+                          <td style={{ padding: '8px' }}>{r.merged_at || r.upload_date}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  </div>
+                </div>
+            )}
           </div>
 
-          {error && (
-            <div style={{ background: '#f8d7da', color: '#721c24', padding: '0.75rem', borderRadius: 4, border: '1px solid #f5c6cb', marginTop: '1rem' }}>{error}</div>
-          )}
-
-          {previewRows.length > 0 && (
-            <div style={{ marginTop: '1rem' }}>
-              <strong>Preview ({previewCount} rows)</strong>
-              <div style={{ fontSize: '0.85rem', marginTop: '0.5rem', overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #eee' }}>
-                  <thead>
-                    <tr>
-                      {['url','iab_code','iab_subcode','iab_secondary_code','iab_secondary_subcode','tone','intent','conversions','ctr','viewability','scroll_depth','impressions','fill_rate','last_updated'].map(h => (
-                        <th key={h} style={{ padding: '8px', background: '#f8f9fa', borderBottom: '1px solid #eee', textAlign: 'left' }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {previewRows.slice(0, 20).map((r, i) => (
-                      <tr key={i} style={{ borderBottom: '1px solid #f2f2f2' }}>
-                        <td style={{ padding: '8px' }}>{r.url}</td>
-                        <td style={{ padding: '8px' }}>{r.iab_code}</td>
-                        <td style={{ padding: '8px' }}>{r.iab_subcode}</td>
-                        <td style={{ padding: '8px' }}>{r.iab_secondary_code}</td>
-                        <td style={{ padding: '8px' }}>{r.iab_secondary_subcode}</td>
-                        <td style={{ padding: '8px' }}>{r.tone}</td>
-                        <td style={{ padding: '8px' }}>{r.intent}</td>
-                        <td style={{ padding: '8px' }}>{r.conversions}</td>
-                        <td style={{ padding: '8px' }}>{r.ctr}</td>
-                        <td style={{ padding: '8px' }}>{r.viewability}</td>
-                        <td style={{ padding: '8px' }}>{r.scroll_depth}</td>
-                        <td style={{ padding: '8px' }}>{r.impressions}</td>
-                        <td style={{ padding: '8px' }}>{r.fill_rate}</td>
-                        <td style={{ padding: '8px' }}>{r.last_updated}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Saved segments */}
+          {/* Saved segments */}
         <div style={{ backgroundColor: '#fff', padding: '1rem', borderRadius: 8, border: '1px solid #dee2e6' }}>
           <h3 style={{ marginTop: 0 }}>Saved Segments</h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
