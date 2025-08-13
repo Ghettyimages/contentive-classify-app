@@ -9,6 +9,7 @@ import SavedSegmentsDropdown from '../components/SavedSegmentsDropdown';
 import { InlineAlert } from '../components/Alerts';
 import { slog, serror } from '../utils/log';
 import { getAuth } from 'firebase/auth';
+import '../styles/segmentBuilder.css';
 
 const formatDate = (date) => date.toISOString().slice(0, 10);
 
@@ -465,16 +466,36 @@ const SegmentBuilder = () => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', flexWrap: 'wrap' }}>
-              <button onClick={onApply} style={{ padding: '0.5rem 1rem', backgroundColor: '#6f42c1', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Apply</button>
-              <button onClick={onClear} style={{ padding: '0.5rem 1rem', backgroundColor: '#adb5bd', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Clear</button>
-              <button onClick={onSaveClient} disabled={!segmentName.trim() || !isApplied} style={{ padding: '0.5rem 1rem', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: 4, cursor: (!segmentName.trim() || !isApplied) ? 'not-allowed' : 'pointer' }}>Save</button>
-              <select value={exportFormat} onChange={(e) => setExportFormat(e.target.value)} style={{ padding: '0.5rem', borderRadius: 4, border: '1px solid #ddd' }}>
+          <div className="segment-toolbar">
+            <div className="segment-toolbar__left">
+              <div className="segment-toolbar__label">Saved Segments</div>
+              <SavedSegmentsDropdown
+                value={selectedSegmentId}
+                onChange={(id) => {
+                  setSelectedSegmentId(id);
+                  const seg = savedSegmentsCache.find(s => s.id === id);
+                  if (seg) {
+                    setIncludeIab(seg.include_codes || []);
+                    setExcludeIab(seg.exclude_codes || []);
+                  }
+                }}
+                onLoaded={(rows) => setSavedSegmentsCache(rows)}
+              />
+              <button type="button" className="btn btn-secondary" onClick={async () => { if (!selectedSegmentId) return; const res = await axios.get(`${API_BASE_URL}/segments/${selectedSegmentId}/preview?limit=100`, { headers: tokenHeader() }); setPreviewRows(res.data?.rows || []); setPreviewCount(res.data?.count || 0); }} disabled={!selectedSegmentId} title={!selectedSegmentId ? 'Select a saved segment to preview.' : ''}>Preview</button>
+              <button type="button" className="btn btn-secondary" onClick={loadSegments}>Refresh</button>
+              <button type="button" className="btn" onClick={handleSegmentExport} disabled={!selectedSegmentId} title={!selectedSegmentId ? 'Select a saved segment to export.' : ''}>Export</button>
+            </div>
+            <div className="segment-toolbar__right">
+              <button type="button" className="btn" onClick={onApply}>Apply</button>
+              <button type="button" className="btn btn-secondary" onClick={onClear}>Clear</button>
+              <button type="button" className="btn btn-primary" onClick={onSaveClient} disabled={!segmentName.trim() || !isApplied}>Save</button>
+              <select className="btn" value={exportFormat} onChange={(e) => setExportFormat(e.target.value)}>
                 <option value="csv">CSV</option>
                 <option value="json">JSON</option>
               </select>
-              <button onClick={handleSegmentExport} disabled={!selectedSegmentId} style={{ padding: '0.5rem 1rem', backgroundColor: '#20c997', color: 'white', border: 'none', borderRadius: 4, cursor: selectedSegmentId ? 'pointer' : 'not-allowed' }}>Export Saved Segment</button>
+              <button type="button" className="btn" onClick={handleSegmentExport} disabled={!selectedSegmentId} title={!selectedSegmentId ? 'Select a saved segment to export.' : ''}>Export Saved Segment</button>
             </div>
+          </div>
 
             {error && (
               <div style={{ background: '#f8d7da', color: '#721c24', padding: '0.75rem', borderRadius: 4, border: '1px solid #f5c6cb', marginTop: '1rem' }}>{error}</div>
@@ -518,42 +539,7 @@ const SegmentBuilder = () => {
             )}
           </div>
 
-          {/* Saved segments */}
-        <div style={{ backgroundColor: '#fff', padding: '1rem', borderRadius: 8, border: '1px solid #dee2e6' }}>
-          <h3 style={{ marginTop: 0 }}>Saved Segments</h3>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <SavedSegmentsDropdown
-              value={selectedSegmentId}
-              onChange={(id) => {
-                setSelectedSegmentId(id);
-                const seg = savedSegmentsCache.find(s => s.id === id);
-                if (seg) {
-                  setIncludeIab(seg.include_codes || []);
-                  setExcludeIab(seg.exclude_codes || []);
-                }
-              }}
-              onLoaded={(rows) => setSavedSegmentsCache(rows)}
-            />
-            <button onClick={async () => { if (!selectedSegmentId) return; const res = await axios.get(`${API_BASE_URL}/segments/${selectedSegmentId}/preview?limit=100`, { headers: tokenHeader() }); setPreviewRows(res.data?.rows || []); setPreviewCount(res.data?.count || 0); }} style={{ padding: '0.5rem 1rem', backgroundColor: '#6f42c1', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9rem' }}>Preview</button>
-            <button onClick={loadSegments} style={{ padding: '0.5rem 1rem', backgroundColor: '#ffc107', color: 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9rem' }}>Refresh</button>
-          </div>
-          <div style={{ marginTop: 10 }}>
-            {(() => {
-              const disabled = !canExport();
-              const hint = 'Select a saved segment or click Apply to build a non-empty preview before exporting.';
-              return (
-                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                  <button type="button" disabled={disabled} title={disabled ? hint : ''} onClick={onExportClick}>Export</button>
-                  {disabled && (
-                    <InlineAlert>
-                      <strong>Export unavailable:</strong> {hint}
-                    </InlineAlert>
-                  )}
-                </div>
-              );
-            })()}
-          </div>
-        </div>
+        {/* Table and errors below toolbar */}
       </div>
     </div>
   );

@@ -41,9 +41,12 @@ export default function SavedSegmentsDropdown({ value, onChange, onLoaded }) {
   }, [uid]);
 
   return (
-    <label style={{ display: 'grid', gap: 6 }}>
-      <span>Saved Segments</span>
-      <select value={value || ''} onChange={(e) => onChange?.(e.target.value)}>
+    <div className="saved-segments">
+      <select
+        className="saved-segments__select"
+        value={value || ''}
+        onChange={(e) => onChange?.(e.target.value || null)}
+      >
         <option value="">— Select saved segment —</option>
         {items.map((s) => (
           <option key={s.id} value={s.id}>
@@ -51,6 +54,6 @@ export default function SavedSegmentsDropdown({ value, onChange, onLoaded }) {
           </option>
         ))}
       </select>
-    </label>
+    </div>
   );
 }
