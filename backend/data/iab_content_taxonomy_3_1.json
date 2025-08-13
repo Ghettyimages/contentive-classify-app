@@ -1,0 +1,11 @@
+{
+	"version": "3.1",
+	"commit": "unversioned",
+	"codes": [
+		{ "code": "IAB1", "label": "Arts & Entertainment", "path": ["Arts & Entertainment"], "level": 1 },
+		{ "code": "IAB1-1", "label": "Books & Literature", "path": ["Arts & Entertainment", "Books & Literature"], "level": 2 },
+		{ "code": "IAB9", "label": "Sports", "path": ["Sports"], "level": 1 },
+		{ "code": "IAB9-6", "label": "Soccer", "path": ["Sports", "Soccer"], "level": 2 },
+		{ "code": "IAB14", "label": "Society", "path": ["Society"], "level": 1 }
+	]
+}

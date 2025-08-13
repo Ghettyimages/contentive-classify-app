@@ -10,8 +10,8 @@ import { InlineAlert } from '../components/Alerts';
 import { slog, serror } from '../utils/log';
 import { getAuth } from 'firebase/auth';
 import '../styles/segmentBuilder.css';
-import IAB_TSV from '../data/iab_content_taxonomy_3_1.tsv?raw';
-import { parseIABTSV, buildIABOptions } from '../utils/iabTaxonomy';
+import localTaxonomy from '../data/iab_content_taxonomy_3_1.json';
+import { sortByIabCode } from '../utils/iabSort';
 
 const formatDate = (date) => date.toISOString().slice(0, 10);
 
@@ -47,6 +47,7 @@ const SegmentBuilder = () => {
   const [exportFormat, setExportFormat] = useState('csv');
   const [error, setError] = useState('');
   const [iabOptions, setIabOptions] = useState([]);
+  const [taxonomyFallbackUsed, setTaxonomyFallbackUsed] = useState(false);
   const [sourceRows, setSourceRows] = useState([]); // raw merged rows fetched for local preview
   const [isApplied, setIsApplied] = useState(false);
 
@@ -71,12 +72,27 @@ const SegmentBuilder = () => {
 
   const loadIabOptions = async () => {
     try {
-      const rows = parseIABTSV(IAB_TSV);
-      const opts = buildIABOptions(rows);
-      setIabOptions(opts.map(o => ({ code: o.value, display: o.label })));
+      // Backend first
+      const res = await axios.get(`${API_BASE_URL}/taxonomy/codes`, { timeout: 8000 });
+      const rows = Array.isArray(res.data) ? res.data : (res.data?.codes || []);
+      if (!rows || rows.length === 0) throw new Error('Empty taxonomy');
+      const opts = rows.map(r => ({ code: r.code, display: `${r.code} (${r.label || r.name})` }))
+        .sort(sortByIabCode);
+      setIabOptions(opts);
+      setTaxonomyFallbackUsed(false);
     } catch (e) {
-      console.error('Error parsing IAB taxonomy TSV', e);
-      setIabOptions([]);
+      console.warn('[Taxonomy] Backend load failed, using local fallback', e?.response?.status, e?.message);
+      try {
+        const rows = localTaxonomy?.codes || [];
+        const opts = rows.map(r => ({ code: r.code, display: `${r.code} (${r.label || r.name})` }))
+          .sort(sortByIabCode);
+        setIabOptions(opts);
+        setTaxonomyFallbackUsed(true);
+      } catch (e2) {
+        console.error('Error loading fallback taxonomy', e2);
+        setIabOptions([]);
+        setTaxonomyFallbackUsed(true);
+      }
     }
   };
 
@@ -395,11 +411,15 @@ const SegmentBuilder = () => {
                   setIncludeIab(values);
                 }}
                 style={{ width: '100%', padding: '0.25rem', border: '1px solid #ddd', borderRadius: 4 }}
+                disabled={!iabOptions.length}
               >
                 {iabOptions.map(({ code, display }) => (
                   <option key={code} value={code}>{display}</option>
                 ))}
               </select>
+              {!iabOptions.length && (
+                <div style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: 6 }}>IAB taxonomy unavailable; filters disabled.</div>
+              )}
             </div>
             <div>
               <label style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>Exclude IAB (multi-select)</label>
@@ -412,11 +432,17 @@ const SegmentBuilder = () => {
                   setExcludeIab(values);
                 }}
                 style={{ width: '100%', padding: '0.25rem', border: '1px solid #ddd', borderRadius: 4 }}
+                disabled={!iabOptions.length}
               >
                 {iabOptions.map(({ code, display }) => (
                   <option key={code} value={code}>{display}</option>
                 ))}
               </select>
+              {taxonomyFallbackUsed && (
+                <div style={{ fontSize: '0.75rem', background: '#fff7ed', color: '#9a3412', padding: '2px 6px', borderRadius: 6, display: 'inline-block', marginTop: 6 }}>
+                  IAB 3.1 • Source: Local fallback
+                </div>
+              )}
             </div>
             <div>
               <label style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>Sort By</label>

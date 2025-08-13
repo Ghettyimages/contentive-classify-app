@@ -66,21 +66,33 @@ Rules:
 
 # Load IAB taxonomy at startup using a pinned URL if provided
 IAB_TAXONOMY_URL = os.getenv('IAB_TAXONOMY_URL', '').strip()
-IAB_LOCAL_FALLBACK = os.path.join(os.path.dirname(__file__), 'data', 'IAB_Content_Taxonomy_3_1.tsv')
+IAB_LOCAL_FALLBACK_TSV = os.path.join(os.path.dirname(__file__), 'data', 'IAB_Content_Taxonomy_3_1.tsv')
+IAB_LOCAL_FALLBACK_JSON = os.path.join(os.path.dirname(__file__), 'data', 'iab_content_taxonomy_3_1.json')
 
-# Pinning to a specific commit avoids inadvertent breaking changes from a moving branch
 try:
     if IAB_TAXONOMY_URL:
-        app.config['IAB_TAXONOMY'] = load_taxonomy(IAB_TAXONOMY_URL)
+        app.config['IAB_TAXONOMY'] = load_taxonomy(IAB_TAXONOMY_URL, IAB_LOCAL_FALLBACK_JSON)
     else:
-        raise TaxonomyLoadError('No IAB_TAXONOMY_URL set')
+        # No URL; use JSON fallback
+        app.config['IAB_TAXONOMY'] = load_taxonomy('', IAB_LOCAL_FALLBACK_JSON)
 except Exception as e:
-    print(f"⚠️ Taxonomy load from URL failed, falling back to local: {e}")
+    print(f"⚠️ Taxonomy load failed, falling back to local TSV then JSON: {e}")
     try:
-        app.config['IAB_TAXONOMY'] = load_taxonomy(IAB_LOCAL_FALLBACK)
-    except Exception as e2:
-        print(f"❌ Failed to load local fallback taxonomy: {e2}")
-        app.config['IAB_TAXONOMY'] = {'version': '3.1', 'source': 'unavailable', 'commit': 'unversioned', 'codes': {}, 'labels_to_codes': {}}
+        # attempt TSV fallback (legacy)
+        app.config['IAB_TAXONOMY'] = load_taxonomy_from_tsv(IAB_LOCAL_FALLBACK_TSV)
+    except Exception:
+        try:
+            with open(IAB_LOCAL_FALLBACK_JSON, 'r', encoding='utf-8') as f:
+                payload = json.load(f)
+            app.config['IAB_TAXONOMY'] = {
+                'version': payload.get('version', '3.1'),
+                'source': f"local:{os.path.basename(IAB_LOCAL_FALLBACK_JSON)}",
+                'commit': payload.get('commit') or 'unversioned',
+                'codes': {c['code']: {'label': c['label'], 'path': c.get('path', [c['label']]), 'level': c.get('level', c['code'].count('-')+1)} for c in payload.get('codes', [])},
+            }
+        except Exception as e2:
+            print(f"❌ Failed to load any taxonomy fallback: {e2}")
+            app.config['IAB_TAXONOMY'] = {'version': '3.1', 'source': 'unavailable', 'commit': 'unversioned', 'codes': {}}
 
 
 def _taxonomy_summary():
@@ -102,10 +114,23 @@ def taxonomy_health():
 def taxonomy_codes():
     tax = app.config.get('IAB_TAXONOMY') or {}
     codes = tax.get('codes', {})
-    arr = [{'code': c, 'label': v.get('label'), 'path': v.get('path'), 'level': v.get('level')} for c, v in codes.items()]
-    # Sort by code for stable UI
-    arr.sort(key=lambda x: x['code'])
-    return jsonify({'codes': arr})
+    arr = []
+    for c, v in codes.items():
+        arr.append({'code': c, 'name': v.get('label'), 'path': v.get('path'), 'level': v.get('level')})
+    # sort numerically by IAB code parts
+    def parts(code: str):
+        segs = code.split('-')
+        out = []
+        for i, s in enumerate(segs):
+            if i == 0:
+                s = s.replace('IAB', '')
+            try:
+                out.append(int(s))
+            except Exception:
+                out.append(-1)
+        return out
+    arr.sort(key=lambda item: parts(item['code']))
+    return jsonify(arr)
 
 
 @app.route('/admin/refresh-taxonomy', methods=['POST'])
@@ -114,8 +139,8 @@ def refresh_taxonomy():
         # Basic protection: require valid Firebase token
         _verify_and_get_user_id()
         global IAB_TAXONOMY_URL
-        source = IAB_TAXONOMY_URL or IAB_LOCAL_FALLBACK
-        app.config['IAB_TAXONOMY'] = load_taxonomy(source)
+        source = IAB_TAXONOMY_URL or IAB_LOCAL_FALLBACK_TSV
+        app.config['IAB_TAXONOMY'] = load_taxonomy(source, IAB_LOCAL_FALLBACK_JSON)
         return jsonify(_taxonomy_summary())
     except Exception as e:
         return jsonify({'error': str(e)}), 500
