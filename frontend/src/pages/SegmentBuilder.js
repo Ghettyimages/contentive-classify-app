@@ -157,20 +157,28 @@ const SegmentBuilder = () => {
           if (data?.length) { rows = data; break; }
         } catch (_) {}
       }
+      if (rows.length && rows.length < 100) {
+        console.warn('[IAB] suspiciously low taxonomy size from server:', rows.length);
+        throw new Error('LOW_COUNT');
+      }
       if (!rows.length) {
         rows = localTaxonomy?.codes || [];
         setTaxonomyFallbackUsed(true);
+        console.log('[Taxonomy] Ready from bundled count:', rows.length);
       } else {
         setTaxonomyFallbackUsed(false);
+        console.log('[Taxonomy] Ready from server count:', rows.length);
       }
       const norm = normalizeIabCodes(rows);
-      if (norm.length < 50) console.error('[IAB] suspiciously low taxonomy size:', norm.length);
       const opts = norm.map(r => ({ code: r.code, display: `${r.code} (${r.label})` }));
       setIabOptions(opts);
     } catch (e) {
-      console.error('Error resolving IAB taxonomy', e);
-      setIabOptions([]);
+      console.warn('[Taxonomy] Backend insufficient, using bundled fallback:', e?.message);
+      const codes = localTaxonomy?.codes || [];
+      const norm = normalizeIabCodes(codes);
+      setIabOptions(norm.map(r => ({ code: r.code, display: `${r.code} (${r.label})` })));
       setTaxonomyFallbackUsed(true);
+      console.log('[Taxonomy] Ready from bundled count:', codes.length);
     }
   };
 
