@@ -5,3 +5,4 @@ newspaper3k
 beautifulsoup4
 firebase-admin
 requests
+gunicorn>=22.0.0

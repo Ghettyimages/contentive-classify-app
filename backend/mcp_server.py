@@ -1215,6 +1215,11 @@ def classify_url(url):
     except json.JSONDecodeError:
         raise ValueError("Failed to parse GPT response as valid JSON:\n" + content)
 
+@app.route('/health', methods=['GET'])
+@cross_origin()
+def health():
+    return jsonify({'ok': True, 'status': 'healthy'}), 200
+
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "5000"))
     app.run(host="0.0.0.0", port=port)
