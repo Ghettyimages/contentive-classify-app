@@ -14,6 +14,7 @@ import firebase_admin
 from firebase_admin import auth
 from merge_attribution_with_classification import merge_attribution_data
 from taxonomy_loader import load_taxonomy, TaxonomyLoadError
+from exporter import to_csv, to_json
 
 # Initialize Flask app
 app = Flask(__name__)

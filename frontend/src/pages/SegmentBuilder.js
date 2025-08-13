@@ -12,6 +12,7 @@ import { getAuth } from 'firebase/auth';
 import '../styles/segmentBuilder.css';
 import localTaxonomy from '../data/iab_content_taxonomy_3_1.json';
 import { sortByIabCode } from '../utils/iabSort';
+import ExportFormatModal from '../components/ExportFormatModal.jsx';
 
 const formatDate = (date) => date.toISOString().slice(0, 10);
 
@@ -50,6 +51,79 @@ const SegmentBuilder = () => {
   const [taxonomyFallbackUsed, setTaxonomyFallbackUsed] = useState(false);
   const [sourceRows, setSourceRows] = useState([]); // raw merged rows fetched for local preview
   const [isApplied, setIsApplied] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [previewQuery, setPreviewQuery] = useState(null);
+
+  const taxonomyReady = iabOptions.length > 0;
+  const uiDisabled = (() => {
+    const reasons = {
+      view: selectedSegmentId ? null : 'Select a saved segment to view',
+      apply: taxonomyReady ? null : 'IAB taxonomy not loaded',
+      save: (includeIab?.length || excludeIab?.length) ? null : 'Add at least one filter to save',
+      export: (Array.isArray(previewRows) && previewRows.length > 0) ? null : 'No preview results to export. Click Apply first.',
+    };
+    return {
+      view: !!reasons.view, viewReason: reasons.view || '',
+      apply: !!reasons.apply, applyReason: reasons.apply || '',
+      save: !!reasons.save, saveReason: reasons.save || '',
+      export: !!reasons.export, exportReason: reasons.export || '',
+    };
+  })();
+
+  const handleViewSaved = async () => {
+    try {
+      if (!selectedSegmentId) return;
+      const res = await axios.get(`${API_BASE_URL}/segments/${selectedSegmentId}/preview?limit=100`, { headers: tokenHeader() });
+      const rows = res.data?.rows || [];
+      setPreviewRows(rows);
+      setPreviewCount(res.data?.count || rows.length || 0);
+      const seg = savedSegmentsCache.find(s => s.id === selectedSegmentId) || segments.find(s => s.id === selectedSegmentId);
+      if (seg) {
+        setIncludeIab(seg.include_codes || seg.rules?.include_iab || []);
+        setExcludeIab(seg.exclude_codes || seg.rules?.exclude_iab || []);
+        setPreviewQuery({ mode: 'segment', segment_id: selectedSegmentId });
+      }
+    } catch (e) {
+      console.error('View saved segment failed', e);
+      alert(e?.response?.data?.error || e?.message || 'Failed to view segment');
+    }
+  };
+
+  const handleApply = () => {
+    const rules = buildSegmentRules();
+    setPreviewQuery({ mode: 'preview', query: rules });
+    onApply();
+  };
+
+  const handleSave = () => onSaveClient();
+
+  const handleExport = async (format) => {
+    try {
+      const token = window.localStorage.getItem('fb_id_token') || '';
+      let body = {};
+      if (Array.isArray(previewRows) && previewRows.length > 0 && previewQuery) {
+        body = { mode: 'preview', format, query: previewQuery?.query || {}, rows: previewRows };
+      } else if (selectedSegmentId) {
+        body = { mode: 'segment', format, segment_id: selectedSegmentId };
+      } else {
+        throw new Error('Nothing to export: run Apply or select a saved segment');
+      }
+      const response = await axios.post(`${API_BASE_URL}/export`, body, { headers: { Authorization: `Bearer ${token}` }, responseType: 'blob' });
+      if (response.status !== 200) throw new Error('Export failed');
+      const blob = new Blob([response.data], { type: format === 'csv' ? 'text/csv;charset=utf-8' : 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `contentive_export.${format}`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      setExportOpen(false);
+    } catch (e) {
+      const msg = e?.response?.data?.message || e?.message || 'Export failed';
+      console.error('[Export] failed', e);
+      alert(msg);
+    }
+  };
 
   const tokenHeader = () => ({ Authorization: `Bearer ${window.localStorage.getItem('fb_id_token') || ''}` });
 
@@ -497,29 +571,15 @@ const SegmentBuilder = () => {
               <div className="segment-toolbar__label">Saved Segments</div>
               <SavedSegmentsDropdown
                 value={selectedSegmentId}
-                onChange={(id) => {
-                  setSelectedSegmentId(id);
-                  const seg = savedSegmentsCache.find(s => s.id === id);
-                  if (seg) {
-                    setIncludeIab(seg.include_codes || []);
-                    setExcludeIab(seg.exclude_codes || []);
-                  }
-                }}
+                onChange={(id) => setSelectedSegmentId(id)}
                 onLoaded={(rows) => setSavedSegmentsCache(rows)}
               />
-              <button type="button" className="btn btn-secondary" onClick={async () => { if (!selectedSegmentId) return; const res = await axios.get(`${API_BASE_URL}/segments/${selectedSegmentId}/preview?limit=100`, { headers: tokenHeader() }); setPreviewRows(res.data?.rows || []); setPreviewCount(res.data?.count || 0); }} disabled={!selectedSegmentId} title={!selectedSegmentId ? 'Select a saved segment to preview.' : ''}>Preview</button>
-              <button type="button" className="btn btn-secondary" onClick={loadSegments}>Refresh</button>
-              <button type="button" className="btn" onClick={handleSegmentExport} disabled={!selectedSegmentId} title={!selectedSegmentId ? 'Select a saved segment to export.' : ''}>Export</button>
             </div>
             <div className="segment-toolbar__right">
-              <button type="button" className="btn" onClick={onApply}>Apply</button>
-              <button type="button" className="btn btn-secondary" onClick={onClear}>Clear</button>
-              <button type="button" className="btn btn-primary" onClick={onSaveClient} disabled={!segmentName.trim() || !isApplied}>Save</button>
-              <select className="btn" value={exportFormat} onChange={(e) => setExportFormat(e.target.value)}>
-                <option value="csv">CSV</option>
-                <option value="json">JSON</option>
-              </select>
-              <button type="button" className="btn" onClick={handleSegmentExport} disabled={!selectedSegmentId} title={!selectedSegmentId ? 'Select a saved segment to export.' : ''}>Export Saved Segment</button>
+              <button type="button" className="btn" onClick={handleViewSaved} disabled={uiDisabled.view} title={uiDisabled.viewReason}>View</button>
+              <button type="button" className="btn" onClick={handleApply} disabled={uiDisabled.apply} title={uiDisabled.applyReason}>Apply</button>
+              <button type="button" className="btn btn-primary" onClick={handleSave} disabled={uiDisabled.save} title={uiDisabled.saveReason}>Save</button>
+              <button type="button" className="btn" onClick={() => setExportOpen(true)} disabled={uiDisabled.export} title={uiDisabled.exportReason}>Export</button>
             </div>
           </div>
 
@@ -565,7 +625,8 @@ const SegmentBuilder = () => {
             )}
           </div>
 
-        {/* Table and errors below toolbar */}
+        {/* Table and export modal below toolbar */}
+        <ExportFormatModal open={exportOpen} onClose={() => setExportOpen(false)} onConfirm={(fmt) => handleExport(fmt)} />
       </div>
     </div>
   );
