@@ -8,6 +8,7 @@ import { labelForCode as labelFromMap } from '../iabTaxonomy';
 import SavedSegmentsDropdown from '../components/SavedSegmentsDropdown';
 import { InlineAlert } from '../components/Alerts';
 import { slog, serror } from '../utils/log';
+import { getAuth } from 'firebase/auth';
 
 const formatDate = (date) => date.toISOString().slice(0, 10);
 
@@ -287,6 +288,65 @@ const SegmentBuilder = () => {
     }
   };
 
+  const canExport = () => {
+    return Boolean(selectedSegmentId) || (Array.isArray(previewRows) && previewRows.length > 0);
+  };
+
+  const onExportClick = async () => {
+    try {
+      if (!canExport()) return;
+      const authInstance = getAuth();
+      const token = await authInstance.currentUser?.getIdToken?.();
+      const body = {
+        segmentId: selectedSegmentId || null,
+        include_codes: includeIab || [],
+        exclude_codes: excludeIab || [],
+        filters: {
+          date_range: [segmentStart, segmentEnd],
+          kpi: {
+            ctr: kpiCtr || null,
+            viewability: kpiViewability || null,
+            scroll_depth: kpiScrollDepth || null,
+            conversions: kpiConversions || null,
+            impressions: kpiImpressions || null,
+            fill_rate: kpiFillRate || null,
+          }
+        },
+      };
+      slog('[Export] request body', body);
+      const res = await axios.post(`${API_BASE_URL}/export-segment`, body, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        responseType: 'text'
+      });
+      if (res.status !== 200) throw new Error(`Export failed (${res.status})`);
+      const csvText = typeof res.data === 'string' ? res.data : (res.data?.csv || '');
+      if (!csvText) throw new Error('Empty CSV returned');
+      const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `segment_${Date.now()}.csv`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      const status = e?.response?.status;
+      const serverErr = e?.response?.data?.error || e?.response?.data || e?.message || String(e);
+      serror('[Export] failed', { status, serverErr });
+      alert(`Export failed${status ? ` (${status})` : ''}: ${serverErr}`);
+      if (Array.isArray(previewRows) && previewRows.length > 0) {
+        const headers = Object.keys(previewRows[0]);
+        const csv = [headers.join(','), ...previewRows.map(r => headers.map(h => JSON.stringify(r[h] ?? '')).join(','))].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `segment_preview_${Date.now()}.csv`;
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+      }
+    }
+  };
+
   const handleSegmentPreview = async () => {
     try {
       setError('');
@@ -530,25 +590,15 @@ const SegmentBuilder = () => {
             <button onClick={loadSegments} style={{ padding: '0.5rem 1rem', backgroundColor: '#ffc107', color: 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9rem' }}>Refresh</button>
           </div>
           <div style={{ marginTop: 10 }}>
-            {/* Export example with explanation of disabled state */}
             {(() => {
-              const REQUIRED_METRICS = ['attribution_conversions','attribution_ctr','attribution_viewability','attribution_scroll_depth','attribution_impressions','attribution_fill_rate'];
-              const rows = previewRows;
-              const issues = [];
-              if (!Array.isArray(rows) || rows.length === 0) issues.push('No rows to export. Apply filters or load data.');
-              const missing = [];
-              for (const m of REQUIRED_METRICS) {
-                const allMissing = rows.length > 0 && rows.every(r => r[m] === undefined || r[m] === null || r[m] === '');
-                if (allMissing) missing.push(m.replace('attribution_',''));
-              }
-              if (missing.length) issues.push(`Missing required metric(s): ${missing.join(', ')}`);
-              const disabled = issues.length > 0;
+              const disabled = !canExport();
+              const hint = 'Select a saved segment or click Apply to build a non-empty preview before exporting.';
               return (
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                  <button type="button" disabled={disabled} onClick={() => {/* reuse existing export if any */}}>Export</button>
+                  <button type="button" disabled={disabled} title={disabled ? hint : ''} onClick={onExportClick}>Export</button>
                   {disabled && (
                     <InlineAlert>
-                      <strong>Export unavailable:</strong> {issues.join(' • ')}
+                      <strong>Export unavailable:</strong> {hint}
                     </InlineAlert>
                   )}
                 </div>
