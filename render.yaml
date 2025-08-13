@@ -2,7 +2,7 @@ services:
   - type: web
     name: segment-builder-api
     env: python
-    buildCommand: pip install -r backend/requirements.txt
+    buildCommand: python -m pip install --upgrade pip && pip install -r backend/requirements.txt
     startCommand: bash scripts/start.sh
     envVars:
       - key: PYTHON_VERSION
