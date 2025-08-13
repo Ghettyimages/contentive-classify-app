@@ -112,6 +112,7 @@ def taxonomy_health():
 
 
 @app.route('/taxonomy/codes', methods=['GET'])
+@cross_origin()
 def taxonomy_codes():
     tax = app.config.get('IAB_TAXONOMY') or {}
     codes = tax.get('codes', {})
@@ -131,7 +132,13 @@ def taxonomy_codes():
                 out.append(-1)
         return out
     arr.sort(key=lambda item: parts(item['code']))
-    return jsonify(arr)
+    app.logger.info('Serving taxonomy codes count=%d', len(arr))
+    return jsonify({'version': tax.get('version', '3.1'), 'source': tax.get('source'), 'commit': tax.get('commit'), 'codes': arr})
+
+@app.route('/api/taxonomy/codes', methods=['GET'])
+@cross_origin()
+def taxonomy_codes_api():
+    return taxonomy_codes()
 
 
 @app.route('/admin/refresh-taxonomy', methods=['POST'])
