@@ -4,7 +4,7 @@ import axios from 'axios';
 import { API_BASE_URL } from '../config';
 import { auth } from '../firebase/auth';
 import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { labelForCode as labelFromMap } from '../iabTaxonomy';
+// IAB options now powered by backend /taxonomy/codes
 import SavedSegmentsDropdown from '../components/SavedSegmentsDropdown';
 import { InlineAlert } from '../components/Alerts';
 import { slog, serror } from '../utils/log';
@@ -68,70 +68,18 @@ const SegmentBuilder = () => {
 
   const loadIabOptions = async () => {
     try {
-      // Fetch a sample of merged data to derive available codes
-      const params = new URLSearchParams();
-      params.set('fallback', '1');
-      params.set('limit', '1000');
-      const res = await axios.get(`${API_BASE_URL}/merged-data?${params.toString()}`, { headers: tokenHeader() });
-      const rows = res.data?.results || [];
-      const setCodes = new Set();
-      rows.forEach(r => {
-        const code = r?.classification_iab_code || r?.iab_code;
-        const sub  = r?.classification_iab_subcode || r?.iab_subcode;
-        if (code && typeof code === 'string' && code.startsWith('IAB')) setCodes.add(code);
-        if (sub && typeof sub === 'string' && sub.startsWith('IAB')) setCodes.add(sub);
-        if (Array.isArray(r?.iab_codes)) r.iab_codes.forEach(c => { if (typeof c === 'string' && c.startsWith('IAB')) setCodes.add(c); });
-        if (Array.isArray(r?.iab_all_codes)) r.iab_all_codes.forEach(c => { if (typeof c === 'string' && c.startsWith('IAB')) setCodes.add(c); });
-      });
-      const entries = Array.from(setCodes).map((code) => {
-        const label = resolveIabLabel(code, rows);
-        const display = label ? `${code} (${label})` : code;
-        return { code, label, display };
-      });
-      entries.sort((a, b) => (a.label || a.code).localeCompare(b.label || b.code));
+      const res = await axios.get(`${API_BASE_URL}/taxonomy/codes`);
+      const rows = res.data?.codes || [];
+      const entries = rows.map(({ code, label }) => ({ code, label, display: label ? `${code} (${label})` : code }));
+      entries.sort((a, b) => (a.code).localeCompare(b.code));
       setIabOptions(entries);
     } catch (e) {
-      console.error('Error loading IAB options', e);
+      console.error('Error loading IAB taxonomy', e);
       setIabOptions([]);
     }
   };
 
-  const deriveLabelFromRows = (code, rows) => {
-    const maxSamples = 50;
-    let seen = 0;
-    for (const r of rows) {
-      if (seen >= maxSamples) break;
-      const topMatch = r?.iab_code === code || r?.classification_iab_code === code;
-      const subMatch = r?.iab_subcode === code || r?.classification_iab_subcode === code;
-      if (topMatch) {
-        const cat = r?.iab_category || r?.classification_iab_category;
-        if (typeof cat === 'string' && cat.trim()) {
-          const m = cat.match(/\(([^)]+)\)/);
-          if (m?.[1]) return m[1].trim();
-          // If cat looks like "IAB9 (Sports)" we extracted above; else just use as-is
-          if (!cat.startsWith('IAB')) return cat.trim();
-        }
-      }
-      if (subMatch) {
-        const sub = r?.iab_subcategory || r?.classification_iab_subcategory;
-        if (typeof sub === 'string' && sub.trim()) {
-          const m = sub.match(/\(([^)]+)\)/);
-          if (m?.[1]) return m[1].trim();
-          if (!sub.startsWith('IAB')) return sub.trim();
-        }
-      }
-      seen++;
-    }
-    return '';
-  };
-
-  const resolveIabLabel = (code, rows) => {
-    const fromMap = labelFromMap ? labelFromMap(code) : '';
-    if (fromMap) return fromMap;
-    const fromRows = deriveLabelFromRows(code, rows);
-    if (fromRows) return fromRows;
-    return '';
-  };
+  // Removed legacy label derivation; taxonomy is the source of truth now
 
   const loadSourceRows = async () => {
     try {

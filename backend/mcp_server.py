@@ -13,6 +13,7 @@ from firebase_service import get_firebase_service
 import firebase_admin
 from firebase_admin import auth
 from merge_attribution_with_classification import merge_attribution_data
+from taxonomy_loader import load_taxonomy, TaxonomyLoadError
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -62,6 +63,111 @@ Rules:
 - If no secondary category fits, set the secondary fields to null
 - Return strict JSON only — no comments, markdown, or extra text
 """
+
+# Load IAB taxonomy at startup using a pinned URL if provided
+IAB_TAXONOMY_URL = os.getenv('IAB_TAXONOMY_URL', '').strip()
+IAB_LOCAL_FALLBACK = os.path.join(os.path.dirname(__file__), 'data', 'IAB_Content_Taxonomy_3_1.tsv')
+
+# Pinning to a specific commit avoids inadvertent breaking changes from a moving branch
+try:
+    if IAB_TAXONOMY_URL:
+        app.config['IAB_TAXONOMY'] = load_taxonomy(IAB_TAXONOMY_URL)
+    else:
+        raise TaxonomyLoadError('No IAB_TAXONOMY_URL set')
+except Exception as e:
+    print(f"⚠️ Taxonomy load from URL failed, falling back to local: {e}")
+    try:
+        app.config['IAB_TAXONOMY'] = load_taxonomy(IAB_LOCAL_FALLBACK)
+    except Exception as e2:
+        print(f"❌ Failed to load local fallback taxonomy: {e2}")
+        app.config['IAB_TAXONOMY'] = {'version': '3.1', 'source': 'unavailable', 'commit': 'unversioned', 'codes': {}, 'labels_to_codes': {}}
+
+
+def _taxonomy_summary():
+    tax = app.config.get('IAB_TAXONOMY') or {}
+    return {
+        'version': tax.get('version'),
+        'source': tax.get('source'),
+        'commit': tax.get('commit'),
+        'count': len(tax.get('codes', {})),
+    }
+
+
+@app.route('/taxonomy', methods=['GET'])
+def taxonomy_health():
+    return jsonify(_taxonomy_summary())
+
+
+@app.route('/taxonomy/codes', methods=['GET'])
+def taxonomy_codes():
+    tax = app.config.get('IAB_TAXONOMY') or {}
+    codes = tax.get('codes', {})
+    arr = [{'code': c, 'label': v.get('label'), 'path': v.get('path'), 'level': v.get('level')} for c, v in codes.items()]
+    # Sort by code for stable UI
+    arr.sort(key=lambda x: x['code'])
+    return jsonify({'codes': arr})
+
+
+@app.route('/admin/refresh-taxonomy', methods=['POST'])
+def refresh_taxonomy():
+    try:
+        # Basic protection: require valid Firebase token
+        _verify_and_get_user_id()
+        global IAB_TAXONOMY_URL
+        source = IAB_TAXONOMY_URL or IAB_LOCAL_FALLBACK
+        app.config['IAB_TAXONOMY'] = load_taxonomy(source)
+        return jsonify(_taxonomy_summary())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+def _normalize_and_validate_iab(result: dict) -> dict:
+    tax = app.config.get('IAB_TAXONOMY') or {}
+    code_map = tax.get('codes', {})
+    label_to_codes = tax.get('labels_to_codes', {})
+
+    def valid_or_map(code: str, label: str) -> str:
+        code_s = (code or '').strip()
+        if code_s and code_s in code_map:
+            return code_s
+        # Try map by label
+        label_key = (label or '').strip().lower()
+        if label_key and label_key in label_to_codes:
+            # Prefer deepest by level
+            candidates = label_to_codes[label_key]
+            best = None
+            best_level = -1
+            for c in candidates:
+                lvl = code_map.get(c, {}).get('level', 0)
+                if lvl > best_level:
+                    best = c
+                    best_level = lvl
+            return best
+        return ''
+
+    primary_code = valid_or_map(result.get('iab_code'), result.get('iab_category'))
+    sub_code = valid_or_map(result.get('iab_subcode'), result.get('iab_subcategory'))
+    sec_code = valid_or_map(result.get('iab_secondary_code'), result.get('iab_secondary_category'))
+    sec_sub_code = valid_or_map(result.get('iab_secondary_subcode'), result.get('iab_secondary_subcategory'))
+
+    # Metrics log
+    num_codes = len([c for c in [primary_code, sub_code, sec_code, sec_sub_code] if c])
+    unmapped = []
+    for lbl in [result.get('iab_category'), result.get('iab_subcategory'), result.get('iab_secondary_category'), result.get('iab_secondary_subcategory')]:
+        if lbl and (lbl.strip().lower() not in label_to_codes):
+            unmapped.append(lbl)
+    print(f"[taxonomy] version={tax.get('version')} num_codes={num_codes} unmapped_labels={unmapped}")
+
+    # Write back normalized codes; drop invalid ones
+    result['iab_code'] = primary_code or None
+    result['iab_subcode'] = sub_code or None
+    result['iab_secondary_code'] = sec_code or None
+    result['iab_secondary_subcode'] = sec_sub_code or None
+
+    # Optional sentinel if nothing could be mapped
+    if num_codes == 0:
+        result['iab_code'] = None  # keep empty rather than setting IAB0
+    return result
 
 def normalize_url(raw: str) -> str:
     """
@@ -803,6 +909,7 @@ def upload_attribution():
                         
                         if classification_result and 'error' not in classification_result:
                             # Save classification with user_id
+                            classification_result = _normalize_and_validate_iab(classification_result)
                             classification_data = {
                                 **classification_result,
                                 'user_id': user_id,
@@ -1053,13 +1160,16 @@ def classify_url(url):
     # Parse JSON safely
     try:
         classification_result = json.loads(content)
+        # Apply strict taxonomy validation/mapping
+        classification_result = _normalize_and_validate_iab(classification_result)
         
         # Store the result in Firestore if service is available
         if firebase_service:
             try:
                 classification_result_with_meta = {
                     **classification_result,
-                    'url_normalized': normalize_url(url)
+                    'url_normalized': normalize_url(url),
+                    'taxonomy_version': (app.config.get('IAB_TAXONOMY') or {}).get('version', '3.1'),
                 }
                 firebase_service.save_classification(url, classification_result_with_meta)
                 print(f"Successfully saved classification to Firestore for: {url}")

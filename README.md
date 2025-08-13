@@ -111,3 +111,30 @@ This project is optimized for development with AI coding assistants that can:
 - Run development commands
 - Debug issues in real-time
 - Set up automated workflows
+
+## IAB Content Taxonomy 3.1
+
+- The app loads the official IAB Content Taxonomy 3.1 TSV at startup.
+- Configure a pinned raw GitHub URL via env:
+
+```
+IAB_TAXONOMY_URL=https://raw.githubusercontent.com/InteractiveAdvertisingBureau/Taxonomies/<PINNED_COMMIT>/Content%20Taxonomies/Content%20Taxonomy%203.1.tsv
+```
+
+Why pin to a commit?
+- Pinning avoids drift from branches like `develop` and prevents breaking changes from new commits.
+
+Fallback
+- If the URL cannot be fetched, the backend falls back to a local copy at `backend/data/IAB_Content_Taxonomy_3_1.tsv` and logs a single warning.
+
+Health endpoints
+- `GET /taxonomy` → `{ version, source, commit, count }`
+- `GET /taxonomy/codes` → `[ { code, label, path, level }, ... ]`
+
+Admin
+- `POST /admin/refresh-taxonomy` (auth required) reloads the TSV from the configured URL or local fallback at runtime and hot-swaps the in-memory taxonomy.
+
+Classification validation
+- The classifier only accepts codes present in the loaded taxonomy.
+- If the model returns labels, the backend maps them to codes using the taxonomy; unmapped labels are dropped and logged.
+- Saved classification docs include `taxonomy_version`.
