@@ -16,10 +16,12 @@ from merge_attribution_with_classification import merge_attribution_data
 from taxonomy_loader import load_taxonomy, TaxonomyLoadError
 from exporter import to_csv, to_json
 from iab_taxonomy import parse_iab_tsv
+from iab_taxonomy import bp as iab_bp
 
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app)
+app.register_blueprint(iab_bp)
 
 # Initialize Firebase Admin SDK on startup
 print("🚀 Initializing Firebase Admin SDK on app startup...")

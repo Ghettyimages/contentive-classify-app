@@ -14,6 +14,7 @@ import localTaxonomy from '../data/iab_content_taxonomy_3_1.json';
 import { sortByIabCode } from '../utils/iabSort';
 import ExportFormatModal from '../components/ExportFormatModal.jsx';
 import { normalizeIabCodes } from '../utils/iabNormalize';
+import fallbackIAB from '../data/iab_content_taxonomy_3_1.json';
 
 const formatDate = (date) => date.toISOString().slice(0, 10);
 
@@ -147,38 +148,23 @@ const SegmentBuilder = () => {
 
   const loadIabOptions = async () => {
     try {
-      // Try both base paths
-      const tryUrls = [`${API_BASE_URL}/taxonomy/codes`, `${API_BASE_URL}/api/taxonomy/codes`];
-      let rows = [];
-      for (const u of tryUrls) {
-        try {
-          const res = await axios.get(u, { timeout: 10000 });
-          const data = Array.isArray(res.data) ? res.data : (res.data?.codes || []);
-          if (data?.length) { rows = data; break; }
-        } catch (_) {}
-      }
-      if (rows.length && rows.length < 100) {
-        console.warn('[IAB] suspiciously low taxonomy size from server:', rows.length);
-        throw new Error('LOW_COUNT');
-      }
-      if (!rows.length) {
-        rows = localTaxonomy?.codes || [];
-        setTaxonomyFallbackUsed(true);
-        console.log('[Taxonomy] Ready from bundled count:', rows.length);
-      } else {
-        setTaxonomyFallbackUsed(false);
-        console.log('[Taxonomy] Ready from server count:', rows.length);
-      }
-      const norm = normalizeIabCodes(rows);
-      const opts = norm.map(r => ({ code: r.code, display: `${r.code} (${r.label})` }));
+      const res = await axios.get(`${API_BASE_URL}/taxonomy/iab3_1`, { timeout: 12000 });
+      const items = res.data?.items || [];
+      if (!items.length || items.length < 100) throw new Error(`[IAB] too small (${items.length})`);
+      const opts = items.map((r) => ({ code: r.code, display: `${r.code} (${r.name})` }));
       setIabOptions(opts);
+      setTaxonomyFallbackUsed(false);
+      console.log('[IAB] Ready from server count:', items.length);
     } catch (e) {
-      console.warn('[Taxonomy] Backend insufficient, using bundled fallback:', e?.message);
-      const codes = localTaxonomy?.codes || [];
-      const norm = normalizeIabCodes(codes);
-      setIabOptions(norm.map(r => ({ code: r.code, display: `${r.code} (${r.label})` })));
+      console.warn('[IAB] Backend load failed, using local fallback', e?.message);
+      const items = Array.isArray(fallbackIAB) ? fallbackIAB : (fallbackIAB?.codes || []);
+      if (!items.length || items.length < 100) {
+        console.error('[IAB] Fallback JSON is too small; check build/update script.');
+      }
+      const opts = items.map((r) => ({ code: r.code, display: `${r.code} (${r.name || r.label})` }));
+      setIabOptions(opts);
       setTaxonomyFallbackUsed(true);
-      console.log('[Taxonomy] Ready from bundled count:', codes.length);
+      console.log('[IAB] Ready from bundled count:', items.length);
     }
   };
 
