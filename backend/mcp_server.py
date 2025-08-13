@@ -16,12 +16,20 @@ from merge_attribution_with_classification import merge_attribution_data
 from taxonomy_loader import load_taxonomy, TaxonomyLoadError
 from exporter import to_csv, to_json
 from iab_taxonomy import parse_iab_tsv
-from iab_taxonomy import bp as iab_bp
+from iab_taxonomy import bp as iab_bp, load_iab_taxonomy
 
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app)
 app.register_blueprint(iab_bp)
+
+# Load taxonomy at startup and stash in config
+try:
+	IAB = load_iab_taxonomy(os.getenv('IAB_TSV_PATH'))
+	app.config['IAB_TAXONOMY'] = IAB
+	print(f"[IAB] Loaded {len(IAB)} categories from TSV")
+except Exception as e:
+	print(f"[IAB] Failed to load taxonomy: {e}")
 
 # Initialize Firebase Admin SDK on startup
 print("🚀 Initializing Firebase Admin SDK on app startup...")

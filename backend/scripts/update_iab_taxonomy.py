@@ -14,25 +14,25 @@ def ensure_dirs():
     FRONTEND_DATA.mkdir(parents=True, exist_ok=True)
 
 def download_tsv():
-    print(f"[IAB] Downloading TSV from {IAB_URL}")
+    print(f"[IAB-BUILD] Downloading TSV from {IAB_URL}")
     with urllib.request.urlopen(IAB_URL) as r:
         data = r.read()
     TSV_PATH.write_bytes(data)
-    print(f"[IAB] Wrote {TSV_PATH} ({len(data)} bytes)")
+    print(f"[IAB-BUILD] Wrote {TSV_PATH} ({len(data)} bytes)")
 
 def parse_items(tsv_file):
     items = []
     with open(tsv_file, "r", encoding="utf-8", newline="") as f:
         reader = csv.DictReader(f, delimiter="\t")
         if not reader.fieldnames:
-            raise RuntimeError("IAB TSV has no header row")
+            raise RuntimeError("[IAB-BUILD] IAB TSV has no header row")
         for row in reader:
             code = next((v for v in row.values() if v and re.match(r"^IAB\d+(?:-\d+)*$", v)), None)
             name = row.get("Name") or row.get("Label") or row.get("Category") or row.get("Description")
             if code and name:
                 items.append({"code": code.strip(), "name": name.strip()})
     if len(items) < 100:
-        raise RuntimeError(f"Suspiciously low item count: {len(items)}")
+        raise RuntimeError(f"[IAB-BUILD] Suspiciously low item count: {len(items)}")
     # sort by code path, then name
     def code_key(c): return tuple(int(p) for p in c["code"][3:].split("-"))
     items.sort(key=lambda r: (code_key(r), r["name"]))
@@ -40,7 +40,11 @@ def parse_items(tsv_file):
 
 def write_json(items):
     JSON_PATH.write_text(json.dumps(items, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"[IAB] Wrote {JSON_PATH} with {len(items)} items")
+    print(f"[IAB-BUILD] Wrote {JSON_PATH} with {len(items)} items")
+    # Re-open and validate
+    data = json.loads(JSON_PATH.read_text(encoding="utf-8") or "[]")
+    if not isinstance(data, list) or len(data) < 100:
+        raise SystemExit("[IAB-BUILD] Fallback JSON too small; failing build")
 
 def main():
     ensure_dirs()
@@ -48,7 +52,7 @@ def main():
         download_tsv()
     items = parse_items(TSV_PATH)
     write_json(items)
-    print("[IAB] Done.")
+    print("[IAB-BUILD] Done.")
     return 0
 
 if __name__ == "__main__":
