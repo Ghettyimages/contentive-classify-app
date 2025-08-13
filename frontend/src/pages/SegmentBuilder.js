@@ -10,6 +10,8 @@ import { InlineAlert } from '../components/Alerts';
 import { slog, serror } from '../utils/log';
 import { getAuth } from 'firebase/auth';
 import '../styles/segmentBuilder.css';
+import IAB_TSV from '../data/iab_content_taxonomy_3_1.tsv?raw';
+import { parseIABTSV, buildIABOptions } from '../utils/iabTaxonomy';
 
 const formatDate = (date) => date.toISOString().slice(0, 10);
 
@@ -44,7 +46,7 @@ const SegmentBuilder = () => {
   const [previewCount, setPreviewCount] = useState(0);
   const [exportFormat, setExportFormat] = useState('csv');
   const [error, setError] = useState('');
-  const [iabOptions, setIabOptions] = useState([]); // union of category and subcategory codes available
+  const [iabOptions, setIabOptions] = useState([]);
   const [sourceRows, setSourceRows] = useState([]); // raw merged rows fetched for local preview
   const [isApplied, setIsApplied] = useState(false);
 
@@ -69,13 +71,11 @@ const SegmentBuilder = () => {
 
   const loadIabOptions = async () => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/taxonomy/codes`);
-      const rows = res.data?.codes || [];
-      const entries = rows.map(({ code, label }) => ({ code, label, display: label ? `${code} (${label})` : code }));
-      entries.sort((a, b) => (a.code).localeCompare(b.code));
-      setIabOptions(entries);
+      const rows = parseIABTSV(IAB_TSV);
+      const opts = buildIABOptions(rows);
+      setIabOptions(opts.map(o => ({ code: o.value, display: o.label })));
     } catch (e) {
-      console.error('Error loading IAB taxonomy', e);
+      console.error('Error parsing IAB taxonomy TSV', e);
       setIabOptions([]);
     }
   };
