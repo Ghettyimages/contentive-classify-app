@@ -531,6 +531,68 @@ def export_segment(seg_id):
         print(f"Error exporting segment: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/export-segment', methods=['POST'])
+def export_segment_min():
+    try:
+        # Auth
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'error': 'Missing or invalid authorization header'}), 403
+        token = auth_header.split('Bearer ')[1]
+        auth.verify_id_token(token)
+
+        data = request.get_json(force=True) or {}
+        seg_id = data.get('segmentId')
+        include_codes = data.get('include_codes') or []
+        exclude_codes = data.get('exclude_codes') or []
+        filters = data.get('filters') or {}
+
+        if not seg_id and not (include_codes or exclude_codes or filters):
+            return jsonify({'error': 'Provide segmentId or include/exclude codes/filters'}), 400
+
+        # Load rows using existing merged-data path (fallback to latest N)
+        firebase_service = get_firebase_service()
+        coll = firebase_service.db.collection('merged_content_signals')
+        docs = coll.stream()
+        rows = [d.to_dict() for d in docs]
+
+        def row_has_code(row, codes):
+            if not codes: return True
+            top = row.get('classification_iab_code') or row.get('iab_code')
+            sub = row.get('classification_iab_subcode') or row.get('iab_subcode')
+            s = set([top, sub])
+            return any(c in s for c in codes)
+
+        # Apply include/exclude filters (basic)
+        if include_codes:
+            rows = [r for r in rows if row_has_code(r, include_codes)]
+        if exclude_codes:
+            rows = [r for r in rows if not row_has_code(r, exclude_codes)]
+
+        if not rows:
+            return jsonify({'error': 'No rows match the selection'}), 400
+
+        # Build CSV from activation fields similar to /export-activation
+        headers = [
+            'url', 'classification_iab_code', 'classification_iab_subcode',
+            'classification_iab_secondary_code', 'classification_iab_secondary_subcode',
+            'classification_tone', 'classification_intent',
+            'attribution_conversions','attribution_ctr','attribution_viewability',
+            'attribution_scroll_depth','attribution_impressions','attribution_fill_rate','merged_at'
+        ]
+        def esc(v):
+            s = '' if v is None else str(v)
+            return '"' + s.replace('"','""') + '"'
+        lines = [','.join(headers)]
+        for r in rows:
+            lines.append(','.join(esc(r.get(h)) for h in headers))
+        csv_text = '\n'.join(lines)
+        return Response(csv_text, mimetype='text/csv')
+    except Exception as e:
+        import traceback
+        print('export-segment error:', e, traceback.format_exc())
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/counts', methods=['GET'])
 def get_counts():
     """Return per-uid counts across collections with optional date filters (start/end).
