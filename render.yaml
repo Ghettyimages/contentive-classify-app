@@ -3,7 +3,7 @@ services:
     name: segment-builder-api
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn backend.mcp_server:app --bind 0.0.0.0:$PORT --workers 2 --threads 8 --timeout 120
+    startCommand: bash scripts/start.sh
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.4

@@ -1218,7 +1218,11 @@ def classify_url(url):
 @app.route('/health', methods=['GET'])
 @cross_origin()
 def health():
-    return jsonify({'ok': True, 'status': 'healthy'}), 200
+    return jsonify({
+        'status': 'ok',
+        'commit': os.getenv('RENDER_GIT_COMMIT', 'unknown'),
+        'python': os.sys.version,
+    }), 200
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "5000"))
