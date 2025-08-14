@@ -9,6 +9,7 @@ from flask import Blueprint, jsonify
 import re
 import json
 from typing import Tuple
+import json as _json
 
 bp = Blueprint("iab", __name__)
 log = logging.getLogger("iab")
@@ -299,6 +300,66 @@ def load_iab_from_db(bundle_map: Dict[str, str]) -> Tuple[str, List[Dict]]:
 		return ('firestore', items)
 	items = load_iab_from_postgres(bundle_map)
 	return ('postgres', items)
+
+
+def _load_contentive_json(json_path: str) -> List[Dict]:
+	with open(json_path, 'r', encoding='utf-8') as f:
+		data = _json.load(f)
+	codes = data.get('codes') if isinstance(data, dict) else data
+	if not isinstance(codes, list):
+		raise ValueError('Invalid Contentive taxonomy JSON structure')
+	if len(codes) < 50:
+		raise ValueError(f'Contentive taxonomy too small: {len(codes)} at {json_path}')
+	items: List[Dict] = []
+	for c in codes:
+		code = c.get('code') or c.get('iab_code') or c.get('uid')
+		label = c.get('label') or c.get('name') or code
+		path = c.get('path') or c.get('iab_path') or []
+		sensitive = bool(c.get('sensitive', False))
+		items.append({
+			'code': str(code or '').strip(),
+			'name': str(label or '').strip(),
+			'path': path if isinstance(path, list) else [],
+			'iab_code': c.get('iab_code'),
+			'sensitive': sensitive,
+		})
+	# dedupe by code
+	seen: Dict[str, Dict] = {}
+	for it in items:
+		k = it.get('code')
+		if k and k not in seen:
+			seen[k] = it
+	result = list(seen.values())
+	if len(result) < 50:
+		raise ValueError(f'Contentive taxonomy too small after normalization: {len(result)}')
+	return result
+
+
+def get_taxonomy_codes() -> List[Dict]:
+	"""Return normalized taxonomy codes using Contentive JSON first, else TSV.
+	Raises ValueError if < 50 codes available.
+	"""
+	json_path = os.getenv('CONTENTIVE_TAXONOMY_JSON')
+	if json_path and os.path.exists(json_path):
+		log.info('[IAB] Loading Contentive JSON taxonomy: %s', json_path)
+		items = _load_contentive_json(json_path)
+		if len(items) < 50:
+			raise ValueError(f'Contentive JSON too small: {len(items)}')
+		return items
+	# Fallback to IAB TSV via our loader
+	path = _env_path()
+	log.info('[IAB] Loading IAB TSV taxonomy: %s', path)
+	items = load_iab_taxonomy(path)
+	if len(items) < 50:
+		raise ValueError(f'IAB TSV too small: {len(items)}')
+	# Normalize keys to match JSON shape
+	return [{
+		'code': it.get('code'),
+		'name': it.get('name'),
+		'path': it.get('path', []),
+		'iab_code': it.get('code'),
+		'sensitive': False,
+	} for it in items]
 
 
 __all__ = ["parse_iab_tsv", "load_iab_taxonomy"]

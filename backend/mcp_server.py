@@ -17,6 +17,7 @@ from taxonomy_loader import load_taxonomy, TaxonomyLoadError
 from exporter import to_csv, to_json
 from iab_taxonomy import bp as iab_bp, load_iab_taxonomy
 from iab_taxonomy import load_tsv_items, load_bundle_map, load_iab_from_db, MIN_FULL_TAXONOMY
+from iab_taxonomy import get_taxonomy_codes
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -1266,6 +1267,16 @@ def api_iab_taxonomy():
         except Exception as e:
             app.logger.exception('[IAB] Bundle load failed: %s', e)
     return jsonify({"source": "none", "count": 0, "items": []}), 503
+
+@app.get('/api/iab/taxonomy')
+def api_iab_unified_taxonomy():
+    try:
+        codes = get_taxonomy_codes()
+        app.logger.info('[IAB] Loaded %d categories (unified)', len(codes))
+        return jsonify({'codes': codes}), 200
+    except Exception as e:
+        app.logger.exception('[IAB] Unified taxonomy load failed: %s', e)
+        return jsonify({'error': 'taxonomy_unavailable'}), 503
 
 @app.get('/api/taxonomy/iab3_1/debug')
 def api_iab_taxonomy_debug():
