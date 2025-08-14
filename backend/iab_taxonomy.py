@@ -17,13 +17,27 @@ def _env_path() -> str:
 	return os.getenv("IAB_TSV_PATH", _DEFAULT_PATH)
 
 
+def parse_iab_tsv(tsv_path: str | None = None) -> List[Dict]:
+	"""Parse TSV into minimal list of dicts: {code,name}. Size guard >= 100."""
+	path = tsv_path or _env_path()
+	items: List[Dict] = []
+	with open(path, "r", encoding="utf-8", newline="") as f:
+		reader = csv.DictReader(f, delimiter="\t")
+		if not reader.fieldnames:
+			raise RuntimeError("IAB TSV has no header row")
+		for row in reader:
+			code = (row.get("Code") or row.get("code") or row.get("IAB Code") or "").strip()
+			name = (row.get("Name") or row.get("name") or row.get("Label") or "").strip()
+			if not code or not name:
+				continue
+			items.append({"code": code, "name": name})
+	if len(items) < 100:
+		raise RuntimeError(f"IAB taxonomy too small: {len(items)} rows at {path}")
+	return items
+
+
 def load_iab_taxonomy(tsv_path: str | None = None) -> List[Dict]:
-	"""Parse the TSV into a list of {code,name,path,level} dicts.
-	- Reads UTF-8, tab-delimited TSV with at least Code and Name columns
-	- Builds path as [Tier1, Tier2, Tier3, Tier4] trimmed to non-empty
-	- Adds level as number of non-empty tier columns
-	- Enforces size guard (>= 100)
-	"""
+	"""Cached richer loader returning {code,name,path,level}. Prefer this at runtime."""
 	global _IAB_CACHE, _IAB_PATH
 	path = tsv_path or _env_path()
 	if _IAB_CACHE and _IAB_PATH == path:
@@ -81,3 +95,6 @@ def get_taxonomy_api():
 def get_taxonomy_count():
 	items = load_iab_taxonomy()
 	return jsonify({"count": len(items)})
+
+
+__all__ = ["parse_iab_tsv", "load_iab_taxonomy"]
