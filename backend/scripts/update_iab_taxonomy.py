@@ -9,9 +9,11 @@ FRONTEND_DATA = ROOT / "frontend" / "src" / "data"
 TSV_PATH = BACKEND_DATA / "IAB_Content_Taxonomy_3_1.tsv"
 JSON_PATH = FRONTEND_DATA / "iab_content_taxonomy_3_1.json"
 
+
 def ensure_dirs():
     BACKEND_DATA.mkdir(parents=True, exist_ok=True)
     FRONTEND_DATA.mkdir(parents=True, exist_ok=True)
+
 
 def download_tsv():
     print(f"[IAB-BUILD] Downloading TSV from {IAB_URL}")
@@ -19,6 +21,7 @@ def download_tsv():
         data = r.read()
     TSV_PATH.write_bytes(data)
     print(f"[IAB-BUILD] Wrote {TSV_PATH} ({len(data)} bytes)")
+
 
 def parse_items(tsv_file):
     items = []
@@ -31,12 +34,11 @@ def parse_items(tsv_file):
             name = row.get("Name") or row.get("Label") or row.get("Category") or row.get("Description")
             if code and name:
                 items.append({"code": code.strip(), "name": name.strip()})
-    if len(items) < 100:
-        raise RuntimeError(f"[IAB-BUILD] Suspiciously low item count: {len(items)}")
     # sort by code path, then name
     def code_key(c): return tuple(int(p) for p in c["code"][3:].split("-"))
     items.sort(key=lambda r: (code_key(r), r["name"]))
     return items
+
 
 def write_json(items):
     JSON_PATH.write_text(json.dumps(items, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -46,14 +48,29 @@ def write_json(items):
     if not isinstance(data, list) or len(data) < 100:
         raise SystemExit("[IAB-BUILD] Fallback JSON too small; failing build")
 
+
 def main():
     ensure_dirs()
-    if not TSV_PATH.exists():
+    need_download = not TSV_PATH.exists()
+    items = []
+    if not need_download:
+        try:
+            items = parse_items(TSV_PATH)
+            print(f"[IAB-BUILD] Existing TSV parse count: {len(items)}")
+            if len(items) < 100:
+                need_download = True
+        except Exception as e:
+            print(f"[IAB-BUILD] Existing TSV parse failed: {e}")
+            need_download = True
+    if need_download:
         download_tsv()
-    items = parse_items(TSV_PATH)
+        items = parse_items(TSV_PATH)
+    if len(items) < 100:
+        raise SystemExit(f"[IAB-BUILD] Suspiciously low item count after download: {len(items)}")
     write_json(items)
     print("[IAB-BUILD] Done.")
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())
