@@ -29,7 +29,7 @@ NAME_FIELDS = [
 ]
 TIER_FIELDS = ["Tier1", "Tier2", "Tier3", "Tier 1", "Tier 2", "Tier 3", "Path", "Full Path"]
 
-MIN_FULL_TAXONOMY = 100
+MIN_FULL_TAXONOMY = 200
 
 
 def _env_path() -> str:
@@ -48,46 +48,137 @@ def _pick_first(row: dict, keys: list[str]) -> str | None:
 
 
 def parse_iab_tsv(tsv_path: str | None = None) -> List[Dict]:
-	"""Parse TSV into minimal list of dicts: {code,name}. Size guard >= 100."""
+	"""Parse the official IAB 3.1 TSV and return deterministic codes with UI-friendly shape.
+
+	Returns list of dicts:
+	{
+	  "code": "IAB9-7",
+	  "label": "Basketball",
+	  "path": ["Sports", "Basketball"],
+	  "level": 2,
+	  "parent": "IAB9"  # None for top-level
+	}
+	
+	Rules:
+	- Top-level: IAB{rank}, where rank is 1-based position among roots (alphabetical by label)
+	- Children: IAB{topRank}-{seq}, where seq is child's local 1-based index under its parent (siblings sorted alphabetically)
+	- Deterministic across runs given same TSV
+	"""
 	path = tsv_path or _env_path()
 	if not os.path.exists(path):
 		raise RuntimeError(f"IAB TSV not found at {path}")
-	items: List[Dict] = []
+
+	nodes: List[Dict] = []
+	headers: list[str] = []
 	with _open_text_sig(path) as f:
-		reader = csv.DictReader(f, delimiter="\t")
+		text = f.read()
+		lines = [ln for ln in text.splitlines() if ln is not None]
+		# Find actual header row (some files include a preamble line before the header)
+		header_idx = -1
+		for i, ln in enumerate(lines):
+			if ('Unique ID' in ln) and ('Parent' in ln) and ('Tier 1' in ln):
+				header_idx = i
+				break
+		if header_idx == -1:
+			raise RuntimeError("[IAB] Could not find TSV header row (Unique ID / Parent / Tier 1)")
+		data_str = "\n".join(lines[header_idx:])
+		reader = csv.DictReader(io.StringIO(data_str), delimiter="\t")
 		headers = reader.fieldnames or []
 		global _HEADERS_INFO
 		_HEADERS_INFO = (headers, path)
+		# Header indices by name
+		def get(row: dict, key: str) -> str:
+			v = row.get(key)
+			return str(v).strip() if v is not None else ""
 		for row in reader:
-			code = _pick_first(row, CODE_FIELDS)
-			name = _pick_first(row, NAME_FIELDS)
-			if not code and not name:
+			uid = get(row, "Unique ID")
+			parent_uid = get(row, "Parent") or None
+			name = get(row, "Name")
+			# Build hierarchical path from tiers
+			tiers = [get(row, "Tier 1"), get(row, "Tier 2"), get(row, "Tier 3"), get(row, "Tier 4")]
+			path_names = [t for t in tiers if t]
+			label = name or (path_names[-1] if path_names else "")
+			if not uid or not label:
 				continue
-			if not name:
-				# try tiers/path
-				for k in TIER_FIELDS:
-					v = row.get(k)
-					if v and str(v).strip():
-						name = str(v).strip()
-						if ">" in name:
-							name = name.split(">")[-1].strip()
-						break
-			if not name:
-				continue
-			items.append({"code": (code or "").strip(), "name": name.strip()})
-	if len(items) < 100:
-		raise RuntimeError(f"IAB taxonomy too small: {len(items)} rows at {path}; headers={headers}")
-	# de-dupe
-	seen = set()
-	deduped: List[Dict] = []
-	for it in items:
-		key = (it.get("code") or "", it["name"])
-		if key in seen:
-			continue
-		seen.add(key)
-		deduped.append(it)
-	return deduped
+			if not path_names:
+				path_names = [label]
+			level = len(path_names) if path_names else 1
+			nodes.append({
+				"uid": uid,
+				"parent_uid": parent_uid,
+				"label": label,
+				"path": path_names,
+				"level": level,
+			})
 
+	# Index by parent
+	by_parent: dict[str, List[Dict]] = {}
+	roots: List[Dict] = []
+	for n in nodes:
+		key = n.get("parent_uid") or "__ROOT__"
+		lst = by_parent.get(key, [])
+		lst.append(n)
+		by_parent[key] = lst
+		if n.get("parent_uid") is None:
+			roots.append(n)
+
+	# Sort siblings deterministically by label
+	for k, lst in list(by_parent.items()):
+		lst.sort(key=lambda a: a.get("label", "").lower())
+		by_parent[k] = lst
+	roots.sort(key=lambda a: a.get("label", "").lower())
+
+	# Assign codes
+	code_by_uid: dict[str, str] = {}
+	top_rank_by_uid: dict[str, int] = {}
+
+	for i, root in enumerate(roots):
+		top = f"IAB{i+1}"
+		code_by_uid[root["uid"]] = top
+		top_rank_by_uid[root["uid"]] = i + 1
+		_assign_children(root["uid"], top, by_parent, code_by_uid, top_rank_by_uid, nodes)
+
+	# Build final list
+	codes: List[Dict] = []
+	for n in nodes:
+		uid = n["uid"]
+		code = code_by_uid.get(uid)
+		parent_uid = n.get("parent_uid")
+		parent_code = code_by_uid.get(parent_uid) if parent_uid else None
+		codes.append({
+			"code": code,
+			"label": n["label"],
+			"path": n["path"],
+			"level": n["level"],
+			"parent": parent_code,
+		})
+
+	if len(codes) < 200:
+		raise RuntimeError(f"[IAB] taxonomy too small ({len(codes)}) at {path}")
+
+	return codes
+
+
+def _assign_children(parent_uid: str, parent_code: str, by_parent: dict[str, List[Dict]], code_by_uid: dict[str, str], top_rank_by_uid: dict[str, int], nodes: List[Dict]):
+	kids = by_parent.get(parent_uid) or []
+	# Determine top rank for this subtree by climbing to root via parent links
+	uid_to_parent: dict[str, str | None] = {n["uid"]: n.get("parent_uid") for n in nodes}
+	def top_rank_of(uid: str) -> int:
+		p = uid
+		while True:
+			parent = uid_to_parent.get(p)
+			if not parent:
+				return top_rank_by_uid.get(p, 0)
+			p = parent
+	for idx, child in enumerate(kids):
+		top_rank = top_rank_of(parent_uid)
+		code = f"IAB{top_rank}-{idx+1}"
+		code_by_uid[child["uid"]] = code
+		top_rank_by_uid[child["uid"]] = top_rank
+		_assign_children(child["uid"], code, by_parent, code_by_uid, top_rank_by_uid, nodes)
+
+
+# Legacy/minimal loaders retained for compatibility elsewhere in the app
 
 def load_iab_taxonomy(tsv_path: str | None = None) -> List[Dict]:
 	"""Cached richer loader returning {code,name,path,level}. Prefer this at runtime."""
@@ -360,6 +451,19 @@ def get_taxonomy_codes() -> List[Dict]:
 		'iab_code': it.get('code'),
 		'sensitive': False,
 	} for it in items]
+
+
+@bp.get('/api/iab31')
+def api_iab31():
+	try:
+		codes = parse_iab_tsv(os.getenv('IAB_TSV_PATH'))
+		if not codes or len(codes) < 200:
+			log.error('[IAB] Backend IAB3.1 parse too small: %s', len(codes) if codes else 0)
+			return jsonify({'error': 'taxonomy_unavailable', 'count': len(codes) if codes else 0}), 503
+		return jsonify({ 'version': '3.1', 'source': 'backend', 'codes': codes })
+	except Exception as e:
+		log.exception('[IAB] Backend IAB3.1 parse failed: %s', e)
+		return jsonify({'error': 'taxonomy_unavailable'}), 503
 
 
 __all__ = ["parse_iab_tsv", "load_iab_taxonomy"]

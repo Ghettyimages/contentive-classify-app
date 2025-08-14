@@ -18,7 +18,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build:iab-fallback": "node ../scripts/build_iab_fallback_from_tsv.mjs",
+    "build": "npm run build:iab-fallback && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

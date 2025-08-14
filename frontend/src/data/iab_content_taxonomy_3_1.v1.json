@@ -1,0 +1,7422 @@
+{
+  "version": "3.1",
+  "source": "fallback",
+  "codes": [
+    {
+      "code": "IAB1",
+      "label": "Attractions",
+      "path": [
+        "Attractions"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB1-1",
+      "label": "Amusement and Theme Parks",
+      "path": [
+        "Attractions",
+        "Amusement and Theme Parks"
+      ],
+      "level": 2,
+      "parent": "IAB1"
+    },
+    {
+      "code": "IAB1-2",
+      "label": "Bars & Restaurants",
+      "path": [
+        "Attractions",
+        "Bars & Restaurants"
+      ],
+      "level": 2,
+      "parent": "IAB1"
+    },
+    {
+      "code": "IAB1-3",
+      "label": "Casinos & Gambling",
+      "path": [
+        "Attractions",
+        "Casinos & Gambling"
+      ],
+      "level": 2,
+      "parent": "IAB1"
+    },
+    {
+      "code": "IAB1-4",
+      "label": "Historic Site and Landmark Tours",
+      "path": [
+        "Attractions",
+        "Historic Site and Landmark Tours"
+      ],
+      "level": 2,
+      "parent": "IAB1"
+    },
+    {
+      "code": "IAB1-5",
+      "label": "Malls & Shopping Centers",
+      "path": [
+        "Attractions",
+        "Malls & Shopping Centers"
+      ],
+      "level": 2,
+      "parent": "IAB1"
+    },
+    {
+      "code": "IAB1-6",
+      "label": "Museums & Galleries",
+      "path": [
+        "Attractions",
+        "Museums & Galleries"
+      ],
+      "level": 2,
+      "parent": "IAB1"
+    },
+    {
+      "code": "IAB1-7",
+      "label": "Nightclubs",
+      "path": [
+        "Attractions",
+        "Nightclubs"
+      ],
+      "level": 2,
+      "parent": "IAB1"
+    },
+    {
+      "code": "IAB1-8",
+      "label": "Outdoor Activities",
+      "path": [
+        "Attractions",
+        "Outdoor Activities"
+      ],
+      "level": 2,
+      "parent": "IAB1"
+    },
+    {
+      "code": "IAB1-9",
+      "label": "Parks & Nature",
+      "path": [
+        "Attractions",
+        "Parks & Nature"
+      ],
+      "level": 2,
+      "parent": "IAB1"
+    },
+    {
+      "code": "IAB1-10",
+      "label": "Theater Venues",
+      "path": [
+        "Attractions",
+        "Theater Venues"
+      ],
+      "level": 2,
+      "parent": "IAB1"
+    },
+    {
+      "code": "IAB1-11",
+      "label": "Zoos & Aquariums",
+      "path": [
+        "Attractions",
+        "Zoos & Aquariums"
+      ],
+      "level": 2,
+      "parent": "IAB1"
+    },
+    {
+      "code": "IAB2",
+      "label": "Automotive",
+      "path": [
+        "Automotive"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB2-1",
+      "label": "Auto Body Styles",
+      "path": [
+        "Automotive",
+        "Auto Body Styles"
+      ],
+      "level": 2,
+      "parent": "IAB2"
+    },
+    {
+      "code": "IAB2-1",
+      "label": "Commercial Trucks",
+      "path": [
+        "Automotive",
+        "Auto Body Styles",
+        "Commercial Trucks"
+      ],
+      "level": 3,
+      "parent": "IAB2-1"
+    },
+    {
+      "code": "IAB2-2",
+      "label": "Convertible",
+      "path": [
+        "Automotive",
+        "Auto Body Styles",
+        "Convertible"
+      ],
+      "level": 3,
+      "parent": "IAB2-1"
+    },
+    {
+      "code": "IAB2-3",
+      "label": "Coupe",
+      "path": [
+        "Automotive",
+        "Auto Body Styles",
+        "Coupe"
+      ],
+      "level": 3,
+      "parent": "IAB2-1"
+    },
+    {
+      "code": "IAB2-4",
+      "label": "Crossover",
+      "path": [
+        "Automotive",
+        "Auto Body Styles",
+        "Crossover"
+      ],
+      "level": 3,
+      "parent": "IAB2-1"
+    },
+    {
+      "code": "IAB2-5",
+      "label": "Hatchback",
+      "path": [
+        "Automotive",
+        "Auto Body Styles",
+        "Hatchback"
+      ],
+      "level": 3,
+      "parent": "IAB2-1"
+    },
+    {
+      "code": "IAB2-6",
+      "label": "Microcar",
+      "path": [
+        "Automotive",
+        "Auto Body Styles",
+        "Microcar"
+      ],
+      "level": 3,
+      "parent": "IAB2-1"
+    },
+    {
+      "code": "IAB2-7",
+      "label": "Minivan",
+      "path": [
+        "Automotive",
+        "Auto Body Styles",
+        "Minivan"
+      ],
+      "level": 3,
+      "parent": "IAB2-1"
+    },
+    {
+      "code": "IAB2-8",
+      "label": "Off-Road Vehicles",
+      "path": [
+        "Automotive",
+        "Auto Body Styles",
+        "Off-Road Vehicles"
+      ],
+      "level": 3,
+      "parent": "IAB2-1"
+    },
+    {
+      "code": "IAB2-9",
+      "label": "Pickup Trucks",
+      "path": [
+        "Automotive",
+        "Auto Body Styles",
+        "Pickup Trucks"
+      ],
+      "level": 3,
+      "parent": "IAB2-1"
+    },
+    {
+      "code": "IAB2-10",
+      "label": "Sedan",
+      "path": [
+        "Automotive",
+        "Auto Body Styles",
+        "Sedan"
+      ],
+      "level": 3,
+      "parent": "IAB2-1"
+    },
+    {
+      "code": "IAB2-11",
+      "label": "Station Wagon",
+      "path": [
+        "Automotive",
+        "Auto Body Styles",
+        "Station Wagon"
+      ],
+      "level": 3,
+      "parent": "IAB2-1"
+    },
+    {
+      "code": "IAB2-12",
+      "label": "SUV",
+      "path": [
+        "Automotive",
+        "Auto Body Styles",
+        "SUV"
+      ],
+      "level": 3,
+      "parent": "IAB2-1"
+    },
+    {
+      "code": "IAB2-13",
+      "label": "Van",
+      "path": [
+        "Automotive",
+        "Auto Body Styles",
+        "Van"
+      ],
+      "level": 3,
+      "parent": "IAB2-1"
+    },
+    {
+      "code": "IAB2-2",
+      "label": "Auto Buying and Selling",
+      "path": [
+        "Automotive",
+        "Auto Buying and Selling"
+      ],
+      "level": 2,
+      "parent": "IAB2"
+    },
+    {
+      "code": "IAB2-3",
+      "label": "Auto Insurance",
+      "path": [
+        "Automotive",
+        "Auto Insurance"
+      ],
+      "level": 2,
+      "parent": "IAB2"
+    },
+    {
+      "code": "IAB2-4",
+      "label": "Auto Parts",
+      "path": [
+        "Automotive",
+        "Auto Parts"
+      ],
+      "level": 2,
+      "parent": "IAB2"
+    },
+    {
+      "code": "IAB2-5",
+      "label": "Auto Recalls",
+      "path": [
+        "Automotive",
+        "Auto Recalls"
+      ],
+      "level": 2,
+      "parent": "IAB2"
+    },
+    {
+      "code": "IAB2-6",
+      "label": "Auto Rentals",
+      "path": [
+        "Automotive",
+        "Auto Rentals"
+      ],
+      "level": 2,
+      "parent": "IAB2"
+    },
+    {
+      "code": "IAB2-7",
+      "label": "Auto Repair",
+      "path": [
+        "Automotive",
+        "Auto Repair"
+      ],
+      "level": 2,
+      "parent": "IAB2"
+    },
+    {
+      "code": "IAB2-8",
+      "label": "Auto Safety",
+      "path": [
+        "Automotive",
+        "Auto Safety"
+      ],
+      "level": 2,
+      "parent": "IAB2"
+    },
+    {
+      "code": "IAB2-9",
+      "label": "Auto Shows",
+      "path": [
+        "Automotive",
+        "Auto Shows"
+      ],
+      "level": 2,
+      "parent": "IAB2"
+    },
+    {
+      "code": "IAB2-10",
+      "label": "Auto Technology",
+      "path": [
+        "Automotive",
+        "Auto Technology"
+      ],
+      "level": 2,
+      "parent": "IAB2"
+    },
+    {
+      "code": "IAB2-1",
+      "label": "Auto Infotainment Technologies",
+      "path": [
+        "Automotive",
+        "Auto Technology",
+        "Auto Infotainment Technologies"
+      ],
+      "level": 3,
+      "parent": "IAB2-10"
+    },
+    {
+      "code": "IAB2-2",
+      "label": "Auto Navigation Systems",
+      "path": [
+        "Automotive",
+        "Auto Technology",
+        "Auto Navigation Systems"
+      ],
+      "level": 3,
+      "parent": "IAB2-10"
+    },
+    {
+      "code": "IAB2-3",
+      "label": "Auto Safety Technologies",
+      "path": [
+        "Automotive",
+        "Auto Technology",
+        "Auto Safety Technologies"
+      ],
+      "level": 3,
+      "parent": "IAB2-10"
+    },
+    {
+      "code": "IAB2-11",
+      "label": "Auto Type",
+      "path": [
+        "Automotive",
+        "Auto Type"
+      ],
+      "level": 2,
+      "parent": "IAB2"
+    },
+    {
+      "code": "IAB2-1",
+      "label": "Budget Cars",
+      "path": [
+        "Automotive",
+        "Auto Type",
+        "Budget Cars"
+      ],
+      "level": 3,
+      "parent": "IAB2-11"
+    },
+    {
+      "code": "IAB2-2",
+      "label": "Certified Pre-Owned Cars",
+      "path": [
+        "Automotive",
+        "Auto Type",
+        "Certified Pre-Owned Cars"
+      ],
+      "level": 3,
+      "parent": "IAB2-11"
+    },
+    {
+      "code": "IAB2-3",
+      "label": "Classic Cars",
+      "path": [
+        "Automotive",
+        "Auto Type",
+        "Classic Cars"
+      ],
+      "level": 3,
+      "parent": "IAB2-11"
+    },
+    {
+      "code": "IAB2-4",
+      "label": "Concept Cars",
+      "path": [
+        "Automotive",
+        "Auto Type",
+        "Concept Cars"
+      ],
+      "level": 3,
+      "parent": "IAB2-11"
+    },
+    {
+      "code": "IAB2-5",
+      "label": "Driverless Cars",
+      "path": [
+        "Automotive",
+        "Auto Type",
+        "Driverless Cars"
+      ],
+      "level": 3,
+      "parent": "IAB2-11"
+    },
+    {
+      "code": "IAB2-6",
+      "label": "Green Vehicles",
+      "path": [
+        "Automotive",
+        "Auto Type",
+        "Green Vehicles"
+      ],
+      "level": 3,
+      "parent": "IAB2-11"
+    },
+    {
+      "code": "IAB2-7",
+      "label": "Luxury Cars",
+      "path": [
+        "Automotive",
+        "Auto Type",
+        "Luxury Cars"
+      ],
+      "level": 3,
+      "parent": "IAB2-11"
+    },
+    {
+      "code": "IAB2-8",
+      "label": "Performance Cars",
+      "path": [
+        "Automotive",
+        "Auto Type",
+        "Performance Cars"
+      ],
+      "level": 3,
+      "parent": "IAB2-11"
+    },
+    {
+      "code": "IAB2-12",
+      "label": "Car Culture",
+      "path": [
+        "Automotive",
+        "Car Culture"
+      ],
+      "level": 2,
+      "parent": "IAB2"
+    },
+    {
+      "code": "IAB2-13",
+      "label": "Dash Cam Videos",
+      "path": [
+        "Automotive",
+        "Dash Cam Videos"
+      ],
+      "level": 2,
+      "parent": "IAB2"
+    },
+    {
+      "code": "IAB2-14",
+      "label": "Motorcycles",
+      "path": [
+        "Automotive",
+        "Motorcycles"
+      ],
+      "level": 2,
+      "parent": "IAB2"
+    },
+    {
+      "code": "IAB2-15",
+      "label": "Road-Side Assistance",
+      "path": [
+        "Automotive",
+        "Road-Side Assistance"
+      ],
+      "level": 2,
+      "parent": "IAB2"
+    },
+    {
+      "code": "IAB2-16",
+      "label": "Scooters",
+      "path": [
+        "Automotive",
+        "Scooters"
+      ],
+      "level": 2,
+      "parent": "IAB2"
+    },
+    {
+      "code": "IAB3",
+      "label": "Books and Literature",
+      "path": [
+        "Books and Literature"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB3-1",
+      "label": "Art and Photography",
+      "path": [
+        "Books and Literature",
+        "Art and Photography"
+      ],
+      "level": 2,
+      "parent": "IAB3"
+    },
+    {
+      "code": "IAB3-2",
+      "label": "Comics and Graphic Novels",
+      "path": [
+        "Books and Literature",
+        "Comics and Graphic Novels"
+      ],
+      "level": 2,
+      "parent": "IAB3"
+    },
+    {
+      "code": "IAB3-3",
+      "label": "Fiction",
+      "path": [
+        "Books and Literature",
+        "Fiction"
+      ],
+      "level": 2,
+      "parent": "IAB3"
+    },
+    {
+      "code": "IAB3-4",
+      "label": "Poetry",
+      "path": [
+        "Books and Literature",
+        "Poetry"
+      ],
+      "level": 2,
+      "parent": "IAB3"
+    },
+    {
+      "code": "IAB4",
+      "label": "Business and Finance",
+      "path": [
+        "Business and Finance"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB4-1",
+      "label": "Business",
+      "path": [
+        "Business and Finance",
+        "Business"
+      ],
+      "level": 2,
+      "parent": "IAB4"
+    },
+    {
+      "code": "IAB4-1",
+      "label": "Business Accounting & Finance",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Business Accounting & Finance"
+      ],
+      "level": 3,
+      "parent": "IAB4-1"
+    },
+    {
+      "code": "IAB4-2",
+      "label": "Business Administration",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Business Administration"
+      ],
+      "level": 3,
+      "parent": "IAB4-1"
+    },
+    {
+      "code": "IAB4-3",
+      "label": "Business Banking & Finance",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Business Banking & Finance"
+      ],
+      "level": 3,
+      "parent": "IAB4-1"
+    },
+    {
+      "code": "IAB4-1",
+      "label": "Angel Investment",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Business Banking & Finance",
+        "Angel Investment"
+      ],
+      "level": 4,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-2",
+      "label": "Bankruptcy",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Business Banking & Finance",
+        "Bankruptcy"
+      ],
+      "level": 4,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-3",
+      "label": "Business Loans",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Business Banking & Finance",
+        "Business Loans"
+      ],
+      "level": 4,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-4",
+      "label": "Debt Factoring & Invoice Discounting",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Business Banking & Finance",
+        "Debt Factoring & Invoice Discounting"
+      ],
+      "level": 4,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-5",
+      "label": "Mergers and Acquisitions",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Business Banking & Finance",
+        "Mergers and Acquisitions"
+      ],
+      "level": 4,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-6",
+      "label": "Private Equity",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Business Banking & Finance",
+        "Private Equity"
+      ],
+      "level": 4,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-7",
+      "label": "Sale & Lease Back",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Business Banking & Finance",
+        "Sale & Lease Back"
+      ],
+      "level": 4,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-8",
+      "label": "Venture Capital",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Business Banking & Finance",
+        "Venture Capital"
+      ],
+      "level": 4,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-4",
+      "label": "Business I.T.",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Business I.T."
+      ],
+      "level": 3,
+      "parent": "IAB4-1"
+    },
+    {
+      "code": "IAB4-5",
+      "label": "Business Operations",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Business Operations"
+      ],
+      "level": 3,
+      "parent": "IAB4-1"
+    },
+    {
+      "code": "IAB4-6",
+      "label": "Business Utilities",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Business Utilities"
+      ],
+      "level": 3,
+      "parent": "IAB4-1"
+    },
+    {
+      "code": "IAB4-7",
+      "label": "Consumer Issues",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Consumer Issues"
+      ],
+      "level": 3,
+      "parent": "IAB4-1"
+    },
+    {
+      "code": "IAB4-1",
+      "label": "Recalls",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Consumer Issues",
+        "Recalls"
+      ],
+      "level": 4,
+      "parent": "IAB4-7"
+    },
+    {
+      "code": "IAB4-8",
+      "label": "Executive Leadership & Management",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Executive Leadership & Management"
+      ],
+      "level": 3,
+      "parent": "IAB4-1"
+    },
+    {
+      "code": "IAB4-9",
+      "label": "Government Business",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Government Business"
+      ],
+      "level": 3,
+      "parent": "IAB4-1"
+    },
+    {
+      "code": "IAB4-10",
+      "label": "Green Solutions",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Green Solutions"
+      ],
+      "level": 3,
+      "parent": "IAB4-1"
+    },
+    {
+      "code": "IAB4-11",
+      "label": "Human Resources",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Human Resources"
+      ],
+      "level": 3,
+      "parent": "IAB4-1"
+    },
+    {
+      "code": "IAB4-12",
+      "label": "Large Business",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Large Business"
+      ],
+      "level": 3,
+      "parent": "IAB4-1"
+    },
+    {
+      "code": "IAB4-13",
+      "label": "Logistics",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Logistics"
+      ],
+      "level": 3,
+      "parent": "IAB4-1"
+    },
+    {
+      "code": "IAB4-14",
+      "label": "Marketing and Advertising",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Marketing and Advertising"
+      ],
+      "level": 3,
+      "parent": "IAB4-1"
+    },
+    {
+      "code": "IAB4-15",
+      "label": "Sales",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Sales"
+      ],
+      "level": 3,
+      "parent": "IAB4-1"
+    },
+    {
+      "code": "IAB4-16",
+      "label": "Small and Medium-sized Business",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Small and Medium-sized Business"
+      ],
+      "level": 3,
+      "parent": "IAB4-1"
+    },
+    {
+      "code": "IAB4-17",
+      "label": "Startups",
+      "path": [
+        "Business and Finance",
+        "Business",
+        "Startups"
+      ],
+      "level": 3,
+      "parent": "IAB4-1"
+    },
+    {
+      "code": "IAB4-2",
+      "label": "Economy",
+      "path": [
+        "Business and Finance",
+        "Economy"
+      ],
+      "level": 2,
+      "parent": "IAB4"
+    },
+    {
+      "code": "IAB4-1",
+      "label": "Commodities",
+      "path": [
+        "Business and Finance",
+        "Economy",
+        "Commodities"
+      ],
+      "level": 3,
+      "parent": "IAB4-2"
+    },
+    {
+      "code": "IAB4-2",
+      "label": "Currencies",
+      "path": [
+        "Business and Finance",
+        "Economy",
+        "Currencies"
+      ],
+      "level": 3,
+      "parent": "IAB4-2"
+    },
+    {
+      "code": "IAB4-3",
+      "label": "Financial Crisis",
+      "path": [
+        "Business and Finance",
+        "Economy",
+        "Financial Crisis"
+      ],
+      "level": 3,
+      "parent": "IAB4-2"
+    },
+    {
+      "code": "IAB4-4",
+      "label": "Financial Reform",
+      "path": [
+        "Business and Finance",
+        "Economy",
+        "Financial Reform"
+      ],
+      "level": 3,
+      "parent": "IAB4-2"
+    },
+    {
+      "code": "IAB4-5",
+      "label": "Financial Regulation",
+      "path": [
+        "Business and Finance",
+        "Economy",
+        "Financial Regulation"
+      ],
+      "level": 3,
+      "parent": "IAB4-2"
+    },
+    {
+      "code": "IAB4-6",
+      "label": "Gasoline Prices",
+      "path": [
+        "Business and Finance",
+        "Economy",
+        "Gasoline Prices"
+      ],
+      "level": 3,
+      "parent": "IAB4-2"
+    },
+    {
+      "code": "IAB4-7",
+      "label": "Housing Market",
+      "path": [
+        "Business and Finance",
+        "Economy",
+        "Housing Market"
+      ],
+      "level": 3,
+      "parent": "IAB4-2"
+    },
+    {
+      "code": "IAB4-8",
+      "label": "Interest Rates",
+      "path": [
+        "Business and Finance",
+        "Economy",
+        "Interest Rates"
+      ],
+      "level": 3,
+      "parent": "IAB4-2"
+    },
+    {
+      "code": "IAB4-9",
+      "label": "Job Market",
+      "path": [
+        "Business and Finance",
+        "Economy",
+        "Job Market"
+      ],
+      "level": 3,
+      "parent": "IAB4-2"
+    },
+    {
+      "code": "IAB4-3",
+      "label": "Industries",
+      "path": [
+        "Business and Finance",
+        "Industries"
+      ],
+      "level": 2,
+      "parent": "IAB4"
+    },
+    {
+      "code": "IAB4-1",
+      "label": "Advertising Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Advertising Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-2",
+      "label": "Agriculture",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Agriculture"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-3",
+      "label": "Apparel Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Apparel Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-4",
+      "label": "Automotive Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Automotive Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-5",
+      "label": "Aviation Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Aviation Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-6",
+      "label": "Biotech and Biomedical Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Biotech and Biomedical Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-7",
+      "label": "Civil Engineering Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Civil Engineering Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-8",
+      "label": "Construction Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Construction Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-9",
+      "label": "Defense Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Defense Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-10",
+      "label": "Education industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Education industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-11",
+      "label": "Entertainment Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Entertainment Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-12",
+      "label": "Environmental Services Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Environmental Services Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-13",
+      "label": "Financial Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Financial Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-14",
+      "label": "Food Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Food Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-15",
+      "label": "Healthcare Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Healthcare Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-16",
+      "label": "Hospitality Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Hospitality Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-17",
+      "label": "Information Services Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Information Services Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-18",
+      "label": "Legal Services Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Legal Services Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-19",
+      "label": "Logistics and Transportation Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Logistics and Transportation Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-20",
+      "label": "Management Consulting Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Management Consulting Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-21",
+      "label": "Manufacturing Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Manufacturing Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-22",
+      "label": "Mechanical and Industrial Engineering Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Mechanical and Industrial Engineering Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-23",
+      "label": "Media Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Media Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-24",
+      "label": "Metals Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Metals Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-25",
+      "label": "Non-Profit Organizations",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Non-Profit Organizations"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-26",
+      "label": "Pharmaceutical Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Pharmaceutical Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-27",
+      "label": "Power and Energy Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Power and Energy Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-28",
+      "label": "Publishing Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Publishing Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-29",
+      "label": "Real Estate Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Real Estate Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-30",
+      "label": "Retail Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Retail Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-31",
+      "label": "Technology Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Technology Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB4-32",
+      "label": "Telecommunications Industry",
+      "path": [
+        "Business and Finance",
+        "Industries",
+        "Telecommunications Industry"
+      ],
+      "level": 3,
+      "parent": "IAB4-3"
+    },
+    {
+      "code": "IAB5",
+      "label": "Careers",
+      "path": [
+        "Careers"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB5-1",
+      "label": "Apprenticeships",
+      "path": [
+        "Careers",
+        "Apprenticeships"
+      ],
+      "level": 2,
+      "parent": "IAB5"
+    },
+    {
+      "code": "IAB5-2",
+      "label": "Career Advice",
+      "path": [
+        "Careers",
+        "Career Advice"
+      ],
+      "level": 2,
+      "parent": "IAB5"
+    },
+    {
+      "code": "IAB5-3",
+      "label": "Career Planning",
+      "path": [
+        "Careers",
+        "Career Planning"
+      ],
+      "level": 2,
+      "parent": "IAB5"
+    },
+    {
+      "code": "IAB5-4",
+      "label": "Job Search",
+      "path": [
+        "Careers",
+        "Job Search"
+      ],
+      "level": 2,
+      "parent": "IAB5"
+    },
+    {
+      "code": "IAB5-1",
+      "label": "Job Fairs",
+      "path": [
+        "Careers",
+        "Job Search",
+        "Job Fairs"
+      ],
+      "level": 3,
+      "parent": "IAB5-4"
+    },
+    {
+      "code": "IAB5-2",
+      "label": "Resume Writing and Advice",
+      "path": [
+        "Careers",
+        "Job Search",
+        "Resume Writing and Advice"
+      ],
+      "level": 3,
+      "parent": "IAB5-4"
+    },
+    {
+      "code": "IAB5-5",
+      "label": "Remote Working",
+      "path": [
+        "Careers",
+        "Remote Working"
+      ],
+      "level": 2,
+      "parent": "IAB5"
+    },
+    {
+      "code": "IAB5-6",
+      "label": "Vocational Training",
+      "path": [
+        "Careers",
+        "Vocational Training"
+      ],
+      "level": 2,
+      "parent": "IAB5"
+    },
+    {
+      "code": "IAB6",
+      "label": "Communication",
+      "path": [
+        "Communication"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB7",
+      "label": "Crime",
+      "path": [
+        "Crime"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB8",
+      "label": "Disasters",
+      "path": [
+        "Disasters"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB9",
+      "label": "Education",
+      "path": [
+        "Education"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB9-1",
+      "label": "Adult Education",
+      "path": [
+        "Education",
+        "Adult Education"
+      ],
+      "level": 2,
+      "parent": "IAB9"
+    },
+    {
+      "code": "IAB9-2",
+      "label": "College Education",
+      "path": [
+        "Education",
+        "College Education"
+      ],
+      "level": 2,
+      "parent": "IAB9"
+    },
+    {
+      "code": "IAB9-1",
+      "label": "College Planning",
+      "path": [
+        "Education",
+        "College Education",
+        "College Planning"
+      ],
+      "level": 3,
+      "parent": "IAB9-2"
+    },
+    {
+      "code": "IAB9-2",
+      "label": "Postgraduate Education",
+      "path": [
+        "Education",
+        "College Education",
+        "Postgraduate Education"
+      ],
+      "level": 3,
+      "parent": "IAB9-2"
+    },
+    {
+      "code": "IAB9-1",
+      "label": "Professional School",
+      "path": [
+        "Education",
+        "College Education",
+        "Postgraduate Education",
+        "Professional School"
+      ],
+      "level": 4,
+      "parent": "IAB9-2"
+    },
+    {
+      "code": "IAB9-3",
+      "label": "Undergraduate Education",
+      "path": [
+        "Education",
+        "College Education",
+        "Undergraduate Education"
+      ],
+      "level": 3,
+      "parent": "IAB9-2"
+    },
+    {
+      "code": "IAB9-3",
+      "label": "Early Childhood Education",
+      "path": [
+        "Education",
+        "Early Childhood Education"
+      ],
+      "level": 2,
+      "parent": "IAB9"
+    },
+    {
+      "code": "IAB9-4",
+      "label": "Educational Assessment",
+      "path": [
+        "Education",
+        "Educational Assessment"
+      ],
+      "level": 2,
+      "parent": "IAB9"
+    },
+    {
+      "code": "IAB9-1",
+      "label": "Standardized Testing",
+      "path": [
+        "Education",
+        "Educational Assessment",
+        "Standardized Testing"
+      ],
+      "level": 3,
+      "parent": "IAB9-4"
+    },
+    {
+      "code": "IAB9-5",
+      "label": "Homeschooling",
+      "path": [
+        "Education",
+        "Homeschooling"
+      ],
+      "level": 2,
+      "parent": "IAB9"
+    },
+    {
+      "code": "IAB9-6",
+      "label": "Homework and Study",
+      "path": [
+        "Education",
+        "Homework and Study"
+      ],
+      "level": 2,
+      "parent": "IAB9"
+    },
+    {
+      "code": "IAB9-7",
+      "label": "Language Learning",
+      "path": [
+        "Education",
+        "Language Learning"
+      ],
+      "level": 2,
+      "parent": "IAB9"
+    },
+    {
+      "code": "IAB9-8",
+      "label": "Online Education",
+      "path": [
+        "Education",
+        "Online Education"
+      ],
+      "level": 2,
+      "parent": "IAB9"
+    },
+    {
+      "code": "IAB9-9",
+      "label": "Primary Education",
+      "path": [
+        "Education",
+        "Primary Education"
+      ],
+      "level": 2,
+      "parent": "IAB9"
+    },
+    {
+      "code": "IAB9-10",
+      "label": "Private School",
+      "path": [
+        "Education",
+        "Private School"
+      ],
+      "level": 2,
+      "parent": "IAB9"
+    },
+    {
+      "code": "IAB9-11",
+      "label": "Secondary Education",
+      "path": [
+        "Education",
+        "Secondary Education"
+      ],
+      "level": 2,
+      "parent": "IAB9"
+    },
+    {
+      "code": "IAB9-12",
+      "label": "Special Education",
+      "path": [
+        "Education",
+        "Special Education"
+      ],
+      "level": 2,
+      "parent": "IAB9"
+    },
+    {
+      "code": "IAB10",
+      "label": "Entertainment",
+      "path": [
+        "Entertainment"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB10-1",
+      "label": "Movies",
+      "path": [
+        "Entertainment",
+        "Movies"
+      ],
+      "level": 2,
+      "parent": "IAB10"
+    },
+    {
+      "code": "IAB10-2",
+      "label": "Music",
+      "path": [
+        "Entertainment",
+        "Music"
+      ],
+      "level": 2,
+      "parent": "IAB10"
+    },
+    {
+      "code": "IAB10-3",
+      "label": "Television",
+      "path": [
+        "Entertainment",
+        "Television"
+      ],
+      "level": 2,
+      "parent": "IAB10"
+    },
+    {
+      "code": "IAB11",
+      "label": "Events",
+      "path": [
+        "Events"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB11-1",
+      "label": "Awards Shows",
+      "path": [
+        "Events",
+        "Awards Shows"
+      ],
+      "level": 2,
+      "parent": "IAB11"
+    },
+    {
+      "code": "IAB11-2",
+      "label": "Business Expos & Conferences",
+      "path": [
+        "Events",
+        "Business Expos & Conferences"
+      ],
+      "level": 2,
+      "parent": "IAB11"
+    },
+    {
+      "code": "IAB11-3",
+      "label": "Fan Conventions",
+      "path": [
+        "Events",
+        "Fan Conventions"
+      ],
+      "level": 2,
+      "parent": "IAB11"
+    },
+    {
+      "code": "IAB12",
+      "label": "Family and Relationships",
+      "path": [
+        "Family and Relationships"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB12-1",
+      "label": "Bereavement",
+      "path": [
+        "Family and Relationships",
+        "Bereavement"
+      ],
+      "level": 2,
+      "parent": "IAB12"
+    },
+    {
+      "code": "IAB12-2",
+      "label": "Dating",
+      "path": [
+        "Family and Relationships",
+        "Dating"
+      ],
+      "level": 2,
+      "parent": "IAB12"
+    },
+    {
+      "code": "IAB12-3",
+      "label": "Divorce",
+      "path": [
+        "Family and Relationships",
+        "Divorce"
+      ],
+      "level": 2,
+      "parent": "IAB12"
+    },
+    {
+      "code": "IAB12-4",
+      "label": "Eldercare",
+      "path": [
+        "Family and Relationships",
+        "Eldercare"
+      ],
+      "level": 2,
+      "parent": "IAB12"
+    },
+    {
+      "code": "IAB12-5",
+      "label": "Marriage and Civil Unions",
+      "path": [
+        "Family and Relationships",
+        "Marriage and Civil Unions"
+      ],
+      "level": 2,
+      "parent": "IAB12"
+    },
+    {
+      "code": "IAB12-6",
+      "label": "Parenting",
+      "path": [
+        "Family and Relationships",
+        "Parenting"
+      ],
+      "level": 2,
+      "parent": "IAB12"
+    },
+    {
+      "code": "IAB12-1",
+      "label": "Adoption and Fostering",
+      "path": [
+        "Family and Relationships",
+        "Parenting",
+        "Adoption and Fostering"
+      ],
+      "level": 3,
+      "parent": "IAB12-6"
+    },
+    {
+      "code": "IAB12-2",
+      "label": "Daycare and Pre-School",
+      "path": [
+        "Family and Relationships",
+        "Parenting",
+        "Daycare and Pre-School"
+      ],
+      "level": 3,
+      "parent": "IAB12-6"
+    },
+    {
+      "code": "IAB12-3",
+      "label": "Internet Safety",
+      "path": [
+        "Family and Relationships",
+        "Parenting",
+        "Internet Safety"
+      ],
+      "level": 3,
+      "parent": "IAB12-6"
+    },
+    {
+      "code": "IAB12-4",
+      "label": "Parenting Babies and Toddlers",
+      "path": [
+        "Family and Relationships",
+        "Parenting",
+        "Parenting Babies and Toddlers"
+      ],
+      "level": 3,
+      "parent": "IAB12-6"
+    },
+    {
+      "code": "IAB12-5",
+      "label": "Parenting Children Aged 4-11",
+      "path": [
+        "Family and Relationships",
+        "Parenting",
+        "Parenting Children Aged 4-11"
+      ],
+      "level": 3,
+      "parent": "IAB12-6"
+    },
+    {
+      "code": "IAB12-6",
+      "label": "Parenting Teens",
+      "path": [
+        "Family and Relationships",
+        "Parenting",
+        "Parenting Teens"
+      ],
+      "level": 3,
+      "parent": "IAB12-6"
+    },
+    {
+      "code": "IAB12-7",
+      "label": "Special Needs Kids",
+      "path": [
+        "Family and Relationships",
+        "Parenting",
+        "Special Needs Kids"
+      ],
+      "level": 3,
+      "parent": "IAB12-6"
+    },
+    {
+      "code": "IAB12-7",
+      "label": "Single Life",
+      "path": [
+        "Family and Relationships",
+        "Single Life"
+      ],
+      "level": 2,
+      "parent": "IAB12"
+    },
+    {
+      "code": "IAB13",
+      "label": "Fine Art",
+      "path": [
+        "Fine Art"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB13-1",
+      "label": "Costume",
+      "path": [
+        "Fine Art",
+        "Costume"
+      ],
+      "level": 2,
+      "parent": "IAB13"
+    },
+    {
+      "code": "IAB13-2",
+      "label": "Dance",
+      "path": [
+        "Fine Art",
+        "Dance"
+      ],
+      "level": 2,
+      "parent": "IAB13"
+    },
+    {
+      "code": "IAB13-3",
+      "label": "Design",
+      "path": [
+        "Fine Art",
+        "Design"
+      ],
+      "level": 2,
+      "parent": "IAB13"
+    },
+    {
+      "code": "IAB13-4",
+      "label": "Digital Arts",
+      "path": [
+        "Fine Art",
+        "Digital Arts"
+      ],
+      "level": 2,
+      "parent": "IAB13"
+    },
+    {
+      "code": "IAB13-5",
+      "label": "Fine Art Photography",
+      "path": [
+        "Fine Art",
+        "Fine Art Photography"
+      ],
+      "level": 2,
+      "parent": "IAB13"
+    },
+    {
+      "code": "IAB13-6",
+      "label": "Modern Art",
+      "path": [
+        "Fine Art",
+        "Modern Art"
+      ],
+      "level": 2,
+      "parent": "IAB13"
+    },
+    {
+      "code": "IAB13-7",
+      "label": "Opera",
+      "path": [
+        "Fine Art",
+        "Opera"
+      ],
+      "level": 2,
+      "parent": "IAB13"
+    },
+    {
+      "code": "IAB13-8",
+      "label": "Theater",
+      "path": [
+        "Fine Art",
+        "Theater"
+      ],
+      "level": 2,
+      "parent": "IAB13"
+    },
+    {
+      "code": "IAB14",
+      "label": "Food & Drink",
+      "path": [
+        "Food & Drink"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB14-1",
+      "label": "Alcoholic Beverages",
+      "path": [
+        "Food & Drink",
+        "Alcoholic Beverages"
+      ],
+      "level": 2,
+      "parent": "IAB14"
+    },
+    {
+      "code": "IAB14-2",
+      "label": "Barbecues and Grilling",
+      "path": [
+        "Food & Drink",
+        "Barbecues and Grilling"
+      ],
+      "level": 2,
+      "parent": "IAB14"
+    },
+    {
+      "code": "IAB14-3",
+      "label": "Cooking",
+      "path": [
+        "Food & Drink",
+        "Cooking"
+      ],
+      "level": 2,
+      "parent": "IAB14"
+    },
+    {
+      "code": "IAB14-4",
+      "label": "Desserts and Baking",
+      "path": [
+        "Food & Drink",
+        "Desserts and Baking"
+      ],
+      "level": 2,
+      "parent": "IAB14"
+    },
+    {
+      "code": "IAB14-5",
+      "label": "Dining Out",
+      "path": [
+        "Food & Drink",
+        "Dining Out"
+      ],
+      "level": 2,
+      "parent": "IAB14"
+    },
+    {
+      "code": "IAB14-6",
+      "label": "Food Allergies",
+      "path": [
+        "Food & Drink",
+        "Food Allergies"
+      ],
+      "level": 2,
+      "parent": "IAB14"
+    },
+    {
+      "code": "IAB14-7",
+      "label": "Food Movements",
+      "path": [
+        "Food & Drink",
+        "Food Movements"
+      ],
+      "level": 2,
+      "parent": "IAB14"
+    },
+    {
+      "code": "IAB14-8",
+      "label": "Healthy Cooking and Eating",
+      "path": [
+        "Food & Drink",
+        "Healthy Cooking and Eating"
+      ],
+      "level": 2,
+      "parent": "IAB14"
+    },
+    {
+      "code": "IAB14-9",
+      "label": "Non-Alcoholic Beverages",
+      "path": [
+        "Food & Drink",
+        "Non-Alcoholic Beverages"
+      ],
+      "level": 2,
+      "parent": "IAB14"
+    },
+    {
+      "code": "IAB14-10",
+      "label": "Vegan Diets",
+      "path": [
+        "Food & Drink",
+        "Vegan Diets"
+      ],
+      "level": 2,
+      "parent": "IAB14"
+    },
+    {
+      "code": "IAB14-11",
+      "label": "Vegetarian Diets",
+      "path": [
+        "Food & Drink",
+        "Vegetarian Diets"
+      ],
+      "level": 2,
+      "parent": "IAB14"
+    },
+    {
+      "code": "IAB14-12",
+      "label": "World Cuisines",
+      "path": [
+        "Food & Drink",
+        "World Cuisines"
+      ],
+      "level": 2,
+      "parent": "IAB14"
+    },
+    {
+      "code": "IAB15",
+      "label": "Genres",
+      "path": [
+        "Genres"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB15-17",
+      "label": "Nature",
+      "path": [
+        "Genres",
+        "Nature"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-1",
+      "label": "Action/Adventure",
+      "path": [
+        "Genres",
+        "Action/Adventure"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-2",
+      "label": "Animation & Anime",
+      "path": [
+        "Genres",
+        "Animation & Anime"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-3",
+      "label": "Biographies",
+      "path": [
+        "Genres",
+        "Biographies"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-4",
+      "label": "Comedy",
+      "path": [
+        "Genres",
+        "Comedy"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-5",
+      "label": "Documentary",
+      "path": [
+        "Genres",
+        "Documentary"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-6",
+      "label": "Drama",
+      "path": [
+        "Genres",
+        "Drama"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-7",
+      "label": "Factual",
+      "path": [
+        "Genres",
+        "Factual"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-8",
+      "label": "Family/Children",
+      "path": [
+        "Genres",
+        "Family/Children"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-9",
+      "label": "Fantasy",
+      "path": [
+        "Genres",
+        "Fantasy"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-10",
+      "label": "History",
+      "path": [
+        "Genres",
+        "History"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-11",
+      "label": "Holiday",
+      "path": [
+        "Genres",
+        "Holiday"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-12",
+      "label": "Horror",
+      "path": [
+        "Genres",
+        "Horror"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-13",
+      "label": "Lifestyle",
+      "path": [
+        "Genres",
+        "Lifestyle"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-14",
+      "label": "Music Video",
+      "path": [
+        "Genres",
+        "Music Video"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-15",
+      "label": "Musical",
+      "path": [
+        "Genres",
+        "Musical"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-16",
+      "label": "Mystery",
+      "path": [
+        "Genres",
+        "Mystery"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-19",
+      "label": "Reality TV",
+      "path": [
+        "Genres",
+        "Reality TV"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-20",
+      "label": "Romance",
+      "path": [
+        "Genres",
+        "Romance"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-21",
+      "label": "Science Fiction",
+      "path": [
+        "Genres",
+        "Science Fiction"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-22",
+      "label": "Soap Opera",
+      "path": [
+        "Genres",
+        "Soap Opera"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-23",
+      "label": "Special Interest (Indie/Art House)",
+      "path": [
+        "Genres",
+        "Special Interest (Indie/Art House)"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-24",
+      "label": "Sports Radio",
+      "path": [
+        "Genres",
+        "Sports Radio"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-25",
+      "label": "Talk Radio",
+      "path": [
+        "Genres",
+        "Talk Radio"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-18",
+      "label": "Public Radio",
+      "path": [
+        "Genres",
+        "Talk Radio",
+        "Public Radio"
+      ],
+      "level": 3,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-26",
+      "label": "Talk Show",
+      "path": [
+        "Genres",
+        "Talk Show"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-28",
+      "label": "True Crime",
+      "path": [
+        "Genres",
+        "True Crime"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-29",
+      "label": "Western",
+      "path": [
+        "Genres",
+        "Western"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-30",
+      "label": "Young Adult",
+      "path": [
+        "Genres",
+        "Young Adult"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB15-27",
+      "label": "Thriller",
+      "path": [
+        "Genres",
+        "Thriller"
+      ],
+      "level": 2,
+      "parent": "IAB15"
+    },
+    {
+      "code": "IAB16",
+      "label": "Healthy Living",
+      "path": [
+        "Healthy Living"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB16-1",
+      "label": "Children's Health",
+      "path": [
+        "Healthy Living",
+        "Children's Health"
+      ],
+      "level": 2,
+      "parent": "IAB16"
+    },
+    {
+      "code": "IAB16-2",
+      "label": "Fitness and Exercise",
+      "path": [
+        "Healthy Living",
+        "Fitness and Exercise"
+      ],
+      "level": 2,
+      "parent": "IAB16"
+    },
+    {
+      "code": "IAB16-1",
+      "label": "Participant Sports",
+      "path": [
+        "Healthy Living",
+        "Fitness and Exercise",
+        "Participant Sports"
+      ],
+      "level": 3,
+      "parent": "IAB16-2"
+    },
+    {
+      "code": "IAB16-2",
+      "label": "Running and Jogging",
+      "path": [
+        "Healthy Living",
+        "Fitness and Exercise",
+        "Running and Jogging"
+      ],
+      "level": 3,
+      "parent": "IAB16-2"
+    },
+    {
+      "code": "IAB16-3",
+      "label": "Men's Health",
+      "path": [
+        "Healthy Living",
+        "Men's Health"
+      ],
+      "level": 2,
+      "parent": "IAB16"
+    },
+    {
+      "code": "IAB16-4",
+      "label": "Nutrition",
+      "path": [
+        "Healthy Living",
+        "Nutrition"
+      ],
+      "level": 2,
+      "parent": "IAB16"
+    },
+    {
+      "code": "IAB16-5",
+      "label": "Senior Health",
+      "path": [
+        "Healthy Living",
+        "Senior Health"
+      ],
+      "level": 2,
+      "parent": "IAB16"
+    },
+    {
+      "code": "IAB16-6",
+      "label": "Weight Loss",
+      "path": [
+        "Healthy Living",
+        "Weight Loss"
+      ],
+      "level": 2,
+      "parent": "IAB16"
+    },
+    {
+      "code": "IAB16-7",
+      "label": "Wellness",
+      "path": [
+        "Healthy Living",
+        "Wellness"
+      ],
+      "level": 2,
+      "parent": "IAB16"
+    },
+    {
+      "code": "IAB16-1",
+      "label": "Alternative Medicine",
+      "path": [
+        "Healthy Living",
+        "Wellness",
+        "Alternative Medicine"
+      ],
+      "level": 3,
+      "parent": "IAB16-7"
+    },
+    {
+      "code": "IAB16-1",
+      "label": "Herbs and Supplements",
+      "path": [
+        "Healthy Living",
+        "Wellness",
+        "Alternative Medicine",
+        "Herbs and Supplements"
+      ],
+      "level": 4,
+      "parent": "IAB16-1"
+    },
+    {
+      "code": "IAB16-2",
+      "label": "Holistic Health",
+      "path": [
+        "Healthy Living",
+        "Wellness",
+        "Alternative Medicine",
+        "Holistic Health"
+      ],
+      "level": 4,
+      "parent": "IAB16-1"
+    },
+    {
+      "code": "IAB16-2",
+      "label": "Physical Therapy",
+      "path": [
+        "Healthy Living",
+        "Wellness",
+        "Physical Therapy"
+      ],
+      "level": 3,
+      "parent": "IAB16-7"
+    },
+    {
+      "code": "IAB16-3",
+      "label": "Smoking Cessation",
+      "path": [
+        "Healthy Living",
+        "Wellness",
+        "Smoking Cessation"
+      ],
+      "level": 3,
+      "parent": "IAB16-7"
+    },
+    {
+      "code": "IAB16-8",
+      "label": "Women's Health",
+      "path": [
+        "Healthy Living",
+        "Women's Health"
+      ],
+      "level": 2,
+      "parent": "IAB16"
+    },
+    {
+      "code": "IAB17",
+      "label": "Hobbies & Interests",
+      "path": [
+        "Hobbies & Interests"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB17-1",
+      "label": "Antiquing and Antiques",
+      "path": [
+        "Hobbies & Interests",
+        "Antiquing and Antiques"
+      ],
+      "level": 2,
+      "parent": "IAB17"
+    },
+    {
+      "code": "IAB17-2",
+      "label": "Arts and Crafts",
+      "path": [
+        "Hobbies & Interests",
+        "Arts and Crafts"
+      ],
+      "level": 2,
+      "parent": "IAB17"
+    },
+    {
+      "code": "IAB17-1",
+      "label": "Beadwork",
+      "path": [
+        "Hobbies & Interests",
+        "Arts and Crafts",
+        "Beadwork"
+      ],
+      "level": 3,
+      "parent": "IAB17-2"
+    },
+    {
+      "code": "IAB17-2",
+      "label": "Candle and Soap Making",
+      "path": [
+        "Hobbies & Interests",
+        "Arts and Crafts",
+        "Candle and Soap Making"
+      ],
+      "level": 3,
+      "parent": "IAB17-2"
+    },
+    {
+      "code": "IAB17-3",
+      "label": "Drawing and Sketching",
+      "path": [
+        "Hobbies & Interests",
+        "Arts and Crafts",
+        "Drawing and Sketching"
+      ],
+      "level": 3,
+      "parent": "IAB17-2"
+    },
+    {
+      "code": "IAB17-4",
+      "label": "Jewelry Making",
+      "path": [
+        "Hobbies & Interests",
+        "Arts and Crafts",
+        "Jewelry Making"
+      ],
+      "level": 3,
+      "parent": "IAB17-2"
+    },
+    {
+      "code": "IAB17-5",
+      "label": "Needlework",
+      "path": [
+        "Hobbies & Interests",
+        "Arts and Crafts",
+        "Needlework"
+      ],
+      "level": 3,
+      "parent": "IAB17-2"
+    },
+    {
+      "code": "IAB17-6",
+      "label": "Painting",
+      "path": [
+        "Hobbies & Interests",
+        "Arts and Crafts",
+        "Painting"
+      ],
+      "level": 3,
+      "parent": "IAB17-2"
+    },
+    {
+      "code": "IAB17-7",
+      "label": "Photography",
+      "path": [
+        "Hobbies & Interests",
+        "Arts and Crafts",
+        "Photography"
+      ],
+      "level": 3,
+      "parent": "IAB17-2"
+    },
+    {
+      "code": "IAB17-8",
+      "label": "Scrapbooking",
+      "path": [
+        "Hobbies & Interests",
+        "Arts and Crafts",
+        "Scrapbooking"
+      ],
+      "level": 3,
+      "parent": "IAB17-2"
+    },
+    {
+      "code": "IAB17-9",
+      "label": "Woodworking",
+      "path": [
+        "Hobbies & Interests",
+        "Arts and Crafts",
+        "Woodworking"
+      ],
+      "level": 3,
+      "parent": "IAB17-2"
+    },
+    {
+      "code": "IAB17-3",
+      "label": "Beekeeping",
+      "path": [
+        "Hobbies & Interests",
+        "Beekeeping"
+      ],
+      "level": 2,
+      "parent": "IAB17"
+    },
+    {
+      "code": "IAB17-4",
+      "label": "Birdwatching",
+      "path": [
+        "Hobbies & Interests",
+        "Birdwatching"
+      ],
+      "level": 2,
+      "parent": "IAB17"
+    },
+    {
+      "code": "IAB17-5",
+      "label": "Cigars",
+      "path": [
+        "Hobbies & Interests",
+        "Cigars"
+      ],
+      "level": 2,
+      "parent": "IAB17"
+    },
+    {
+      "code": "IAB17-6",
+      "label": "Collecting",
+      "path": [
+        "Hobbies & Interests",
+        "Collecting"
+      ],
+      "level": 2,
+      "parent": "IAB17"
+    },
+    {
+      "code": "IAB17-1",
+      "label": "Comic Books",
+      "path": [
+        "Hobbies & Interests",
+        "Collecting",
+        "Comic Books"
+      ],
+      "level": 3,
+      "parent": "IAB17-6"
+    },
+    {
+      "code": "IAB17-2",
+      "label": "Stamps and Coins",
+      "path": [
+        "Hobbies & Interests",
+        "Collecting",
+        "Stamps and Coins"
+      ],
+      "level": 3,
+      "parent": "IAB17-6"
+    },
+    {
+      "code": "IAB17-7",
+      "label": "Content Production",
+      "path": [
+        "Hobbies & Interests",
+        "Content Production"
+      ],
+      "level": 2,
+      "parent": "IAB17"
+    },
+    {
+      "code": "IAB17-1",
+      "label": "Audio Production",
+      "path": [
+        "Hobbies & Interests",
+        "Content Production",
+        "Audio Production"
+      ],
+      "level": 3,
+      "parent": "IAB17-7"
+    },
+    {
+      "code": "IAB17-2",
+      "label": "Freelance Writing",
+      "path": [
+        "Hobbies & Interests",
+        "Content Production",
+        "Freelance Writing"
+      ],
+      "level": 3,
+      "parent": "IAB17-7"
+    },
+    {
+      "code": "IAB17-3",
+      "label": "Screenwriting",
+      "path": [
+        "Hobbies & Interests",
+        "Content Production",
+        "Screenwriting"
+      ],
+      "level": 3,
+      "parent": "IAB17-7"
+    },
+    {
+      "code": "IAB17-4",
+      "label": "Video Production",
+      "path": [
+        "Hobbies & Interests",
+        "Content Production",
+        "Video Production"
+      ],
+      "level": 3,
+      "parent": "IAB17-7"
+    },
+    {
+      "code": "IAB17-8",
+      "label": "Games and Puzzles",
+      "path": [
+        "Hobbies & Interests",
+        "Games and Puzzles"
+      ],
+      "level": 2,
+      "parent": "IAB17"
+    },
+    {
+      "code": "IAB17-1",
+      "label": "Board Games and Puzzles",
+      "path": [
+        "Hobbies & Interests",
+        "Games and Puzzles",
+        "Board Games and Puzzles"
+      ],
+      "level": 3,
+      "parent": "IAB17-8"
+    },
+    {
+      "code": "IAB17-2",
+      "label": "Card Games",
+      "path": [
+        "Hobbies & Interests",
+        "Games and Puzzles",
+        "Card Games"
+      ],
+      "level": 3,
+      "parent": "IAB17-8"
+    },
+    {
+      "code": "IAB17-3",
+      "label": "Roleplaying Games",
+      "path": [
+        "Hobbies & Interests",
+        "Games and Puzzles",
+        "Roleplaying Games"
+      ],
+      "level": 3,
+      "parent": "IAB17-8"
+    },
+    {
+      "code": "IAB17-9",
+      "label": "Genealogy and Ancestry",
+      "path": [
+        "Hobbies & Interests",
+        "Genealogy and Ancestry"
+      ],
+      "level": 2,
+      "parent": "IAB17"
+    },
+    {
+      "code": "IAB17-10",
+      "label": "Magic and Illusion",
+      "path": [
+        "Hobbies & Interests",
+        "Magic and Illusion"
+      ],
+      "level": 2,
+      "parent": "IAB17"
+    },
+    {
+      "code": "IAB17-11",
+      "label": "Model Toys",
+      "path": [
+        "Hobbies & Interests",
+        "Model Toys"
+      ],
+      "level": 2,
+      "parent": "IAB17"
+    },
+    {
+      "code": "IAB17-12",
+      "label": "Musical Instruments",
+      "path": [
+        "Hobbies & Interests",
+        "Musical Instruments"
+      ],
+      "level": 2,
+      "parent": "IAB17"
+    },
+    {
+      "code": "IAB17-13",
+      "label": "Paranormal Phenomena",
+      "path": [
+        "Hobbies & Interests",
+        "Paranormal Phenomena"
+      ],
+      "level": 2,
+      "parent": "IAB17"
+    },
+    {
+      "code": "IAB17-14",
+      "label": "Radio Control",
+      "path": [
+        "Hobbies & Interests",
+        "Radio Control"
+      ],
+      "level": 2,
+      "parent": "IAB17"
+    },
+    {
+      "code": "IAB17-15",
+      "label": "Sci-fi and Fantasy",
+      "path": [
+        "Hobbies & Interests",
+        "Sci-fi and Fantasy"
+      ],
+      "level": 2,
+      "parent": "IAB17"
+    },
+    {
+      "code": "IAB17-16",
+      "label": "Workshops and Classes",
+      "path": [
+        "Hobbies & Interests",
+        "Workshops and Classes"
+      ],
+      "level": 2,
+      "parent": "IAB17"
+    },
+    {
+      "code": "IAB18",
+      "label": "Holidays",
+      "path": [
+        "Holidays"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB18-1",
+      "label": "National & Civic Holidays",
+      "path": [
+        "Holidays",
+        "National & Civic Holidays"
+      ],
+      "level": 2,
+      "parent": "IAB18"
+    },
+    {
+      "code": "IAB19",
+      "label": "Home & Garden",
+      "path": [
+        "Home & Garden"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB19-1",
+      "label": "Gardening",
+      "path": [
+        "Home & Garden",
+        "Gardening"
+      ],
+      "level": 2,
+      "parent": "IAB19"
+    },
+    {
+      "code": "IAB19-2",
+      "label": "Home Appliances",
+      "path": [
+        "Home & Garden",
+        "Home Appliances"
+      ],
+      "level": 2,
+      "parent": "IAB19"
+    },
+    {
+      "code": "IAB19-3",
+      "label": "Home Entertaining",
+      "path": [
+        "Home & Garden",
+        "Home Entertaining"
+      ],
+      "level": 2,
+      "parent": "IAB19"
+    },
+    {
+      "code": "IAB19-4",
+      "label": "Home Improvement",
+      "path": [
+        "Home & Garden",
+        "Home Improvement"
+      ],
+      "level": 2,
+      "parent": "IAB19"
+    },
+    {
+      "code": "IAB19-5",
+      "label": "Home Security",
+      "path": [
+        "Home & Garden",
+        "Home Security"
+      ],
+      "level": 2,
+      "parent": "IAB19"
+    },
+    {
+      "code": "IAB19-6",
+      "label": "Indoor Environmental Quality",
+      "path": [
+        "Home & Garden",
+        "Indoor Environmental Quality"
+      ],
+      "level": 2,
+      "parent": "IAB19"
+    },
+    {
+      "code": "IAB19-7",
+      "label": "Interior Decorating",
+      "path": [
+        "Home & Garden",
+        "Interior Decorating"
+      ],
+      "level": 2,
+      "parent": "IAB19"
+    },
+    {
+      "code": "IAB19-8",
+      "label": "Landscaping",
+      "path": [
+        "Home & Garden",
+        "Landscaping"
+      ],
+      "level": 2,
+      "parent": "IAB19"
+    },
+    {
+      "code": "IAB19-9",
+      "label": "Outdoor Decorating",
+      "path": [
+        "Home & Garden",
+        "Outdoor Decorating"
+      ],
+      "level": 2,
+      "parent": "IAB19"
+    },
+    {
+      "code": "IAB19-10",
+      "label": "Remodeling & Construction",
+      "path": [
+        "Home & Garden",
+        "Remodeling & Construction"
+      ],
+      "level": 2,
+      "parent": "IAB19"
+    },
+    {
+      "code": "IAB19-11",
+      "label": "Smart Home",
+      "path": [
+        "Home & Garden",
+        "Smart Home"
+      ],
+      "level": 2,
+      "parent": "IAB19"
+    },
+    {
+      "code": "IAB20",
+      "label": "Law",
+      "path": [
+        "Law"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB21",
+      "label": "Medical Health",
+      "path": [
+        "Medical Health"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB21-1",
+      "label": "Cosmetic Medical Services",
+      "path": [
+        "Medical Health",
+        "Cosmetic Medical Services"
+      ],
+      "level": 2,
+      "parent": "IAB21"
+    },
+    {
+      "code": "IAB21-2",
+      "label": "Diseases and Conditions",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions"
+      ],
+      "level": 2,
+      "parent": "IAB21"
+    },
+    {
+      "code": "IAB21-1",
+      "label": "Allergies",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Allergies"
+      ],
+      "level": 3,
+      "parent": "IAB21-2"
+    },
+    {
+      "code": "IAB21-2",
+      "label": "Blood Disorders",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Blood Disorders"
+      ],
+      "level": 3,
+      "parent": "IAB21-2"
+    },
+    {
+      "code": "IAB21-3",
+      "label": "Bone and Joint Conditions",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Bone and Joint Conditions"
+      ],
+      "level": 3,
+      "parent": "IAB21-2"
+    },
+    {
+      "code": "IAB21-4",
+      "label": "Brain and Nervous System Disorders",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Brain and Nervous System Disorders"
+      ],
+      "level": 3,
+      "parent": "IAB21-2"
+    },
+    {
+      "code": "IAB21-5",
+      "label": "Cancer",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Cancer"
+      ],
+      "level": 3,
+      "parent": "IAB21-2"
+    },
+    {
+      "code": "IAB21-6",
+      "label": "Cold and Flu",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Cold and Flu"
+      ],
+      "level": 3,
+      "parent": "IAB21-2"
+    },
+    {
+      "code": "IAB21-7",
+      "label": "Dental Health",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Dental Health"
+      ],
+      "level": 3,
+      "parent": "IAB21-2"
+    },
+    {
+      "code": "IAB21-8",
+      "label": "Diabetes",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Diabetes"
+      ],
+      "level": 3,
+      "parent": "IAB21-2"
+    },
+    {
+      "code": "IAB21-9",
+      "label": "Digestive Disorders",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Digestive Disorders"
+      ],
+      "level": 3,
+      "parent": "IAB21-2"
+    },
+    {
+      "code": "IAB21-10",
+      "label": "Ear, Nose and Throat Conditions",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Ear, Nose and Throat Conditions"
+      ],
+      "level": 3,
+      "parent": "IAB21-2"
+    },
+    {
+      "code": "IAB21-11",
+      "label": "Endocrine and Metabolic Diseases",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Endocrine and Metabolic Diseases"
+      ],
+      "level": 3,
+      "parent": "IAB21-2"
+    },
+    {
+      "code": "IAB21-1",
+      "label": "Hormonal Disorders",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Endocrine and Metabolic Diseases",
+        "Hormonal Disorders"
+      ],
+      "level": 4,
+      "parent": "IAB21-11"
+    },
+    {
+      "code": "IAB21-2",
+      "label": "Menopause",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Endocrine and Metabolic Diseases",
+        "Menopause"
+      ],
+      "level": 4,
+      "parent": "IAB21-11"
+    },
+    {
+      "code": "IAB21-3",
+      "label": "Thyroid Disorders",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Endocrine and Metabolic Diseases",
+        "Thyroid Disorders"
+      ],
+      "level": 4,
+      "parent": "IAB21-11"
+    },
+    {
+      "code": "IAB21-12",
+      "label": "Eye and Vision Conditions",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Eye and Vision Conditions"
+      ],
+      "level": 3,
+      "parent": "IAB21-2"
+    },
+    {
+      "code": "IAB21-13",
+      "label": "Foot Health",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Foot Health"
+      ],
+      "level": 3,
+      "parent": "IAB21-2"
+    },
+    {
+      "code": "IAB21-14",
+      "label": "Heart and Cardiovascular Diseases",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Heart and Cardiovascular Diseases"
+      ],
+      "level": 3,
+      "parent": "IAB21-2"
+    },
+    {
+      "code": "IAB21-15",
+      "label": "Infectious Diseases",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Infectious Diseases"
+      ],
+      "level": 3,
+      "parent": "IAB21-2"
+    },
+    {
+      "code": "IAB21-16",
+      "label": "Injuries",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Injuries"
+      ],
+      "level": 3,
+      "parent": "IAB21-2"
+    },
+    {
+      "code": "IAB21-1",
+      "label": "First Aid",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Injuries",
+        "First Aid"
+      ],
+      "level": 4,
+      "parent": "IAB21-16"
+    },
+    {
+      "code": "IAB21-17",
+      "label": "Lung and Respiratory Health",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Lung and Respiratory Health"
+      ],
+      "level": 3,
+      "parent": "IAB21-2"
+    },
+    {
+      "code": "IAB21-18",
+      "label": "Mental Health",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Mental Health"
+      ],
+      "level": 3,
+      "parent": "IAB21-2"
+    },
+    {
+      "code": "IAB21-19",
+      "label": "Reproductive Health",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Reproductive Health"
+      ],
+      "level": 3,
+      "parent": "IAB21-2"
+    },
+    {
+      "code": "IAB21-1",
+      "label": "Birth Control",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Reproductive Health",
+        "Birth Control"
+      ],
+      "level": 4,
+      "parent": "IAB21-19"
+    },
+    {
+      "code": "IAB21-2",
+      "label": "Infertility",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Reproductive Health",
+        "Infertility"
+      ],
+      "level": 4,
+      "parent": "IAB21-19"
+    },
+    {
+      "code": "IAB21-3",
+      "label": "Pregnancy",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Reproductive Health",
+        "Pregnancy"
+      ],
+      "level": 4,
+      "parent": "IAB21-19"
+    },
+    {
+      "code": "IAB21-20",
+      "label": "Sexual Health",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Sexual Health"
+      ],
+      "level": 3,
+      "parent": "IAB21-2"
+    },
+    {
+      "code": "IAB21-1",
+      "label": "Sexual Conditions",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Sexual Health",
+        "Sexual Conditions"
+      ],
+      "level": 4,
+      "parent": "IAB21-20"
+    },
+    {
+      "code": "IAB21-21",
+      "label": "Skin and Dermatology",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Skin and Dermatology"
+      ],
+      "level": 3,
+      "parent": "IAB21-2"
+    },
+    {
+      "code": "IAB21-22",
+      "label": "Sleep Disorders",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Sleep Disorders"
+      ],
+      "level": 3,
+      "parent": "IAB21-2"
+    },
+    {
+      "code": "IAB21-23",
+      "label": "Substance Abuse",
+      "path": [
+        "Medical Health",
+        "Diseases and Conditions",
+        "Substance Abuse"
+      ],
+      "level": 3,
+      "parent": "IAB21-2"
+    },
+    {
+      "code": "IAB21-3",
+      "label": "Medical Tests",
+      "path": [
+        "Medical Health",
+        "Medical Tests"
+      ],
+      "level": 2,
+      "parent": "IAB21"
+    },
+    {
+      "code": "IAB21-4",
+      "label": "Pharmaceutical Drugs",
+      "path": [
+        "Medical Health",
+        "Pharmaceutical Drugs"
+      ],
+      "level": 2,
+      "parent": "IAB21"
+    },
+    {
+      "code": "IAB21-5",
+      "label": "Surgery",
+      "path": [
+        "Medical Health",
+        "Surgery"
+      ],
+      "level": 2,
+      "parent": "IAB21"
+    },
+    {
+      "code": "IAB21-6",
+      "label": "Vaccines",
+      "path": [
+        "Medical Health",
+        "Vaccines"
+      ],
+      "level": 2,
+      "parent": "IAB21"
+    },
+    {
+      "code": "IAB10-1",
+      "label": "Adult Album Alternative",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Adult Album Alternative"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-2",
+      "label": "Adult Contemporary Music",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Adult Contemporary Music"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-1",
+      "label": "Soft AC Music",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Adult Contemporary Music",
+        "Soft AC Music"
+      ],
+      "level": 4,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-2",
+      "label": "Urban AC Music",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Adult Contemporary Music",
+        "Urban AC Music"
+      ],
+      "level": 4,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-3",
+      "label": "Alternative Music",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Alternative Music"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-4",
+      "label": "Blues",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Blues"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-5",
+      "label": "Children's Music",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Children's Music"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-6",
+      "label": "Classic Hits",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Classic Hits"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-7",
+      "label": "Classical Music",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Classical Music"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-8",
+      "label": "College Radio",
+      "path": [
+        "Entertainment",
+        "Music",
+        "College Radio"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-9",
+      "label": "Comedy (Music and Audio)",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Comedy (Music and Audio)"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-10",
+      "label": "Contemporary Hits/Pop/Top 40",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Contemporary Hits/Pop/Top 40"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-11",
+      "label": "Country Music",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Country Music"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-12",
+      "label": "Dance and Electronic Music",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Dance and Electronic Music"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-13",
+      "label": "Gospel Music",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Gospel Music"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-14",
+      "label": "Hip Hop Music",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Hip Hop Music"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-15",
+      "label": "Inspirational/New Age Music",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Inspirational/New Age Music"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-16",
+      "label": "Jazz",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Jazz"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-17",
+      "label": "Oldies/Adult Standards",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Oldies/Adult Standards"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-18",
+      "label": "R&B/Soul/Funk",
+      "path": [
+        "Entertainment",
+        "Music",
+        "R&B/Soul/Funk"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-19",
+      "label": "Reggae",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Reggae"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-20",
+      "label": "Religious (Music and Audio)",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Religious (Music and Audio)"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-21",
+      "label": "Rock Music",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Rock Music"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-1",
+      "label": "Album-oriented Rock",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Rock Music",
+        "Album-oriented Rock"
+      ],
+      "level": 4,
+      "parent": "IAB10-21"
+    },
+    {
+      "code": "IAB10-2",
+      "label": "Alternative Rock",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Rock Music",
+        "Alternative Rock"
+      ],
+      "level": 4,
+      "parent": "IAB10-21"
+    },
+    {
+      "code": "IAB10-3",
+      "label": "Classic Rock",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Rock Music",
+        "Classic Rock"
+      ],
+      "level": 4,
+      "parent": "IAB10-21"
+    },
+    {
+      "code": "IAB10-4",
+      "label": "Hard Rock",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Rock Music",
+        "Hard Rock"
+      ],
+      "level": 4,
+      "parent": "IAB10-21"
+    },
+    {
+      "code": "IAB10-5",
+      "label": "Soft Rock",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Rock Music",
+        "Soft Rock"
+      ],
+      "level": 4,
+      "parent": "IAB10-21"
+    },
+    {
+      "code": "IAB10-22",
+      "label": "Songwriters/Folk",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Songwriters/Folk"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-23",
+      "label": "Soundtracks, TV and Showtunes",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Soundtracks, TV and Showtunes"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-26",
+      "label": "World/International Music",
+      "path": [
+        "Entertainment",
+        "Music",
+        "World/International Music"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-24",
+      "label": "Urban Contemporary Music",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Urban Contemporary Music"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB10-25",
+      "label": "Variety (Music and Audio)",
+      "path": [
+        "Entertainment",
+        "Music",
+        "Variety (Music and Audio)"
+      ],
+      "level": 3,
+      "parent": "IAB10-2"
+    },
+    {
+      "code": "IAB22",
+      "label": "Personal Celebrations & Life Events",
+      "path": [
+        "Personal Celebrations & Life Events"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB22-1",
+      "label": "Anniversary",
+      "path": [
+        "Personal Celebrations & Life Events",
+        "Anniversary"
+      ],
+      "level": 2,
+      "parent": "IAB22"
+    },
+    {
+      "code": "IAB22-2",
+      "label": "Baby Shower",
+      "path": [
+        "Personal Celebrations & Life Events",
+        "Baby Shower"
+      ],
+      "level": 2,
+      "parent": "IAB22"
+    },
+    {
+      "code": "IAB22-3",
+      "label": "Bachelor Party",
+      "path": [
+        "Personal Celebrations & Life Events",
+        "Bachelor Party"
+      ],
+      "level": 2,
+      "parent": "IAB22"
+    },
+    {
+      "code": "IAB22-4",
+      "label": "Bachelorette Party",
+      "path": [
+        "Personal Celebrations & Life Events",
+        "Bachelorette Party"
+      ],
+      "level": 2,
+      "parent": "IAB22"
+    },
+    {
+      "code": "IAB22-5",
+      "label": "Birth",
+      "path": [
+        "Personal Celebrations & Life Events",
+        "Birth"
+      ],
+      "level": 2,
+      "parent": "IAB22"
+    },
+    {
+      "code": "IAB22-6",
+      "label": "Birthday",
+      "path": [
+        "Personal Celebrations & Life Events",
+        "Birthday"
+      ],
+      "level": 2,
+      "parent": "IAB22"
+    },
+    {
+      "code": "IAB22-7",
+      "label": "Funeral",
+      "path": [
+        "Personal Celebrations & Life Events",
+        "Funeral"
+      ],
+      "level": 2,
+      "parent": "IAB22"
+    },
+    {
+      "code": "IAB22-8",
+      "label": "Graduation",
+      "path": [
+        "Personal Celebrations & Life Events",
+        "Graduation"
+      ],
+      "level": 2,
+      "parent": "IAB22"
+    },
+    {
+      "code": "IAB22-9",
+      "label": "Prom",
+      "path": [
+        "Personal Celebrations & Life Events",
+        "Prom"
+      ],
+      "level": 2,
+      "parent": "IAB22"
+    },
+    {
+      "code": "IAB22-10",
+      "label": "Wedding",
+      "path": [
+        "Personal Celebrations & Life Events",
+        "Wedding"
+      ],
+      "level": 2,
+      "parent": "IAB22"
+    },
+    {
+      "code": "IAB23",
+      "label": "Personal Finance",
+      "path": [
+        "Personal Finance"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB23-1",
+      "label": "Consumer Banking",
+      "path": [
+        "Personal Finance",
+        "Consumer Banking"
+      ],
+      "level": 2,
+      "parent": "IAB23"
+    },
+    {
+      "code": "IAB23-2",
+      "label": "Financial Assistance",
+      "path": [
+        "Personal Finance",
+        "Financial Assistance"
+      ],
+      "level": 2,
+      "parent": "IAB23"
+    },
+    {
+      "code": "IAB23-1",
+      "label": "Government Support and Welfare",
+      "path": [
+        "Personal Finance",
+        "Financial Assistance",
+        "Government Support and Welfare"
+      ],
+      "level": 3,
+      "parent": "IAB23-2"
+    },
+    {
+      "code": "IAB23-2",
+      "label": "Student Financial Aid",
+      "path": [
+        "Personal Finance",
+        "Financial Assistance",
+        "Student Financial Aid"
+      ],
+      "level": 3,
+      "parent": "IAB23-2"
+    },
+    {
+      "code": "IAB23-3",
+      "label": "Financial Planning",
+      "path": [
+        "Personal Finance",
+        "Financial Planning"
+      ],
+      "level": 2,
+      "parent": "IAB23"
+    },
+    {
+      "code": "IAB23-4",
+      "label": "Frugal Living",
+      "path": [
+        "Personal Finance",
+        "Frugal Living"
+      ],
+      "level": 2,
+      "parent": "IAB23"
+    },
+    {
+      "code": "IAB23-5",
+      "label": "Home Utilities",
+      "path": [
+        "Personal Finance",
+        "Home Utilities"
+      ],
+      "level": 2,
+      "parent": "IAB23"
+    },
+    {
+      "code": "IAB23-1",
+      "label": "Gas and Electric",
+      "path": [
+        "Personal Finance",
+        "Home Utilities",
+        "Gas and Electric"
+      ],
+      "level": 3,
+      "parent": "IAB23-5"
+    },
+    {
+      "code": "IAB23-2",
+      "label": "Internet Service Providers",
+      "path": [
+        "Personal Finance",
+        "Home Utilities",
+        "Internet Service Providers"
+      ],
+      "level": 3,
+      "parent": "IAB23-5"
+    },
+    {
+      "code": "IAB23-3",
+      "label": "Phone Services",
+      "path": [
+        "Personal Finance",
+        "Home Utilities",
+        "Phone Services"
+      ],
+      "level": 3,
+      "parent": "IAB23-5"
+    },
+    {
+      "code": "IAB23-4",
+      "label": "Water Services",
+      "path": [
+        "Personal Finance",
+        "Home Utilities",
+        "Water Services"
+      ],
+      "level": 3,
+      "parent": "IAB23-5"
+    },
+    {
+      "code": "IAB23-6",
+      "label": "Insurance",
+      "path": [
+        "Personal Finance",
+        "Insurance"
+      ],
+      "level": 2,
+      "parent": "IAB23"
+    },
+    {
+      "code": "IAB23-1",
+      "label": "Health Insurance",
+      "path": [
+        "Personal Finance",
+        "Insurance",
+        "Health Insurance"
+      ],
+      "level": 3,
+      "parent": "IAB23-6"
+    },
+    {
+      "code": "IAB23-2",
+      "label": "Home Insurance",
+      "path": [
+        "Personal Finance",
+        "Insurance",
+        "Home Insurance"
+      ],
+      "level": 3,
+      "parent": "IAB23-6"
+    },
+    {
+      "code": "IAB23-3",
+      "label": "Life Insurance",
+      "path": [
+        "Personal Finance",
+        "Insurance",
+        "Life Insurance"
+      ],
+      "level": 3,
+      "parent": "IAB23-6"
+    },
+    {
+      "code": "IAB23-4",
+      "label": "Motor Insurance",
+      "path": [
+        "Personal Finance",
+        "Insurance",
+        "Motor Insurance"
+      ],
+      "level": 3,
+      "parent": "IAB23-6"
+    },
+    {
+      "code": "IAB23-5",
+      "label": "Pet Insurance",
+      "path": [
+        "Personal Finance",
+        "Insurance",
+        "Pet Insurance"
+      ],
+      "level": 3,
+      "parent": "IAB23-6"
+    },
+    {
+      "code": "IAB23-6",
+      "label": "Travel Insurance",
+      "path": [
+        "Personal Finance",
+        "Insurance",
+        "Travel Insurance"
+      ],
+      "level": 3,
+      "parent": "IAB23-6"
+    },
+    {
+      "code": "IAB23-7",
+      "label": "Personal Debt",
+      "path": [
+        "Personal Finance",
+        "Personal Debt"
+      ],
+      "level": 2,
+      "parent": "IAB23"
+    },
+    {
+      "code": "IAB23-1",
+      "label": "Credit Cards",
+      "path": [
+        "Personal Finance",
+        "Personal Debt",
+        "Credit Cards"
+      ],
+      "level": 3,
+      "parent": "IAB23-7"
+    },
+    {
+      "code": "IAB23-2",
+      "label": "Home Financing",
+      "path": [
+        "Personal Finance",
+        "Personal Debt",
+        "Home Financing"
+      ],
+      "level": 3,
+      "parent": "IAB23-7"
+    },
+    {
+      "code": "IAB23-3",
+      "label": "Personal Loans",
+      "path": [
+        "Personal Finance",
+        "Personal Debt",
+        "Personal Loans"
+      ],
+      "level": 3,
+      "parent": "IAB23-7"
+    },
+    {
+      "code": "IAB23-4",
+      "label": "Student Loans",
+      "path": [
+        "Personal Finance",
+        "Personal Debt",
+        "Student Loans"
+      ],
+      "level": 3,
+      "parent": "IAB23-7"
+    },
+    {
+      "code": "IAB23-8",
+      "label": "Personal Investing",
+      "path": [
+        "Personal Finance",
+        "Personal Investing"
+      ],
+      "level": 2,
+      "parent": "IAB23"
+    },
+    {
+      "code": "IAB23-1",
+      "label": "Hedge Funds",
+      "path": [
+        "Personal Finance",
+        "Personal Investing",
+        "Hedge Funds"
+      ],
+      "level": 3,
+      "parent": "IAB23-8"
+    },
+    {
+      "code": "IAB23-2",
+      "label": "Mutual Funds",
+      "path": [
+        "Personal Finance",
+        "Personal Investing",
+        "Mutual Funds"
+      ],
+      "level": 3,
+      "parent": "IAB23-8"
+    },
+    {
+      "code": "IAB23-3",
+      "label": "Options",
+      "path": [
+        "Personal Finance",
+        "Personal Investing",
+        "Options"
+      ],
+      "level": 3,
+      "parent": "IAB23-8"
+    },
+    {
+      "code": "IAB23-4",
+      "label": "Stocks and Bonds",
+      "path": [
+        "Personal Finance",
+        "Personal Investing",
+        "Stocks and Bonds"
+      ],
+      "level": 3,
+      "parent": "IAB23-8"
+    },
+    {
+      "code": "IAB23-9",
+      "label": "Personal Taxes",
+      "path": [
+        "Personal Finance",
+        "Personal Taxes"
+      ],
+      "level": 2,
+      "parent": "IAB23"
+    },
+    {
+      "code": "IAB23-10",
+      "label": "Retirement Planning",
+      "path": [
+        "Personal Finance",
+        "Retirement Planning"
+      ],
+      "level": 2,
+      "parent": "IAB23"
+    },
+    {
+      "code": "IAB24",
+      "label": "Pets",
+      "path": [
+        "Pets"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB24-1",
+      "label": "Birds",
+      "path": [
+        "Pets",
+        "Birds"
+      ],
+      "level": 2,
+      "parent": "IAB24"
+    },
+    {
+      "code": "IAB24-2",
+      "label": "Cats",
+      "path": [
+        "Pets",
+        "Cats"
+      ],
+      "level": 2,
+      "parent": "IAB24"
+    },
+    {
+      "code": "IAB24-3",
+      "label": "Dogs",
+      "path": [
+        "Pets",
+        "Dogs"
+      ],
+      "level": 2,
+      "parent": "IAB24"
+    },
+    {
+      "code": "IAB24-4",
+      "label": "Fish and Aquariums",
+      "path": [
+        "Pets",
+        "Fish and Aquariums"
+      ],
+      "level": 2,
+      "parent": "IAB24"
+    },
+    {
+      "code": "IAB24-5",
+      "label": "Large Animals",
+      "path": [
+        "Pets",
+        "Large Animals"
+      ],
+      "level": 2,
+      "parent": "IAB24"
+    },
+    {
+      "code": "IAB24-6",
+      "label": "Pet Adoptions",
+      "path": [
+        "Pets",
+        "Pet Adoptions"
+      ],
+      "level": 2,
+      "parent": "IAB24"
+    },
+    {
+      "code": "IAB24-7",
+      "label": "Pet Supplies",
+      "path": [
+        "Pets",
+        "Pet Supplies"
+      ],
+      "level": 2,
+      "parent": "IAB24"
+    },
+    {
+      "code": "IAB24-8",
+      "label": "Reptiles",
+      "path": [
+        "Pets",
+        "Reptiles"
+      ],
+      "level": 2,
+      "parent": "IAB24"
+    },
+    {
+      "code": "IAB24-9",
+      "label": "Veterinary Medicine",
+      "path": [
+        "Pets",
+        "Veterinary Medicine"
+      ],
+      "level": 2,
+      "parent": "IAB24"
+    },
+    {
+      "code": "IAB25",
+      "label": "Politics",
+      "path": [
+        "Politics"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB25-1",
+      "label": "Civic affairs",
+      "path": [
+        "Politics",
+        "Civic affairs"
+      ],
+      "level": 2,
+      "parent": "IAB25"
+    },
+    {
+      "code": "IAB25-2",
+      "label": "Elections",
+      "path": [
+        "Politics",
+        "Elections"
+      ],
+      "level": 2,
+      "parent": "IAB25"
+    },
+    {
+      "code": "IAB25-3",
+      "label": "Political Issues & Policy",
+      "path": [
+        "Politics",
+        "Political Issues & Policy"
+      ],
+      "level": 2,
+      "parent": "IAB25"
+    },
+    {
+      "code": "IAB26",
+      "label": "Pop Culture",
+      "path": [
+        "Pop Culture"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB26-1",
+      "label": "Celebrity Deaths",
+      "path": [
+        "Pop Culture",
+        "Celebrity Deaths"
+      ],
+      "level": 2,
+      "parent": "IAB26"
+    },
+    {
+      "code": "IAB26-2",
+      "label": "Celebrity Families",
+      "path": [
+        "Pop Culture",
+        "Celebrity Families"
+      ],
+      "level": 2,
+      "parent": "IAB26"
+    },
+    {
+      "code": "IAB26-3",
+      "label": "Celebrity Homes",
+      "path": [
+        "Pop Culture",
+        "Celebrity Homes"
+      ],
+      "level": 2,
+      "parent": "IAB26"
+    },
+    {
+      "code": "IAB26-4",
+      "label": "Celebrity Pregnancy",
+      "path": [
+        "Pop Culture",
+        "Celebrity Pregnancy"
+      ],
+      "level": 2,
+      "parent": "IAB26"
+    },
+    {
+      "code": "IAB26-5",
+      "label": "Celebrity Relationships",
+      "path": [
+        "Pop Culture",
+        "Celebrity Relationships"
+      ],
+      "level": 2,
+      "parent": "IAB26"
+    },
+    {
+      "code": "IAB26-6",
+      "label": "Celebrity Scandal",
+      "path": [
+        "Pop Culture",
+        "Celebrity Scandal"
+      ],
+      "level": 2,
+      "parent": "IAB26"
+    },
+    {
+      "code": "IAB26-7",
+      "label": "Celebrity Style",
+      "path": [
+        "Pop Culture",
+        "Celebrity Style"
+      ],
+      "level": 2,
+      "parent": "IAB26"
+    },
+    {
+      "code": "IAB26-8",
+      "label": "Humor and Satire",
+      "path": [
+        "Pop Culture",
+        "Humor and Satire"
+      ],
+      "level": 2,
+      "parent": "IAB26"
+    },
+    {
+      "code": "IAB34-12",
+      "label": "Productivity",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Computer Software and Applications",
+        "Productivity"
+      ],
+      "level": 4,
+      "parent": "IAB34-3"
+    },
+    {
+      "code": "IAB27",
+      "label": "Real Estate",
+      "path": [
+        "Real Estate"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB27-1",
+      "label": "Apartments",
+      "path": [
+        "Real Estate",
+        "Apartments"
+      ],
+      "level": 2,
+      "parent": "IAB27"
+    },
+    {
+      "code": "IAB27-2",
+      "label": "Developmental Sites",
+      "path": [
+        "Real Estate",
+        "Developmental Sites"
+      ],
+      "level": 2,
+      "parent": "IAB27"
+    },
+    {
+      "code": "IAB27-3",
+      "label": "Hotel Properties",
+      "path": [
+        "Real Estate",
+        "Hotel Properties"
+      ],
+      "level": 2,
+      "parent": "IAB27"
+    },
+    {
+      "code": "IAB27-4",
+      "label": "Houses",
+      "path": [
+        "Real Estate",
+        "Houses"
+      ],
+      "level": 2,
+      "parent": "IAB27"
+    },
+    {
+      "code": "IAB27-5",
+      "label": "Industrial Property",
+      "path": [
+        "Real Estate",
+        "Industrial Property"
+      ],
+      "level": 2,
+      "parent": "IAB27"
+    },
+    {
+      "code": "IAB27-6",
+      "label": "Land and Farms",
+      "path": [
+        "Real Estate",
+        "Land and Farms"
+      ],
+      "level": 2,
+      "parent": "IAB27"
+    },
+    {
+      "code": "IAB27-7",
+      "label": "Office Property",
+      "path": [
+        "Real Estate",
+        "Office Property"
+      ],
+      "level": 2,
+      "parent": "IAB27"
+    },
+    {
+      "code": "IAB27-8",
+      "label": "Real Estate Buying and Selling",
+      "path": [
+        "Real Estate",
+        "Real Estate Buying and Selling"
+      ],
+      "level": 2,
+      "parent": "IAB27"
+    },
+    {
+      "code": "IAB27-9",
+      "label": "Real Estate Renting and Leasing",
+      "path": [
+        "Real Estate",
+        "Real Estate Renting and Leasing"
+      ],
+      "level": 2,
+      "parent": "IAB27"
+    },
+    {
+      "code": "IAB27-10",
+      "label": "Retail Property",
+      "path": [
+        "Real Estate",
+        "Retail Property"
+      ],
+      "level": 2,
+      "parent": "IAB27"
+    },
+    {
+      "code": "IAB27-11",
+      "label": "Vacation Properties",
+      "path": [
+        "Real Estate",
+        "Vacation Properties"
+      ],
+      "level": 2,
+      "parent": "IAB27"
+    },
+    {
+      "code": "IAB28",
+      "label": "Religion & Spirituality",
+      "path": [
+        "Religion & Spirituality"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB28-1",
+      "label": "Agnosticism",
+      "path": [
+        "Religion & Spirituality",
+        "Agnosticism"
+      ],
+      "level": 2,
+      "parent": "IAB28"
+    },
+    {
+      "code": "IAB28-2",
+      "label": "Astrology",
+      "path": [
+        "Religion & Spirituality",
+        "Astrology"
+      ],
+      "level": 2,
+      "parent": "IAB28"
+    },
+    {
+      "code": "IAB28-3",
+      "label": "Atheism",
+      "path": [
+        "Religion & Spirituality",
+        "Atheism"
+      ],
+      "level": 2,
+      "parent": "IAB28"
+    },
+    {
+      "code": "IAB28-4",
+      "label": "Buddhism",
+      "path": [
+        "Religion & Spirituality",
+        "Buddhism"
+      ],
+      "level": 2,
+      "parent": "IAB28"
+    },
+    {
+      "code": "IAB28-5",
+      "label": "Christianity",
+      "path": [
+        "Religion & Spirituality",
+        "Christianity"
+      ],
+      "level": 2,
+      "parent": "IAB28"
+    },
+    {
+      "code": "IAB28-6",
+      "label": "Hinduism",
+      "path": [
+        "Religion & Spirituality",
+        "Hinduism"
+      ],
+      "level": 2,
+      "parent": "IAB28"
+    },
+    {
+      "code": "IAB28-7",
+      "label": "Islam",
+      "path": [
+        "Religion & Spirituality",
+        "Islam"
+      ],
+      "level": 2,
+      "parent": "IAB28"
+    },
+    {
+      "code": "IAB28-8",
+      "label": "Judaism",
+      "path": [
+        "Religion & Spirituality",
+        "Judaism"
+      ],
+      "level": 2,
+      "parent": "IAB28"
+    },
+    {
+      "code": "IAB28-9",
+      "label": "Sikhism",
+      "path": [
+        "Religion & Spirituality",
+        "Sikhism"
+      ],
+      "level": 2,
+      "parent": "IAB28"
+    },
+    {
+      "code": "IAB28-10",
+      "label": "Spirituality",
+      "path": [
+        "Religion & Spirituality",
+        "Spirituality"
+      ],
+      "level": 2,
+      "parent": "IAB28"
+    },
+    {
+      "code": "IAB29",
+      "label": "Science",
+      "path": [
+        "Science"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB29-1",
+      "label": "Biological Sciences",
+      "path": [
+        "Science",
+        "Biological Sciences"
+      ],
+      "level": 2,
+      "parent": "IAB29"
+    },
+    {
+      "code": "IAB29-2",
+      "label": "Chemistry",
+      "path": [
+        "Science",
+        "Chemistry"
+      ],
+      "level": 2,
+      "parent": "IAB29"
+    },
+    {
+      "code": "IAB29-3",
+      "label": "Environment",
+      "path": [
+        "Science",
+        "Environment"
+      ],
+      "level": 2,
+      "parent": "IAB29"
+    },
+    {
+      "code": "IAB29-4",
+      "label": "Genetics",
+      "path": [
+        "Science",
+        "Genetics"
+      ],
+      "level": 2,
+      "parent": "IAB29"
+    },
+    {
+      "code": "IAB29-5",
+      "label": "Geography",
+      "path": [
+        "Science",
+        "Geography"
+      ],
+      "level": 2,
+      "parent": "IAB29"
+    },
+    {
+      "code": "IAB29-6",
+      "label": "Geology",
+      "path": [
+        "Science",
+        "Geology"
+      ],
+      "level": 2,
+      "parent": "IAB29"
+    },
+    {
+      "code": "IAB29-7",
+      "label": "Physics",
+      "path": [
+        "Science",
+        "Physics"
+      ],
+      "level": 2,
+      "parent": "IAB29"
+    },
+    {
+      "code": "IAB29-8",
+      "label": "Space and Astronomy",
+      "path": [
+        "Science",
+        "Space and Astronomy"
+      ],
+      "level": 2,
+      "parent": "IAB29"
+    },
+    {
+      "code": "IAB29-9",
+      "label": "Weather",
+      "path": [
+        "Science",
+        "Weather"
+      ],
+      "level": 2,
+      "parent": "IAB29"
+    },
+    {
+      "code": "IAB30",
+      "label": "Sensitive Topics",
+      "path": [
+        "Sensitive Topics"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB30-1",
+      "label": "Adult & Explicit Sexual Content",
+      "path": [
+        "Sensitive Topics",
+        "Adult & Explicit Sexual Content"
+      ],
+      "level": 2,
+      "parent": "IAB30"
+    },
+    {
+      "code": "IAB30-2",
+      "label": "Arms & Ammunition",
+      "path": [
+        "Sensitive Topics",
+        "Arms & Ammunition"
+      ],
+      "level": 2,
+      "parent": "IAB30"
+    },
+    {
+      "code": "IAB30-3",
+      "label": "Crime & Harmful Acts to Individuals, Society & Human Right Violations",
+      "path": [
+        "Sensitive Topics",
+        "Crime & Harmful Acts to Individuals, Society & Human Right Violations"
+      ],
+      "level": 2,
+      "parent": "IAB30"
+    },
+    {
+      "code": "IAB30-4",
+      "label": "Death, Injury, or Military Conflict",
+      "path": [
+        "Sensitive Topics",
+        "Death, Injury, or Military Conflict"
+      ],
+      "level": 2,
+      "parent": "IAB30"
+    },
+    {
+      "code": "IAB30-5",
+      "label": "Debated Sensitive Social Issues",
+      "path": [
+        "Sensitive Topics",
+        "Debated Sensitive Social Issues"
+      ],
+      "level": 2,
+      "parent": "IAB30"
+    },
+    {
+      "code": "IAB30-6",
+      "label": "Hate Speech and Acts of Aggression",
+      "path": [
+        "Sensitive Topics",
+        "Hate Speech and Acts of Aggression"
+      ],
+      "level": 2,
+      "parent": "IAB30"
+    },
+    {
+      "code": "IAB30-7",
+      "label": "Illegal Drugs, Tobacco, eCigarettes, Vaping, Alcohol",
+      "path": [
+        "Sensitive Topics",
+        "Illegal Drugs, Tobacco, eCigarettes, Vaping, Alcohol"
+      ],
+      "level": 2,
+      "parent": "IAB30"
+    },
+    {
+      "code": "IAB30-8",
+      "label": "Obscenity and Profanity",
+      "path": [
+        "Sensitive Topics",
+        "Obscenity and Profanity"
+      ],
+      "level": 2,
+      "parent": "IAB30"
+    },
+    {
+      "code": "IAB30-9",
+      "label": "Online Piracy",
+      "path": [
+        "Sensitive Topics",
+        "Online Piracy"
+      ],
+      "level": 2,
+      "parent": "IAB30"
+    },
+    {
+      "code": "IAB30-10",
+      "label": "Spam or Harmful Content",
+      "path": [
+        "Sensitive Topics",
+        "Spam or Harmful Content"
+      ],
+      "level": 2,
+      "parent": "IAB30"
+    },
+    {
+      "code": "IAB30-11",
+      "label": "Terrorism",
+      "path": [
+        "Sensitive Topics",
+        "Terrorism"
+      ],
+      "level": 2,
+      "parent": "IAB30"
+    },
+    {
+      "code": "IAB31",
+      "label": "Shopping",
+      "path": [
+        "Shopping"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB31-1",
+      "label": "Children's Games and Toys",
+      "path": [
+        "Shopping",
+        "Children's Games and Toys"
+      ],
+      "level": 2,
+      "parent": "IAB31"
+    },
+    {
+      "code": "IAB31-2",
+      "label": "Coupons and Discounts",
+      "path": [
+        "Shopping",
+        "Coupons and Discounts"
+      ],
+      "level": 2,
+      "parent": "IAB31"
+    },
+    {
+      "code": "IAB31-3",
+      "label": "Flower Shopping",
+      "path": [
+        "Shopping",
+        "Flower Shopping"
+      ],
+      "level": 2,
+      "parent": "IAB31"
+    },
+    {
+      "code": "IAB31-4",
+      "label": "Gifts and Greetings Cards",
+      "path": [
+        "Shopping",
+        "Gifts and Greetings Cards"
+      ],
+      "level": 2,
+      "parent": "IAB31"
+    },
+    {
+      "code": "IAB31-5",
+      "label": "Grocery Shopping",
+      "path": [
+        "Shopping",
+        "Grocery Shopping"
+      ],
+      "level": 2,
+      "parent": "IAB31"
+    },
+    {
+      "code": "IAB31-6",
+      "label": "Holiday Shopping",
+      "path": [
+        "Shopping",
+        "Holiday Shopping"
+      ],
+      "level": 2,
+      "parent": "IAB31"
+    },
+    {
+      "code": "IAB31-7",
+      "label": "Household Supplies",
+      "path": [
+        "Shopping",
+        "Household Supplies"
+      ],
+      "level": 2,
+      "parent": "IAB31"
+    },
+    {
+      "code": "IAB31-8",
+      "label": "Lotteries and Scratchcards",
+      "path": [
+        "Shopping",
+        "Lotteries and Scratchcards"
+      ],
+      "level": 2,
+      "parent": "IAB31"
+    },
+    {
+      "code": "IAB31-9",
+      "label": "Party Supplies and Decorations",
+      "path": [
+        "Shopping",
+        "Party Supplies and Decorations"
+      ],
+      "level": 2,
+      "parent": "IAB31"
+    },
+    {
+      "code": "IAB31-10",
+      "label": "Sales and Promotions",
+      "path": [
+        "Shopping",
+        "Sales and Promotions"
+      ],
+      "level": 2,
+      "parent": "IAB31"
+    },
+    {
+      "code": "IAB32",
+      "label": "Sports",
+      "path": [
+        "Sports"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB32-1",
+      "label": "American Football",
+      "path": [
+        "Sports",
+        "American Football"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-2",
+      "label": "Australian Rules Football",
+      "path": [
+        "Sports",
+        "Australian Rules Football"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-3",
+      "label": "Auto Racing",
+      "path": [
+        "Sports",
+        "Auto Racing"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-1",
+      "label": "Motorcycle Sports",
+      "path": [
+        "Sports",
+        "Auto Racing",
+        "Motorcycle Sports"
+      ],
+      "level": 3,
+      "parent": "IAB32-3"
+    },
+    {
+      "code": "IAB32-4",
+      "label": "Badminton",
+      "path": [
+        "Sports",
+        "Badminton"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-5",
+      "label": "Baseball",
+      "path": [
+        "Sports",
+        "Baseball"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-6",
+      "label": "Basketball",
+      "path": [
+        "Sports",
+        "Basketball"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-7",
+      "label": "Beach Volleyball",
+      "path": [
+        "Sports",
+        "Beach Volleyball"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-8",
+      "label": "Bodybuilding",
+      "path": [
+        "Sports",
+        "Bodybuilding"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-9",
+      "label": "Bowling",
+      "path": [
+        "Sports",
+        "Bowling"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-10",
+      "label": "Boxing",
+      "path": [
+        "Sports",
+        "Boxing"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-11",
+      "label": "Cheerleading",
+      "path": [
+        "Sports",
+        "Cheerleading"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-12",
+      "label": "College Sports",
+      "path": [
+        "Sports",
+        "College Sports"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-1",
+      "label": "College Baseball",
+      "path": [
+        "Sports",
+        "College Sports",
+        "College Baseball"
+      ],
+      "level": 3,
+      "parent": "IAB32-12"
+    },
+    {
+      "code": "IAB32-2",
+      "label": "College Basketball",
+      "path": [
+        "Sports",
+        "College Sports",
+        "College Basketball"
+      ],
+      "level": 3,
+      "parent": "IAB32-12"
+    },
+    {
+      "code": "IAB32-3",
+      "label": "College Football",
+      "path": [
+        "Sports",
+        "College Sports",
+        "College Football"
+      ],
+      "level": 3,
+      "parent": "IAB32-12"
+    },
+    {
+      "code": "IAB32-13",
+      "label": "Cricket",
+      "path": [
+        "Sports",
+        "Cricket"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-14",
+      "label": "Cycling",
+      "path": [
+        "Sports",
+        "Cycling"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-15",
+      "label": "Darts",
+      "path": [
+        "Sports",
+        "Darts"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-16",
+      "label": "Disabled Sports",
+      "path": [
+        "Sports",
+        "Disabled Sports"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-17",
+      "label": "Diving",
+      "path": [
+        "Sports",
+        "Diving"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-18",
+      "label": "Equine Sports",
+      "path": [
+        "Sports",
+        "Equine Sports"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-26",
+      "label": "Horse Racing",
+      "path": [
+        "Sports",
+        "Equine Sports",
+        "Horse Racing"
+      ],
+      "level": 3,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-19",
+      "label": "Extreme Sports",
+      "path": [
+        "Sports",
+        "Extreme Sports"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-1",
+      "label": "Canoeing and Kayaking",
+      "path": [
+        "Sports",
+        "Extreme Sports",
+        "Canoeing and Kayaking"
+      ],
+      "level": 3,
+      "parent": "IAB32-19"
+    },
+    {
+      "code": "IAB32-2",
+      "label": "Climbing",
+      "path": [
+        "Sports",
+        "Extreme Sports",
+        "Climbing"
+      ],
+      "level": 3,
+      "parent": "IAB32-19"
+    },
+    {
+      "code": "IAB32-3",
+      "label": "Paintball",
+      "path": [
+        "Sports",
+        "Extreme Sports",
+        "Paintball"
+      ],
+      "level": 3,
+      "parent": "IAB32-19"
+    },
+    {
+      "code": "IAB32-4",
+      "label": "Scuba Diving",
+      "path": [
+        "Sports",
+        "Extreme Sports",
+        "Scuba Diving"
+      ],
+      "level": 3,
+      "parent": "IAB32-19"
+    },
+    {
+      "code": "IAB32-5",
+      "label": "Skateboarding",
+      "path": [
+        "Sports",
+        "Extreme Sports",
+        "Skateboarding"
+      ],
+      "level": 3,
+      "parent": "IAB32-19"
+    },
+    {
+      "code": "IAB32-6",
+      "label": "Snowboarding",
+      "path": [
+        "Sports",
+        "Extreme Sports",
+        "Snowboarding"
+      ],
+      "level": 3,
+      "parent": "IAB32-19"
+    },
+    {
+      "code": "IAB32-7",
+      "label": "Surfing and Bodyboarding",
+      "path": [
+        "Sports",
+        "Extreme Sports",
+        "Surfing and Bodyboarding"
+      ],
+      "level": 3,
+      "parent": "IAB32-19"
+    },
+    {
+      "code": "IAB32-8",
+      "label": "Waterskiing and Wakeboarding",
+      "path": [
+        "Sports",
+        "Extreme Sports",
+        "Waterskiing and Wakeboarding"
+      ],
+      "level": 3,
+      "parent": "IAB32-19"
+    },
+    {
+      "code": "IAB32-20",
+      "label": "Fantasy Sports",
+      "path": [
+        "Sports",
+        "Fantasy Sports"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-21",
+      "label": "Field Hockey",
+      "path": [
+        "Sports",
+        "Field Hockey"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-22",
+      "label": "Figure Skating",
+      "path": [
+        "Sports",
+        "Figure Skating"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-23",
+      "label": "Fishing Sports",
+      "path": [
+        "Sports",
+        "Fishing Sports"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-24",
+      "label": "Golf",
+      "path": [
+        "Sports",
+        "Golf"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-25",
+      "label": "Gymnastics",
+      "path": [
+        "Sports",
+        "Gymnastics"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-27",
+      "label": "Hunting and Shooting",
+      "path": [
+        "Sports",
+        "Hunting and Shooting"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-28",
+      "label": "Ice Hockey",
+      "path": [
+        "Sports",
+        "Ice Hockey"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-29",
+      "label": "Inline Skating",
+      "path": [
+        "Sports",
+        "Inline Skating"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-30",
+      "label": "Lacrosse",
+      "path": [
+        "Sports",
+        "Lacrosse"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-31",
+      "label": "Martial Arts",
+      "path": [
+        "Sports",
+        "Martial Arts"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-32",
+      "label": "Olympic Sports",
+      "path": [
+        "Sports",
+        "Olympic Sports"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-1",
+      "label": "Summer Olympic Sports",
+      "path": [
+        "Sports",
+        "Olympic Sports",
+        "Summer Olympic Sports"
+      ],
+      "level": 3,
+      "parent": "IAB32-32"
+    },
+    {
+      "code": "IAB32-2",
+      "label": "Winter Olympic Sports",
+      "path": [
+        "Sports",
+        "Olympic Sports",
+        "Winter Olympic Sports"
+      ],
+      "level": 3,
+      "parent": "IAB32-32"
+    },
+    {
+      "code": "IAB32-33",
+      "label": "Poker and Professional Gambling",
+      "path": [
+        "Sports",
+        "Poker and Professional Gambling"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-34",
+      "label": "Rodeo",
+      "path": [
+        "Sports",
+        "Rodeo"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-35",
+      "label": "Rowing",
+      "path": [
+        "Sports",
+        "Rowing"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-36",
+      "label": "Rugby",
+      "path": [
+        "Sports",
+        "Rugby"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-1",
+      "label": "Rugby League",
+      "path": [
+        "Sports",
+        "Rugby",
+        "Rugby League"
+      ],
+      "level": 3,
+      "parent": "IAB32-36"
+    },
+    {
+      "code": "IAB32-2",
+      "label": "Rugby Union",
+      "path": [
+        "Sports",
+        "Rugby",
+        "Rugby Union"
+      ],
+      "level": 3,
+      "parent": "IAB32-36"
+    },
+    {
+      "code": "IAB32-37",
+      "label": "Sailing",
+      "path": [
+        "Sports",
+        "Sailing"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-38",
+      "label": "Skiing",
+      "path": [
+        "Sports",
+        "Skiing"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-39",
+      "label": "Snooker/Pool/Billiards",
+      "path": [
+        "Sports",
+        "Snooker/Pool/Billiards"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-40",
+      "label": "Soccer",
+      "path": [
+        "Sports",
+        "Soccer"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-41",
+      "label": "Softball",
+      "path": [
+        "Sports",
+        "Softball"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-42",
+      "label": "Sports Equipment",
+      "path": [
+        "Sports",
+        "Sports Equipment"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-43",
+      "label": "Squash",
+      "path": [
+        "Sports",
+        "Squash"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-44",
+      "label": "Swimming",
+      "path": [
+        "Sports",
+        "Swimming"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-45",
+      "label": "Table Tennis",
+      "path": [
+        "Sports",
+        "Table Tennis"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-46",
+      "label": "Tennis",
+      "path": [
+        "Sports",
+        "Tennis"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-47",
+      "label": "Track and Field",
+      "path": [
+        "Sports",
+        "Track and Field"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-48",
+      "label": "Volleyball",
+      "path": [
+        "Sports",
+        "Volleyball"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-49",
+      "label": "Walking",
+      "path": [
+        "Sports",
+        "Walking"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-50",
+      "label": "Water Polo",
+      "path": [
+        "Sports",
+        "Water Polo"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-51",
+      "label": "Weightlifting",
+      "path": [
+        "Sports",
+        "Weightlifting"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB32-52",
+      "label": "Wrestling",
+      "path": [
+        "Sports",
+        "Wrestling"
+      ],
+      "level": 2,
+      "parent": "IAB32"
+    },
+    {
+      "code": "IAB33",
+      "label": "Style & Fashion",
+      "path": [
+        "Style & Fashion"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB33-1",
+      "label": "Beauty",
+      "path": [
+        "Style & Fashion",
+        "Beauty"
+      ],
+      "level": 2,
+      "parent": "IAB33"
+    },
+    {
+      "code": "IAB33-1",
+      "label": "Hair Care",
+      "path": [
+        "Style & Fashion",
+        "Beauty",
+        "Hair Care"
+      ],
+      "level": 3,
+      "parent": "IAB33-1"
+    },
+    {
+      "code": "IAB33-2",
+      "label": "Makeup and Accessories",
+      "path": [
+        "Style & Fashion",
+        "Beauty",
+        "Makeup and Accessories"
+      ],
+      "level": 3,
+      "parent": "IAB33-1"
+    },
+    {
+      "code": "IAB33-3",
+      "label": "Nail Care",
+      "path": [
+        "Style & Fashion",
+        "Beauty",
+        "Nail Care"
+      ],
+      "level": 3,
+      "parent": "IAB33-1"
+    },
+    {
+      "code": "IAB33-4",
+      "label": "Natural and Organic Beauty",
+      "path": [
+        "Style & Fashion",
+        "Beauty",
+        "Natural and Organic Beauty"
+      ],
+      "level": 3,
+      "parent": "IAB33-1"
+    },
+    {
+      "code": "IAB33-5",
+      "label": "Perfume and Fragrance",
+      "path": [
+        "Style & Fashion",
+        "Beauty",
+        "Perfume and Fragrance"
+      ],
+      "level": 3,
+      "parent": "IAB33-1"
+    },
+    {
+      "code": "IAB33-6",
+      "label": "Skin Care",
+      "path": [
+        "Style & Fashion",
+        "Beauty",
+        "Skin Care"
+      ],
+      "level": 3,
+      "parent": "IAB33-1"
+    },
+    {
+      "code": "IAB33-2",
+      "label": "Body Art",
+      "path": [
+        "Style & Fashion",
+        "Body Art"
+      ],
+      "level": 2,
+      "parent": "IAB33"
+    },
+    {
+      "code": "IAB33-3",
+      "label": "Children's Clothing",
+      "path": [
+        "Style & Fashion",
+        "Children's Clothing"
+      ],
+      "level": 2,
+      "parent": "IAB33"
+    },
+    {
+      "code": "IAB33-4",
+      "label": "Designer Clothing",
+      "path": [
+        "Style & Fashion",
+        "Designer Clothing"
+      ],
+      "level": 2,
+      "parent": "IAB33"
+    },
+    {
+      "code": "IAB33-5",
+      "label": "Fashion Trends",
+      "path": [
+        "Style & Fashion",
+        "Fashion Trends"
+      ],
+      "level": 2,
+      "parent": "IAB33"
+    },
+    {
+      "code": "IAB33-6",
+      "label": "High Fashion",
+      "path": [
+        "Style & Fashion",
+        "High Fashion"
+      ],
+      "level": 2,
+      "parent": "IAB33"
+    },
+    {
+      "code": "IAB33-7",
+      "label": "Men's Fashion",
+      "path": [
+        "Style & Fashion",
+        "Men's Fashion"
+      ],
+      "level": 2,
+      "parent": "IAB33"
+    },
+    {
+      "code": "IAB33-1",
+      "label": "Men's Accessories",
+      "path": [
+        "Style & Fashion",
+        "Men's Fashion",
+        "Men's Accessories"
+      ],
+      "level": 3,
+      "parent": "IAB33-7"
+    },
+    {
+      "code": "IAB33-1",
+      "label": "Men's Jewelry and Watches",
+      "path": [
+        "Style & Fashion",
+        "Men's Fashion",
+        "Men's Accessories",
+        "Men's Jewelry and Watches"
+      ],
+      "level": 4,
+      "parent": "IAB33-1"
+    },
+    {
+      "code": "IAB33-2",
+      "label": "Men's Clothing",
+      "path": [
+        "Style & Fashion",
+        "Men's Fashion",
+        "Men's Clothing"
+      ],
+      "level": 3,
+      "parent": "IAB33-7"
+    },
+    {
+      "code": "IAB33-1",
+      "label": "Men's Business Wear",
+      "path": [
+        "Style & Fashion",
+        "Men's Fashion",
+        "Men's Clothing",
+        "Men's Business Wear"
+      ],
+      "level": 4,
+      "parent": "IAB33-2"
+    },
+    {
+      "code": "IAB33-2",
+      "label": "Men's Casual Wear",
+      "path": [
+        "Style & Fashion",
+        "Men's Fashion",
+        "Men's Clothing",
+        "Men's Casual Wear"
+      ],
+      "level": 4,
+      "parent": "IAB33-2"
+    },
+    {
+      "code": "IAB33-3",
+      "label": "Men's Formal Wear",
+      "path": [
+        "Style & Fashion",
+        "Men's Fashion",
+        "Men's Clothing",
+        "Men's Formal Wear"
+      ],
+      "level": 4,
+      "parent": "IAB33-2"
+    },
+    {
+      "code": "IAB33-4",
+      "label": "Men's Outerwear",
+      "path": [
+        "Style & Fashion",
+        "Men's Fashion",
+        "Men's Clothing",
+        "Men's Outerwear"
+      ],
+      "level": 4,
+      "parent": "IAB33-2"
+    },
+    {
+      "code": "IAB33-5",
+      "label": "Men's Sportswear",
+      "path": [
+        "Style & Fashion",
+        "Men's Fashion",
+        "Men's Clothing",
+        "Men's Sportswear"
+      ],
+      "level": 4,
+      "parent": "IAB33-2"
+    },
+    {
+      "code": "IAB33-6",
+      "label": "Men's Underwear and Sleepwear",
+      "path": [
+        "Style & Fashion",
+        "Men's Fashion",
+        "Men's Clothing",
+        "Men's Underwear and Sleepwear"
+      ],
+      "level": 4,
+      "parent": "IAB33-2"
+    },
+    {
+      "code": "IAB33-3",
+      "label": "Men's Shoes and Footwear",
+      "path": [
+        "Style & Fashion",
+        "Men's Fashion",
+        "Men's Shoes and Footwear"
+      ],
+      "level": 3,
+      "parent": "IAB33-7"
+    },
+    {
+      "code": "IAB33-8",
+      "label": "Personal Care",
+      "path": [
+        "Style & Fashion",
+        "Personal Care"
+      ],
+      "level": 2,
+      "parent": "IAB33"
+    },
+    {
+      "code": "IAB33-1",
+      "label": "Bath and Shower",
+      "path": [
+        "Style & Fashion",
+        "Personal Care",
+        "Bath and Shower"
+      ],
+      "level": 3,
+      "parent": "IAB33-8"
+    },
+    {
+      "code": "IAB33-2",
+      "label": "Deodorant and Antiperspirant",
+      "path": [
+        "Style & Fashion",
+        "Personal Care",
+        "Deodorant and Antiperspirant"
+      ],
+      "level": 3,
+      "parent": "IAB33-8"
+    },
+    {
+      "code": "IAB33-3",
+      "label": "Oral care",
+      "path": [
+        "Style & Fashion",
+        "Personal Care",
+        "Oral care"
+      ],
+      "level": 3,
+      "parent": "IAB33-8"
+    },
+    {
+      "code": "IAB33-4",
+      "label": "Shaving",
+      "path": [
+        "Style & Fashion",
+        "Personal Care",
+        "Shaving"
+      ],
+      "level": 3,
+      "parent": "IAB33-8"
+    },
+    {
+      "code": "IAB33-9",
+      "label": "Street Style",
+      "path": [
+        "Style & Fashion",
+        "Street Style"
+      ],
+      "level": 2,
+      "parent": "IAB33"
+    },
+    {
+      "code": "IAB33-10",
+      "label": "Women's Fashion",
+      "path": [
+        "Style & Fashion",
+        "Women's Fashion"
+      ],
+      "level": 2,
+      "parent": "IAB33"
+    },
+    {
+      "code": "IAB33-1",
+      "label": "Women's Accessories",
+      "path": [
+        "Style & Fashion",
+        "Women's Fashion",
+        "Women's Accessories"
+      ],
+      "level": 3,
+      "parent": "IAB33-10"
+    },
+    {
+      "code": "IAB33-1",
+      "label": "Women's Glasses",
+      "path": [
+        "Style & Fashion",
+        "Women's Fashion",
+        "Women's Accessories",
+        "Women's Glasses"
+      ],
+      "level": 4,
+      "parent": "IAB33-1"
+    },
+    {
+      "code": "IAB33-2",
+      "label": "Women's Handbags and Wallets",
+      "path": [
+        "Style & Fashion",
+        "Women's Fashion",
+        "Women's Accessories",
+        "Women's Handbags and Wallets"
+      ],
+      "level": 4,
+      "parent": "IAB33-1"
+    },
+    {
+      "code": "IAB33-3",
+      "label": "Women's Hats and Scarves",
+      "path": [
+        "Style & Fashion",
+        "Women's Fashion",
+        "Women's Accessories",
+        "Women's Hats and Scarves"
+      ],
+      "level": 4,
+      "parent": "IAB33-1"
+    },
+    {
+      "code": "IAB33-4",
+      "label": "Women's Jewelry and Watches",
+      "path": [
+        "Style & Fashion",
+        "Women's Fashion",
+        "Women's Accessories",
+        "Women's Jewelry and Watches"
+      ],
+      "level": 4,
+      "parent": "IAB33-1"
+    },
+    {
+      "code": "IAB33-2",
+      "label": "Women's Clothing",
+      "path": [
+        "Style & Fashion",
+        "Women's Fashion",
+        "Women's Clothing"
+      ],
+      "level": 3,
+      "parent": "IAB33-10"
+    },
+    {
+      "code": "IAB33-1",
+      "label": "Women's Business Wear",
+      "path": [
+        "Style & Fashion",
+        "Women's Fashion",
+        "Women's Clothing",
+        "Women's Business Wear"
+      ],
+      "level": 4,
+      "parent": "IAB33-2"
+    },
+    {
+      "code": "IAB33-2",
+      "label": "Women's Casual Wear",
+      "path": [
+        "Style & Fashion",
+        "Women's Fashion",
+        "Women's Clothing",
+        "Women's Casual Wear"
+      ],
+      "level": 4,
+      "parent": "IAB33-2"
+    },
+    {
+      "code": "IAB33-3",
+      "label": "Women's Formal Wear",
+      "path": [
+        "Style & Fashion",
+        "Women's Fashion",
+        "Women's Clothing",
+        "Women's Formal Wear"
+      ],
+      "level": 4,
+      "parent": "IAB33-2"
+    },
+    {
+      "code": "IAB33-4",
+      "label": "Women's Intimates and Sleepwear",
+      "path": [
+        "Style & Fashion",
+        "Women's Fashion",
+        "Women's Clothing",
+        "Women's Intimates and Sleepwear"
+      ],
+      "level": 4,
+      "parent": "IAB33-2"
+    },
+    {
+      "code": "IAB33-5",
+      "label": "Women's Outerwear",
+      "path": [
+        "Style & Fashion",
+        "Women's Fashion",
+        "Women's Clothing",
+        "Women's Outerwear"
+      ],
+      "level": 4,
+      "parent": "IAB33-2"
+    },
+    {
+      "code": "IAB33-6",
+      "label": "Women's Sportswear",
+      "path": [
+        "Style & Fashion",
+        "Women's Fashion",
+        "Women's Clothing",
+        "Women's Sportswear"
+      ],
+      "level": 4,
+      "parent": "IAB33-2"
+    },
+    {
+      "code": "IAB33-3",
+      "label": "Women's Shoes and Footwear",
+      "path": [
+        "Style & Fashion",
+        "Women's Fashion",
+        "Women's Shoes and Footwear"
+      ],
+      "level": 3,
+      "parent": "IAB33-10"
+    },
+    {
+      "code": "IAB34",
+      "label": "Technology & Computing",
+      "path": [
+        "Technology & Computing"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB34-1",
+      "label": "Artificial Intelligence",
+      "path": [
+        "Technology & Computing",
+        "Artificial Intelligence"
+      ],
+      "level": 2,
+      "parent": "IAB34"
+    },
+    {
+      "code": "IAB34-2",
+      "label": "Augmented Reality",
+      "path": [
+        "Technology & Computing",
+        "Augmented Reality"
+      ],
+      "level": 2,
+      "parent": "IAB34"
+    },
+    {
+      "code": "IAB34-3",
+      "label": "Computing",
+      "path": [
+        "Technology & Computing",
+        "Computing"
+      ],
+      "level": 2,
+      "parent": "IAB34"
+    },
+    {
+      "code": "IAB34-1",
+      "label": "Computer Networking",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Computer Networking"
+      ],
+      "level": 3,
+      "parent": "IAB34-3"
+    },
+    {
+      "code": "IAB34-2",
+      "label": "Computer Peripherals",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Computer Peripherals"
+      ],
+      "level": 3,
+      "parent": "IAB34-3"
+    },
+    {
+      "code": "IAB34-3",
+      "label": "Computer Software and Applications",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Computer Software and Applications"
+      ],
+      "level": 3,
+      "parent": "IAB34-3"
+    },
+    {
+      "code": "IAB34-1",
+      "label": "3-D Graphics",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Computer Software and Applications",
+        "3-D Graphics"
+      ],
+      "level": 4,
+      "parent": "IAB34-3"
+    },
+    {
+      "code": "IAB34-2",
+      "label": "Antivirus Software",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Computer Software and Applications",
+        "Antivirus Software"
+      ],
+      "level": 4,
+      "parent": "IAB34-3"
+    },
+    {
+      "code": "IAB34-3",
+      "label": "Browsers",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Computer Software and Applications",
+        "Browsers"
+      ],
+      "level": 4,
+      "parent": "IAB34-3"
+    },
+    {
+      "code": "IAB34-4",
+      "label": "Computer Animation",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Computer Software and Applications",
+        "Computer Animation"
+      ],
+      "level": 4,
+      "parent": "IAB34-3"
+    },
+    {
+      "code": "IAB34-5",
+      "label": "Databases",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Computer Software and Applications",
+        "Databases"
+      ],
+      "level": 4,
+      "parent": "IAB34-3"
+    },
+    {
+      "code": "IAB34-6",
+      "label": "Desktop Publishing",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Computer Software and Applications",
+        "Desktop Publishing"
+      ],
+      "level": 4,
+      "parent": "IAB34-3"
+    },
+    {
+      "code": "IAB34-7",
+      "label": "Digital Audio",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Computer Software and Applications",
+        "Digital Audio"
+      ],
+      "level": 4,
+      "parent": "IAB34-3"
+    },
+    {
+      "code": "IAB34-9",
+      "label": "Maps & Navigation",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Computer Software and Applications",
+        "Maps & Navigation"
+      ],
+      "level": 4,
+      "parent": "IAB34-3"
+    },
+    {
+      "code": "IAB34-8",
+      "label": "Graphics Software",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Computer Software and Applications",
+        "Graphics Software"
+      ],
+      "level": 4,
+      "parent": "IAB34-3"
+    },
+    {
+      "code": "IAB34-10",
+      "label": "Operating Systems",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Computer Software and Applications",
+        "Operating Systems"
+      ],
+      "level": 4,
+      "parent": "IAB34-3"
+    },
+    {
+      "code": "IAB34-11",
+      "label": "Photo Editing Software",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Computer Software and Applications",
+        "Photo Editing Software"
+      ],
+      "level": 4,
+      "parent": "IAB34-3"
+    },
+    {
+      "code": "IAB34-13",
+      "label": "Shareware and Freeware",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Computer Software and Applications",
+        "Shareware and Freeware"
+      ],
+      "level": 4,
+      "parent": "IAB34-3"
+    },
+    {
+      "code": "IAB34-14",
+      "label": "Video Software",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Computer Software and Applications",
+        "Video Software"
+      ],
+      "level": 4,
+      "parent": "IAB34-3"
+    },
+    {
+      "code": "IAB34-15",
+      "label": "Web Conferencing",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Computer Software and Applications",
+        "Web Conferencing"
+      ],
+      "level": 4,
+      "parent": "IAB34-3"
+    },
+    {
+      "code": "IAB34-4",
+      "label": "Data Storage and Warehousing",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Data Storage and Warehousing"
+      ],
+      "level": 3,
+      "parent": "IAB34-3"
+    },
+    {
+      "code": "IAB34-5",
+      "label": "Desktops",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Desktops"
+      ],
+      "level": 3,
+      "parent": "IAB34-3"
+    },
+    {
+      "code": "IAB34-6",
+      "label": "Information and Network Security",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Information and Network Security"
+      ],
+      "level": 3,
+      "parent": "IAB34-3"
+    },
+    {
+      "code": "IAB34-7",
+      "label": "Internet",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Internet"
+      ],
+      "level": 3,
+      "parent": "IAB34-3"
+    },
+    {
+      "code": "IAB34-1",
+      "label": "Cloud Computing",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Internet",
+        "Cloud Computing"
+      ],
+      "level": 4,
+      "parent": "IAB34-7"
+    },
+    {
+      "code": "IAB34-2",
+      "label": "Email",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Internet",
+        "Email"
+      ],
+      "level": 4,
+      "parent": "IAB34-7"
+    },
+    {
+      "code": "IAB34-3",
+      "label": "Internet for Beginners",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Internet",
+        "Internet for Beginners"
+      ],
+      "level": 4,
+      "parent": "IAB34-7"
+    },
+    {
+      "code": "IAB34-4",
+      "label": "Internet of Things",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Internet",
+        "Internet of Things"
+      ],
+      "level": 4,
+      "parent": "IAB34-7"
+    },
+    {
+      "code": "IAB34-5",
+      "label": "IT and Internet Support",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Internet",
+        "IT and Internet Support"
+      ],
+      "level": 4,
+      "parent": "IAB34-7"
+    },
+    {
+      "code": "IAB34-6",
+      "label": "Search",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Internet",
+        "Search"
+      ],
+      "level": 4,
+      "parent": "IAB34-7"
+    },
+    {
+      "code": "IAB34-7",
+      "label": "Social Networking",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Internet",
+        "Social Networking"
+      ],
+      "level": 4,
+      "parent": "IAB34-7"
+    },
+    {
+      "code": "IAB34-8",
+      "label": "Web Design and HTML",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Internet",
+        "Web Design and HTML"
+      ],
+      "level": 4,
+      "parent": "IAB34-7"
+    },
+    {
+      "code": "IAB34-9",
+      "label": "Web Development",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Internet",
+        "Web Development"
+      ],
+      "level": 4,
+      "parent": "IAB34-7"
+    },
+    {
+      "code": "IAB34-10",
+      "label": "Web Hosting",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Internet",
+        "Web Hosting"
+      ],
+      "level": 4,
+      "parent": "IAB34-7"
+    },
+    {
+      "code": "IAB34-8",
+      "label": "Laptops",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Laptops"
+      ],
+      "level": 3,
+      "parent": "IAB34-3"
+    },
+    {
+      "code": "IAB34-9",
+      "label": "Programming Languages",
+      "path": [
+        "Technology & Computing",
+        "Computing",
+        "Programming Languages"
+      ],
+      "level": 3,
+      "parent": "IAB34-3"
+    },
+    {
+      "code": "IAB34-4",
+      "label": "Consumer Electronics",
+      "path": [
+        "Technology & Computing",
+        "Consumer Electronics"
+      ],
+      "level": 2,
+      "parent": "IAB34"
+    },
+    {
+      "code": "IAB34-1",
+      "label": "Cameras and Camcorders",
+      "path": [
+        "Technology & Computing",
+        "Consumer Electronics",
+        "Cameras and Camcorders"
+      ],
+      "level": 3,
+      "parent": "IAB34-4"
+    },
+    {
+      "code": "IAB34-2",
+      "label": "Home Entertainment Systems",
+      "path": [
+        "Technology & Computing",
+        "Consumer Electronics",
+        "Home Entertainment Systems"
+      ],
+      "level": 3,
+      "parent": "IAB34-4"
+    },
+    {
+      "code": "IAB34-3",
+      "label": "Smartphones",
+      "path": [
+        "Technology & Computing",
+        "Consumer Electronics",
+        "Smartphones"
+      ],
+      "level": 3,
+      "parent": "IAB34-4"
+    },
+    {
+      "code": "IAB34-4",
+      "label": "Tablets and E-readers",
+      "path": [
+        "Technology & Computing",
+        "Consumer Electronics",
+        "Tablets and E-readers"
+      ],
+      "level": 3,
+      "parent": "IAB34-4"
+    },
+    {
+      "code": "IAB34-5",
+      "label": "Wearable Technology",
+      "path": [
+        "Technology & Computing",
+        "Consumer Electronics",
+        "Wearable Technology"
+      ],
+      "level": 3,
+      "parent": "IAB34-4"
+    },
+    {
+      "code": "IAB34-5",
+      "label": "Robotics",
+      "path": [
+        "Technology & Computing",
+        "Robotics"
+      ],
+      "level": 2,
+      "parent": "IAB34"
+    },
+    {
+      "code": "IAB34-6",
+      "label": "Virtual Reality",
+      "path": [
+        "Technology & Computing",
+        "Virtual Reality"
+      ],
+      "level": 2,
+      "parent": "IAB34"
+    },
+    {
+      "code": "IAB35",
+      "label": "Travel",
+      "path": [
+        "Travel"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB35-1",
+      "label": "Travel Accessories",
+      "path": [
+        "Travel",
+        "Travel Accessories"
+      ],
+      "level": 2,
+      "parent": "IAB35"
+    },
+    {
+      "code": "IAB35-2",
+      "label": "Travel Locations",
+      "path": [
+        "Travel",
+        "Travel Locations"
+      ],
+      "level": 2,
+      "parent": "IAB35"
+    },
+    {
+      "code": "IAB35-1",
+      "label": "Africa Travel",
+      "path": [
+        "Travel",
+        "Travel Locations",
+        "Africa Travel"
+      ],
+      "level": 3,
+      "parent": "IAB35-2"
+    },
+    {
+      "code": "IAB35-2",
+      "label": "Asia Travel",
+      "path": [
+        "Travel",
+        "Travel Locations",
+        "Asia Travel"
+      ],
+      "level": 3,
+      "parent": "IAB35-2"
+    },
+    {
+      "code": "IAB35-3",
+      "label": "Australia and Oceania Travel",
+      "path": [
+        "Travel",
+        "Travel Locations",
+        "Australia and Oceania Travel"
+      ],
+      "level": 3,
+      "parent": "IAB35-2"
+    },
+    {
+      "code": "IAB35-4",
+      "label": "Europe Travel",
+      "path": [
+        "Travel",
+        "Travel Locations",
+        "Europe Travel"
+      ],
+      "level": 3,
+      "parent": "IAB35-2"
+    },
+    {
+      "code": "IAB35-5",
+      "label": "North America Travel",
+      "path": [
+        "Travel",
+        "Travel Locations",
+        "North America Travel"
+      ],
+      "level": 3,
+      "parent": "IAB35-2"
+    },
+    {
+      "code": "IAB35-6",
+      "label": "Polar Travel",
+      "path": [
+        "Travel",
+        "Travel Locations",
+        "Polar Travel"
+      ],
+      "level": 3,
+      "parent": "IAB35-2"
+    },
+    {
+      "code": "IAB35-7",
+      "label": "South America Travel",
+      "path": [
+        "Travel",
+        "Travel Locations",
+        "South America Travel"
+      ],
+      "level": 3,
+      "parent": "IAB35-2"
+    },
+    {
+      "code": "IAB35-3",
+      "label": "Travel Preparation and Advice",
+      "path": [
+        "Travel",
+        "Travel Preparation and Advice"
+      ],
+      "level": 2,
+      "parent": "IAB35"
+    },
+    {
+      "code": "IAB35-4",
+      "label": "Travel Type",
+      "path": [
+        "Travel",
+        "Travel Type"
+      ],
+      "level": 2,
+      "parent": "IAB35"
+    },
+    {
+      "code": "IAB35-1",
+      "label": "Adventure Travel",
+      "path": [
+        "Travel",
+        "Travel Type",
+        "Adventure Travel"
+      ],
+      "level": 3,
+      "parent": "IAB35-4"
+    },
+    {
+      "code": "IAB35-2",
+      "label": "Air Travel",
+      "path": [
+        "Travel",
+        "Travel Type",
+        "Air Travel"
+      ],
+      "level": 3,
+      "parent": "IAB35-4"
+    },
+    {
+      "code": "IAB35-3",
+      "label": "Beach Travel",
+      "path": [
+        "Travel",
+        "Travel Type",
+        "Beach Travel"
+      ],
+      "level": 3,
+      "parent": "IAB35-4"
+    },
+    {
+      "code": "IAB35-4",
+      "label": "Bed & Breakfasts",
+      "path": [
+        "Travel",
+        "Travel Type",
+        "Bed & Breakfasts"
+      ],
+      "level": 3,
+      "parent": "IAB35-4"
+    },
+    {
+      "code": "IAB35-5",
+      "label": "Budget Travel",
+      "path": [
+        "Travel",
+        "Travel Type",
+        "Budget Travel"
+      ],
+      "level": 3,
+      "parent": "IAB35-4"
+    },
+    {
+      "code": "IAB35-6",
+      "label": "Business Travel",
+      "path": [
+        "Travel",
+        "Travel Type",
+        "Business Travel"
+      ],
+      "level": 3,
+      "parent": "IAB35-4"
+    },
+    {
+      "code": "IAB35-7",
+      "label": "Camping",
+      "path": [
+        "Travel",
+        "Travel Type",
+        "Camping"
+      ],
+      "level": 3,
+      "parent": "IAB35-4"
+    },
+    {
+      "code": "IAB35-8",
+      "label": "Cruises",
+      "path": [
+        "Travel",
+        "Travel Type",
+        "Cruises"
+      ],
+      "level": 3,
+      "parent": "IAB35-4"
+    },
+    {
+      "code": "IAB35-9",
+      "label": "Day Trips",
+      "path": [
+        "Travel",
+        "Travel Type",
+        "Day Trips"
+      ],
+      "level": 3,
+      "parent": "IAB35-4"
+    },
+    {
+      "code": "IAB35-10",
+      "label": "Family Travel",
+      "path": [
+        "Travel",
+        "Travel Type",
+        "Family Travel"
+      ],
+      "level": 3,
+      "parent": "IAB35-4"
+    },
+    {
+      "code": "IAB35-11",
+      "label": "Honeymoons and Getaways",
+      "path": [
+        "Travel",
+        "Travel Type",
+        "Honeymoons and Getaways"
+      ],
+      "level": 3,
+      "parent": "IAB35-4"
+    },
+    {
+      "code": "IAB35-12",
+      "label": "Hotels and Motels",
+      "path": [
+        "Travel",
+        "Travel Type",
+        "Hotels and Motels"
+      ],
+      "level": 3,
+      "parent": "IAB35-4"
+    },
+    {
+      "code": "IAB35-13",
+      "label": "Rail Travel",
+      "path": [
+        "Travel",
+        "Travel Type",
+        "Rail Travel"
+      ],
+      "level": 3,
+      "parent": "IAB35-4"
+    },
+    {
+      "code": "IAB35-14",
+      "label": "Road Trips",
+      "path": [
+        "Travel",
+        "Travel Type",
+        "Road Trips"
+      ],
+      "level": 3,
+      "parent": "IAB35-4"
+    },
+    {
+      "code": "IAB35-15",
+      "label": "Spas",
+      "path": [
+        "Travel",
+        "Travel Type",
+        "Spas"
+      ],
+      "level": 3,
+      "parent": "IAB35-4"
+    },
+    {
+      "code": "IAB36",
+      "label": "Video Gaming",
+      "path": [
+        "Video Gaming"
+      ],
+      "level": 1,
+      "parent": null
+    },
+    {
+      "code": "IAB36-1",
+      "label": "Console Games",
+      "path": [
+        "Video Gaming",
+        "Console Games"
+      ],
+      "level": 2,
+      "parent": "IAB36"
+    },
+    {
+      "code": "IAB36-2",
+      "label": "eSports",
+      "path": [
+        "Video Gaming",
+        "eSports"
+      ],
+      "level": 2,
+      "parent": "IAB36"
+    },
+    {
+      "code": "IAB36-3",
+      "label": "Mobile Games",
+      "path": [
+        "Video Gaming",
+        "Mobile Games"
+      ],
+      "level": 2,
+      "parent": "IAB36"
+    },
+    {
+      "code": "IAB36-4",
+      "label": "PC Games",
+      "path": [
+        "Video Gaming",
+        "PC Games"
+      ],
+      "level": 2,
+      "parent": "IAB36"
+    },
+    {
+      "code": "IAB36-5",
+      "label": "Video Game Genres",
+      "path": [
+        "Video Gaming",
+        "Video Game Genres"
+      ],
+      "level": 2,
+      "parent": "IAB36"
+    },
+    {
+      "code": "IAB36-1",
+      "label": "Action Video Games",
+      "path": [
+        "Video Gaming",
+        "Video Game Genres",
+        "Action Video Games"
+      ],
+      "level": 3,
+      "parent": "IAB36-5"
+    },
+    {
+      "code": "IAB36-2",
+      "label": "Action-Adventure Video Games",
+      "path": [
+        "Video Gaming",
+        "Video Game Genres",
+        "Action-Adventure Video Games"
+      ],
+      "level": 3,
+      "parent": "IAB36-5"
+    },
+    {
+      "code": "IAB36-3",
+      "label": "Adult Video Games",
+      "path": [
+        "Video Gaming",
+        "Video Game Genres",
+        "Adult Video Games"
+      ],
+      "level": 3,
+      "parent": "IAB36-5"
+    },
+    {
+      "code": "IAB36-4",
+      "label": "Adventure Video Games",
+      "path": [
+        "Video Gaming",
+        "Video Game Genres",
+        "Adventure Video Games"
+      ],
+      "level": 3,
+      "parent": "IAB36-5"
+    },
+    {
+      "code": "IAB36-5",
+      "label": "Casino and Gambling Video Games",
+      "path": [
+        "Video Gaming",
+        "Video Game Genres",
+        "Casino and Gambling Video Games"
+      ],
+      "level": 3,
+      "parent": "IAB36-5"
+    },
+    {
+      "code": "IAB36-6",
+      "label": "Casual Games",
+      "path": [
+        "Video Gaming",
+        "Video Game Genres",
+        "Casual Games"
+      ],
+      "level": 3,
+      "parent": "IAB36-5"
+    },
+    {
+      "code": "IAB36-7",
+      "label": "Educational Video Games",
+      "path": [
+        "Video Gaming",
+        "Video Game Genres",
+        "Educational Video Games"
+      ],
+      "level": 3,
+      "parent": "IAB36-5"
+    },
+    {
+      "code": "IAB36-8",
+      "label": "Exercise and Fitness Video Games",
+      "path": [
+        "Video Gaming",
+        "Video Game Genres",
+        "Exercise and Fitness Video Games"
+      ],
+      "level": 3,
+      "parent": "IAB36-5"
+    },
+    {
+      "code": "IAB36-9",
+      "label": "Family Video Games",
+      "path": [
+        "Video Gaming",
+        "Video Game Genres",
+        "Family Video Games"
+      ],
+      "level": 3,
+      "parent": "IAB36-5"
+    },
+    {
+      "code": "IAB36-10",
+      "label": "Horror Video Games",
+      "path": [
+        "Video Gaming",
+        "Video Game Genres",
+        "Horror Video Games"
+      ],
+      "level": 3,
+      "parent": "IAB36-5"
+    },
+    {
+      "code": "IAB36-11",
+      "label": "MMOs",
+      "path": [
+        "Video Gaming",
+        "Video Game Genres",
+        "MMOs"
+      ],
+      "level": 3,
+      "parent": "IAB36-5"
+    },
+    {
+      "code": "IAB36-12",
+      "label": "Music and Party Video Games",
+      "path": [
+        "Video Gaming",
+        "Video Game Genres",
+        "Music and Party Video Games"
+      ],
+      "level": 3,
+      "parent": "IAB36-5"
+    },
+    {
+      "code": "IAB36-13",
+      "label": "Puzzle Video Games",
+      "path": [
+        "Video Gaming",
+        "Video Game Genres",
+        "Puzzle Video Games"
+      ],
+      "level": 3,
+      "parent": "IAB36-5"
+    },
+    {
+      "code": "IAB36-14",
+      "label": "Racing Video Games",
+      "path": [
+        "Video Gaming",
+        "Video Game Genres",
+        "Racing Video Games"
+      ],
+      "level": 3,
+      "parent": "IAB36-5"
+    },
+    {
+      "code": "IAB36-15",
+      "label": "Role-Playing Video Games",
+      "path": [
+        "Video Gaming",
+        "Video Game Genres",
+        "Role-Playing Video Games"
+      ],
+      "level": 3,
+      "parent": "IAB36-5"
+    },
+    {
+      "code": "IAB36-16",
+      "label": "Simulation Video Games",
+      "path": [
+        "Video Gaming",
+        "Video Game Genres",
+        "Simulation Video Games"
+      ],
+      "level": 3,
+      "parent": "IAB36-5"
+    },
+    {
+      "code": "IAB36-17",
+      "label": "Sports Video Games",
+      "path": [
+        "Video Gaming",
+        "Video Game Genres",
+        "Sports Video Games"
+      ],
+      "level": 3,
+      "parent": "IAB36-5"
+    },
+    {
+      "code": "IAB36-18",
+      "label": "Strategy Video Games",
+      "path": [
+        "Video Gaming",
+        "Video Game Genres",
+        "Strategy Video Games"
+      ],
+      "level": 3,
+      "parent": "IAB36-5"
+    },
+    {
+      "code": "IAB37",
+      "label": "War and Conflicts",
+      "path": [
+        "War and Conflicts"
+      ],
+      "level": 1,
+      "parent": null
+    }
+  ]
+}

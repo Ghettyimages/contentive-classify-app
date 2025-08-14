@@ -18,6 +18,7 @@ from exporter import to_csv, to_json
 from iab_taxonomy import bp as iab_bp, load_iab_taxonomy
 from iab_taxonomy import load_tsv_items, load_bundle_map, load_iab_from_db, MIN_FULL_TAXONOMY
 from iab_taxonomy import get_taxonomy_codes
+from iab_taxonomy import parse_iab_tsv
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -31,6 +32,13 @@ try:
 	print(f"[IAB] Loaded {len(IAB)} categories from TSV")
 except Exception as e:
 	print(f"[IAB] Failed to load taxonomy: {e}")
+
+# Attempt new deterministic IAB 3.1 load for Segment Builder
+try:
+	codes = parse_iab_tsv(os.getenv('IAB_TSV_PATH'))
+	print(f"[IAB] Loaded {len(codes)} codes from backend")
+except Exception as e:
+	print(f"[IAB] Backend IAB 3.1 not ready: {e}")
 
 # Initialize Firebase Admin SDK on startup
 print("🚀 Initializing Firebase Admin SDK on app startup...")
@@ -1236,7 +1244,7 @@ def health():
     }), 200
 
 IAB_TSV_PATH = os.getenv("IAB_TSV_PATH", os.path.join(os.path.dirname(__file__), 'data', 'IAB_Content_Taxonomy_3_1.tsv'))
-IAB_BUNDLE_JSON = os.getenv("IAB_BUNDLE_JSON", os.path.join(os.path.dirname(__file__), '..', 'frontend', 'src', 'data', 'iab_content_taxonomy_3_1.json'))
+IAB_BUNDLE_JSON = os.getenv("IAB_BUNDLE_JSON", os.path.join(os.path.dirname(__file__), '..', 'frontend', 'src', 'data', 'iab_content_taxonomy_3_1.v1.json'))
 
 def _iab_resp(source: str, items: list):
     return jsonify({"source": source, "count": len(items), "items": items})
