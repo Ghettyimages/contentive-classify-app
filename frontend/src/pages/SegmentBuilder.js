@@ -14,7 +14,8 @@ import localTaxonomy from '../data/iab_content_taxonomy_3_1.json';
 import { sortByIabCode } from '../utils/iabSort';
 import ExportFormatModal from '../components/ExportFormatModal.jsx';
 import { normalizeIabCodes } from '../utils/iabNormalize';
-import fallbackIAB from '../data/iab_content_taxonomy_3_1.json';
+// Contentive fallback taxonomy with optional IAB mapping
+// Note: we will dynamic import in code to avoid build failures if file is temporarily missing
 
 const formatDate = (date) => date.toISOString().slice(0, 10);
 
@@ -149,33 +150,51 @@ const SegmentBuilder = () => {
   const loadIabOptions = async () => {
     console.info('[IAB] initializing…');
     try {
-      const res = await fetch(`${API_BASE_URL}/api/taxonomy/iab3_1`);
+      // Try unified IAB/Contentive taxonomy first
+      const res = await fetch(`${API_BASE_URL}/api/iab/taxonomy`, { credentials: 'same-origin' });
       const body = await res.json();
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const { source, count, items } = body || {};
-      const ready = Array.isArray(items) && items.length > 0;
-      console.info(`[IAB] Loaded from ${source} with ${count} items`);
-      // Use bundled map to fill names if missing
-      const nameMap = Array.isArray(fallbackIAB)
-        ? Object.fromEntries(fallbackIAB.map(r => [String(r.code || '').toUpperCase(), r.name || r.label || r.code]))
-        : (fallbackIAB?.codes ? Object.fromEntries((fallbackIAB.codes || []).map(r => [String(r.code || '').toUpperCase(), r.name || r.label || r.code])) : {});
-      const norm = (s) => (s || '').trim();
-      const opts = (items || [])
-        .filter(x => x && x.code)
-        .map(x => ({ code: norm(x.code).toUpperCase(), name: norm(x.name) || nameMap[norm(x.code).toUpperCase()] || norm(x.code) }))
-        .sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
-      setIabOptions(opts.map(o => ({ code: o.code, display: `${o.code} (${o.name})` })));
-      setTaxonomyFallbackUsed(source && String(source).startsWith('db:'));
+      const codes = body?.codes || body?.items || [];
+      if (!Array.isArray(codes) || codes.length < 50) throw new Error(`too few codes (${codes.length || 0})`);
+      console.info(`[IAB] Source=backend count=${codes.length}`);
+      const map = new Map();
+      for (const c of codes) {
+        const k = (c?.iab_code || c?.code || c?.uid || '').toString().trim().toUpperCase();
+        if (!k) continue;
+        const label = Array.isArray(c?.path) && c.path.length ? c.path.join(' > ') : (c?.label || c?.name || k);
+        if (!map.has(k)) map.set(k, { code: k, label: label });
+      }
+      const items = Array.from(map.values()).sort((a, b) => a.label.toLowerCase().localeCompare(b.label.toLowerCase()));
+      setIabOptions(items.map(it => ({ code: it.code, display: `${it.label}` })));
+      setTaxonomyFallbackUsed(false);
     } catch (err) {
-      console.warn('[IAB] Backend load failed; no taxonomy available', err);
-      // Final attempt: use bundled JSON fully
-      const list = Array.isArray(fallbackIAB) ? fallbackIAB : (fallbackIAB?.codes || []);
-      const opts = (list || [])
-        .filter(x => x && x.code)
-        .map(x => ({ code: String(x.code || '').toUpperCase(), name: String(x.name || x.label || x.code) }))
-        .sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
-      setIabOptions(opts.map(o => ({ code: o.code, display: `${o.code} (${o.name})` })));
-      setTaxonomyFallbackUsed(true);
+      console.warn('[IAB] Backend load failed; using local fallback', err);
+      try {
+        const mod = await import('../data/contentive_taxonomy_v3_1_with_iab.json');
+        const fallback = mod?.default || mod;
+        const list = Array.isArray(fallback?.codes) ? fallback.codes : (Array.isArray(fallback) ? fallback : []);
+        if (!Array.isArray(list) || list.length < 50) {
+          console.error('[IAB] Fallback JSON too small; check build');
+          setIabOptions([]);
+          setTaxonomyFallbackUsed(true);
+          return;
+        }
+        const map = new Map();
+        for (const c of list) {
+          const k = (c?.iab_code || c?.code || c?.uid || '').toString().trim().toUpperCase();
+          if (!k) continue;
+          const label = Array.isArray(c?.path) && c.path.length ? c.path.join(' > ') : (c?.label || c?.name || k);
+          if (!map.has(k)) map.set(k, { code: k, label: label });
+        }
+        const items = Array.from(map.values()).sort((a, b) => a.label.toLowerCase().localeCompare(b.label.toLowerCase()));
+        setIabOptions(items.map(it => ({ code: it.code, display: `${it.label}` })));
+        setTaxonomyFallbackUsed(true);
+        console.info(`[IAB] Source=fallback count=${items.length}`);
+      } catch (e2) {
+        console.error('[IAB] Failed to load fallback JSON', e2);
+        setIabOptions([]);
+        setTaxonomyFallbackUsed(true);
+      }
     }
   };
 
