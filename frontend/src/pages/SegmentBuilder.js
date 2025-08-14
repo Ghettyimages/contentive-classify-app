@@ -147,38 +147,35 @@ const SegmentBuilder = () => {
   };
 
   const loadIabOptions = async () => {
+    console.info('[IAB] initializing…');
     try {
-      const tryUrls = [`${API_BASE_URL}/taxonomy/iab3_1`, `${API_BASE_URL}/api/taxonomy/iab3_1`];
-      let items = [];
-      for (const u of tryUrls) {
-        try {
-          const res = await axios.get(u, { timeout: 15000 });
-          const data = Array.isArray(res.data) ? res.data : (res.data?.items || []);
-          if (Array.isArray(data) && data.length >= 100) { items = data; break; }
-        } catch (_) {}
-      }
-      if (items.length >= 100) {
-        const opts = items.map((r) => ({ code: r.code, display: `${r.code} (${r.name})` }));
-        setIabOptions(opts);
-        setTaxonomyFallbackUsed(false);
-        console.log('[IAB] Loaded from backend:', items.length, 'first:', items.slice(0,3).map(i=>i.code), 'last:', items.slice(-3).map(i=>i.code));
-        return;
-      }
-      throw new Error('Backend returned too few categories');
-    } catch (e) {
-      console.warn('[IAB] Backend load failed, using local fallback', e?.response?.status || e.message);
-      const localMod = await import('../data/iab_content_taxonomy_3_1.json');
-      const local = localMod.default || localMod;
-      const list = Array.isArray(local) ? local : (local?.codes || []);
-      if (Array.isArray(list) && list.length >= 100) {
-        const opts = list.map((r) => ({ code: r.code, display: `${r.code} (${r.name || r.label})` }));
-        setIabOptions(opts);
-        setTaxonomyFallbackUsed(true);
-        console.log('[IAB] Ready from bundled count:', list.length, 'first:', list.slice(0,3).map(i=>i.code), 'last:', list.slice(-3).map(i=>i.code));
-        return;
-      }
-      console.error('[IAB] Fallback JSON is too small; check build/update script.');
-      setIabOptions([]);
+      const res = await fetch(`${API_BASE_URL}/api/taxonomy/iab3_1`);
+      const body = await res.json();
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const { source, count, items } = body || {};
+      const ready = Array.isArray(items) && items.length > 0;
+      console.info(`[IAB] Loaded from ${source} with ${count} items`);
+      // Use bundled map to fill names if missing
+      const nameMap = Array.isArray(fallbackIAB)
+        ? Object.fromEntries(fallbackIAB.map(r => [String(r.code || '').toUpperCase(), r.name || r.label || r.code]))
+        : (fallbackIAB?.codes ? Object.fromEntries((fallbackIAB.codes || []).map(r => [String(r.code || '').toUpperCase(), r.name || r.label || r.code])) : {});
+      const norm = (s) => (s || '').trim();
+      const opts = (items || [])
+        .filter(x => x && x.code)
+        .map(x => ({ code: norm(x.code).toUpperCase(), name: norm(x.name) || nameMap[norm(x.code).toUpperCase()] || norm(x.code) }))
+        .sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
+      setIabOptions(opts.map(o => ({ code: o.code, display: `${o.code} (${o.name})` })));
+      setTaxonomyFallbackUsed(source && String(source).startsWith('db:'));
+    } catch (err) {
+      console.warn('[IAB] Backend load failed; no taxonomy available', err);
+      // Final attempt: use bundled JSON fully
+      const list = Array.isArray(fallbackIAB) ? fallbackIAB : (fallbackIAB?.codes || []);
+      const opts = (list || [])
+        .filter(x => x && x.code)
+        .map(x => ({ code: String(x.code || '').toUpperCase(), name: String(x.name || x.label || x.code) }))
+        .sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
+      setIabOptions(opts.map(o => ({ code: o.code, display: `${o.code} (${o.name})` })));
+      setTaxonomyFallbackUsed(true);
     }
   };
 

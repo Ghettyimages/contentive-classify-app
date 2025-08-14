@@ -16,6 +16,7 @@ from merge_attribution_with_classification import merge_attribution_data
 from taxonomy_loader import load_taxonomy, TaxonomyLoadError
 from exporter import to_csv, to_json
 from iab_taxonomy import bp as iab_bp, load_iab_taxonomy
+from iab_taxonomy import load_tsv_items, load_bundle_map, load_iab_from_db, MIN_FULL_TAXONOMY
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -1232,6 +1233,58 @@ def health():
         'commit': os.getenv('RENDER_GIT_COMMIT', 'unknown'),
         'python': os.sys.version,
     }), 200
+
+IAB_TSV_PATH = os.getenv("IAB_TSV_PATH", os.path.join(os.path.dirname(__file__), 'data', 'IAB_Content_Taxonomy_3_1.tsv'))
+IAB_BUNDLE_JSON = os.getenv("IAB_BUNDLE_JSON", os.path.join(os.path.dirname(__file__), '..', 'frontend', 'src', 'data', 'iab_content_taxonomy_3_1.json'))
+
+def _iab_resp(source: str, items: list):
+    return jsonify({"source": source, "count": len(items), "items": items})
+
+@app.get('/api/taxonomy/iab3_1')
+def api_iab_taxonomy():
+    try:
+        if os.path.exists(IAB_TSV_PATH):
+            tsv_items = load_tsv_items(IAB_TSV_PATH)
+            if len(tsv_items) >= MIN_FULL_TAXONOMY:
+                return _iab_resp('tsv', tsv_items)
+            app.logger.warning('[IAB] TSV present but small: %d', len(tsv_items))
+    except Exception as e:
+        app.logger.exception('[IAB] TSV load failed: %s', e)
+
+    bundle_map = load_bundle_map(IAB_BUNDLE_JSON)
+    db_source, db_items = load_iab_from_db(bundle_map)
+    if len(db_items) > 0:
+        app.logger.warning('[IAB] Using DB fallback (%s): %d', db_source, len(db_items))
+        return _iab_resp(f'db:{db_source}', db_items)
+
+    if os.path.exists(IAB_BUNDLE_JSON):
+        try:
+            m = load_bundle_map(IAB_BUNDLE_JSON)
+            items = [{"code": k, "name": v} for k, v in m.items()]
+            items.sort(key=lambda x: x['code'])
+            return _iab_resp('bundle', items)
+        except Exception as e:
+            app.logger.exception('[IAB] Bundle load failed: %s', e)
+    return jsonify({"source": "none", "count": 0, "items": []}), 503
+
+@app.get('/api/taxonomy/iab3_1/debug')
+def api_iab_taxonomy_debug():
+    info = {}
+    try:
+        info['tsv_path'] = IAB_TSV_PATH if os.path.exists(IAB_TSV_PATH) else '(missing)'
+        info['tsv_count'] = len(load_tsv_items(IAB_TSV_PATH)) if os.path.exists(IAB_TSV_PATH) else 0
+    except Exception as e:
+        info['tsv_error'] = str(e)
+    try:
+        m = load_bundle_map(IAB_BUNDLE_JSON)
+        info['bundle_json'] = IAB_BUNDLE_JSON
+        info['bundle_count'] = len(m)
+    except Exception as e:
+        info['bundle_error'] = str(e)
+    src, items = load_iab_from_db(load_bundle_map(IAB_BUNDLE_JSON))
+    info['db_source'] = src
+    info['db_count'] = len(items)
+    return jsonify(info)
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "5000"))

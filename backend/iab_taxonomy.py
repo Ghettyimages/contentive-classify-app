@@ -6,6 +6,9 @@ import logging
 import io
 from typing import List, Dict, Tuple
 from flask import Blueprint, jsonify
+import re
+import json
+from typing import Tuple
 
 bp = Blueprint("iab", __name__)
 log = logging.getLogger("iab")
@@ -24,6 +27,8 @@ NAME_FIELDS = [
 	"Name", "name", "Label", "Taxonomy Name", "Node Name", "Title", "English Name",
 ]
 TIER_FIELDS = ["Tier1", "Tier2", "Tier3", "Tier 1", "Tier 2", "Tier 3", "Path", "Full Path"]
+
+MIN_FULL_TAXONOMY = 100
 
 
 def _env_path() -> str:
@@ -162,6 +167,138 @@ def taxonomy_debug():
 		"count": len(items),
 		"sample": items[:10],
 	})
+
+
+def _natural_key(code: str):
+	parts = re.split(r'(\d+)', code or '')
+	nk = []
+	for p in parts:
+		nk.append(int(p) if p.isdigit() else p)
+	return nk
+
+
+def normalize_code(code: str) -> str:
+	code = (code or '').strip()
+	code = code.replace('–', '-').replace('—', '-')
+	code = re.sub(r'\s+', '', code)
+	return code.upper()
+
+
+def load_tsv_items(tsv_path: str) -> List[Dict]:
+	items: List[Dict] = []
+	with _open_text_sig(tsv_path) as f:
+		reader = csv.DictReader(f, delimiter='\t')
+		for row in reader:
+			code = normalize_code(_pick_first(row, CODE_FIELDS) or '')
+			name = _pick_first(row, NAME_FIELDS) or code
+			if not code and not name:
+				continue
+			items.append({"code": code, "name": name})
+	items.sort(key=lambda x: (_natural_key(x["code"]), x["name"]))
+	return items
+
+
+def load_bundle_map(bundle_json_path: str) -> Dict[str, str]:
+	try:
+		with open(bundle_json_path, 'r', encoding='utf-8') as f:
+			data = json.load(f)
+		# Accept either list or dict
+		if isinstance(data, dict):
+			return {normalize_code(k): v for k, v in data.items()}
+		m: Dict[str, str] = {}
+		for row in data:
+			c = normalize_code(row.get('code', ''))
+			if not c:
+				continue
+			m[c] = row.get('name') or row.get('label') or row.get('title') or c
+		return m
+	except Exception:
+		return {}
+
+
+def _get_in(d: dict, path: List[str]):
+	cur = d
+	for p in path:
+		if isinstance(cur, dict) and p in cur:
+			cur = cur[p]
+		else:
+			return None
+	return cur
+
+
+def load_iab_from_firestore(bundle_map: Dict[str, str]) -> List[Dict]:
+	try:
+		import firebase_admin
+		from firebase_admin import firestore as fs
+		if not firebase_admin._apps:
+			firebase_admin.initialize_app()
+		db = fs.client()
+		collections = os.getenv('IAB_COLLECTIONS', 'pages,articles,content,urls,documents').split(',')
+		fields = os.getenv('IAB_CODE_FIELDS', 'iab_codes,iab_content_codes,iab,iab_categories,taxonomy.iab,categories.iab').split(',')
+		seen = set()
+		for coll in [c.strip() for c in collections if c.strip()]:
+			for doc in db.collection(coll).limit(10000).stream():
+				data = doc.to_dict() or {}
+				for field in [f.strip() for f in fields if f.strip()]:
+					path = field.split('.')
+					val = _get_in(data, path)
+					if isinstance(val, list):
+						vals = val
+					elif isinstance(val, str):
+						vals = re.split(r'[\s,;]+', val)
+					else:
+						vals = []
+					for c in vals:
+						if isinstance(c, str) and c.strip():
+							seen.add(normalize_code(c))
+		items = [{"code": c, "name": bundle_map.get(c, c)} for c in seen if c]
+		items.sort(key=lambda x: (_natural_key(x['code']), x['name']))
+		return items
+	except Exception as e:
+		logging.exception("load_iab_from_firestore failed: %s", e)
+		return []
+
+
+def load_iab_from_postgres(bundle_map: Dict[str, str]) -> List[Dict]:
+	try:
+		import psycopg
+		dsn = os.getenv('DATABASE_URL')
+		if not dsn:
+			return []
+		seen = set()
+		queries = [
+			"SELECT DISTINCT iab_code FROM content_categories WHERE iab_code IS NOT NULL",
+			"SELECT DISTINCT unnest(iab_codes) AS iab_code FROM content WHERE iab_codes IS NOT NULL",
+			"SELECT DISTINCT jsonb_array_elements_text(iab->'codes') AS iab_code FROM content WHERE iab ? 'codes'",
+		]
+		with psycopg.connect(dsn) as conn:
+			with conn.cursor() as cur:
+				for q in queries:
+					try:
+						cur.execute(q)
+						for (c,) in cur:
+							if c:
+								seen.add(normalize_code(c))
+					except Exception:
+						continue
+		items = [{"code": c, "name": bundle_map.get(c, c)} for c in seen if c]
+		items.sort(key=lambda x: (_natural_key(x['code']), x['name']))
+		return items
+	except Exception:
+		return []
+
+
+def load_iab_from_db(bundle_map: Dict[str, str]) -> Tuple[str, List[Dict]]:
+	backend = os.getenv('IAB_DB_BACKEND', '').lower().strip()
+	if backend == 'postgres':
+		items = load_iab_from_postgres(bundle_map)
+		return ('postgres', items)
+	# default: firestore
+	items = load_iab_from_firestore(bundle_map)
+	if items:
+		return ('firestore', items)
+	items = load_iab_from_postgres(bundle_map)
+	return ('postgres', items)
 
 
 __all__ = ["parse_iab_tsv", "load_iab_taxonomy"]
