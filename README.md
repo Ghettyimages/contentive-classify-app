@@ -58,6 +58,7 @@ This will start:
 - `POST /upload-attribution` - Upload attribution CSV data (requires Firebase ID token)
 - `POST /merge-attribution` - Trigger merge of attribution and classification data (requires Firebase ID token)
 - `GET /merged-data` - Fetch merged attribution + classification records (requires Firebase ID token)
+- `GET /api/iab31` - IAB 3.1 codes for Segment Builder as `{ version, source, codes }`
 
 ## 📱 Features
 
@@ -114,27 +115,17 @@ This project is optimized for development with AI coding assistants that can:
 
 ## IAB Content Taxonomy 3.1
 
-- The app loads the official IAB Content Taxonomy 3.1 TSV at startup.
-- Configure a pinned raw GitHub URL via env:
+- Backend provides a deterministic IAB 3.1 API at `GET /api/iab31` returning `{ version: '3.1', source: 'backend', codes: [...] }`.
+- Fallback: a versioned JSON (`frontend/src/data/iab_content_taxonomy_3_1.v1.json`) is generated from the TSV at build time.
 
-```
-IAB_TAXONOMY_URL=https://raw.githubusercontent.com/InteractiveAdvertisingBureau/Taxonomies/<PINNED_COMMIT>/Content%20Taxonomies/Content%20Taxonomy%203.1.tsv
-```
+Build integration
+- Render build runs: `node scripts/build_iab_fallback_from_tsv.mjs` to produce the fallback JSON
+- Frontend build script runs the same fallback step before `react-scripts build`
 
-Why pin to a commit?
-- Pinning avoids drift from branches like `develop` and prevents breaking changes from new commits.
+Runtime behavior
+- Segment Builder loads `/api/iab31` with an 8s timeout; if unavailable or too small (<200), it falls back to the bundled JSON.
+- UI enables filters when at least 200 codes are available.
 
-Fallback
-- If the URL cannot be fetched, the backend falls back to a local copy at `backend/data/IAB_Content_Taxonomy_3_1.tsv` and logs a single warning.
-
-Health endpoints
-- `GET /taxonomy` → `{ version, source, commit, count }`
-- `GET /taxonomy/codes` → `[ { code, label, path, level }, ... ]`
-
-Admin
-- `POST /admin/refresh-taxonomy` (auth required) reloads the TSV from the configured URL or local fallback at runtime and hot-swaps the in-memory taxonomy.
-
-Classification validation
-- The classifier only accepts codes present in the loaded taxonomy.
-- If the model returns labels, the backend maps them to codes using the taxonomy; unmapped labels are dropped and logged.
-- Saved classification docs include `taxonomy_version`.
+Configuration
+- Set `IAB_TSV_PATH` (default `backend/data/IAB_Content_Taxonomy_3_1.tsv`)
+- Ensure the TSV is committed or available in the Render build environment.

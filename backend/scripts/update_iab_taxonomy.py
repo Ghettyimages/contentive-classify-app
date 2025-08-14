@@ -7,7 +7,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 BACKEND_DATA = ROOT / "backend" / "data"
 FRONTEND_DATA = ROOT / "frontend" / "src" / "data"
 TSV_PATH = BACKEND_DATA / "IAB_Content_Taxonomy_3_1.tsv"
-JSON_PATH = FRONTEND_DATA / "iab_content_taxonomy_3_1.json"
+JSON_PATH = FRONTEND_DATA / "iab_content_taxonomy_3_1.v1.json"
 
 
 def ensure_dirs():
@@ -41,11 +41,12 @@ def parse_items(tsv_file):
 
 
 def write_json(items):
-    JSON_PATH.write_text(json.dumps(items, ensure_ascii=False, indent=2), encoding="utf-8")
+    JSON_PATH.write_text(json.dumps({"version":"3.1","source":"fallback","codes":items}, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"[IAB-BUILD] Wrote {JSON_PATH} with {len(items)} items")
     # Re-open and validate
-    data = json.loads(JSON_PATH.read_text(encoding="utf-8") or "[]")
-    if not isinstance(data, list) or len(data) < 100:
+    data = json.loads(JSON_PATH.read_text(encoding="utf-8") or "{}")
+    codes = data.get('codes') if isinstance(data, dict) else []
+    if not isinstance(codes, list) or len(codes) < 100:
         raise SystemExit("[IAB-BUILD] Fallback JSON too small; failing build")
 
 

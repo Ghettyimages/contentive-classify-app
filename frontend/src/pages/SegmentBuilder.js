@@ -4,18 +4,15 @@ import axios from 'axios';
 import { API_BASE_URL } from '../config';
 import { auth } from '../firebase/auth';
 import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
-// IAB options now powered by backend /taxonomy/codes
+// IAB options now powered by backend /api/iab31 with local fallback
 import SavedSegmentsDropdown from '../components/SavedSegmentsDropdown';
 import { InlineAlert } from '../components/Alerts';
 import { slog, serror } from '../utils/log';
 import { getAuth } from 'firebase/auth';
 import '../styles/segmentBuilder.css';
-import localTaxonomy from '../data/iab_content_taxonomy_3_1.json';
 import { sortByIabCode } from '../utils/iabSort';
 import ExportFormatModal from '../components/ExportFormatModal.jsx';
 import { normalizeIabCodes } from '../utils/iabNormalize';
-// Contentive fallback taxonomy with optional IAB mapping
-// Note: we will dynamic import in code to avoid build failures if file is temporarily missing
 
 const formatDate = (date) => date.toISOString().slice(0, 10);
 
@@ -51,7 +48,8 @@ const SegmentBuilder = () => {
   const [exportFormat, setExportFormat] = useState('csv');
   const [error, setError] = useState('');
   const [iabOptions, setIabOptions] = useState([]);
-  const [taxonomyFallbackUsed, setTaxonomyFallbackUsed] = useState(false);
+  const [taxonomySource, setTaxonomySource] = useState(''); // 'backend' | 'fallback' | ''
+  const [taxonomyCount, setTaxonomyCount] = useState(0);
   const [sourceRows, setSourceRows] = useState([]); // raw merged rows fetched for local preview
   const [isApplied, setIsApplied] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -147,55 +145,55 @@ const SegmentBuilder = () => {
     }
   };
 
+  const MIN_IAB_COUNT = 200;
   const loadIabOptions = async () => {
     console.info('[IAB] initializing…');
     try {
-      // Try unified IAB/Contentive taxonomy first
-      const res = await fetch(`${API_BASE_URL}/api/iab/taxonomy`, { credentials: 'same-origin' });
-      const body = await res.json();
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const codes = body?.codes || body?.items || [];
-      if (!Array.isArray(codes) || codes.length < 50) throw new Error(`too few codes (${codes.length || 0})`);
-      console.info(`[IAB] Source=backend count=${codes.length}`);
-      const map = new Map();
-      for (const c of codes) {
-        const k = (c?.iab_code || c?.code || c?.uid || '').toString().trim().toUpperCase();
-        if (!k) continue;
-        const label = Array.isArray(c?.path) && c.path.length ? c.path.join(' > ') : (c?.label || c?.name || k);
-        if (!map.has(k)) map.set(k, { code: k, label: label });
-      }
-      const items = Array.from(map.values()).sort((a, b) => a.label.toLowerCase().localeCompare(b.label.toLowerCase()));
-      setIabOptions(items.map(it => ({ code: it.code, display: `${it.label}` })));
-      setTaxonomyFallbackUsed(false);
+      const res = await axios.get(`${API_BASE_URL}/api/iab31`, { timeout: 8000 });
+      const data = res.data;
+      const list = data?.codes || [];
+      if (!Array.isArray(list) || list.length < MIN_IAB_COUNT) throw new Error('Backend returned too few categories');
+      const items = buildOptions(list);
+      setIabOptions(items);
+      setTaxonomySource('backend');
+      setTaxonomyCount(list.length);
+      console.info(`[IAB] Ready from backend count: ${list.length}`);
     } catch (err) {
-      console.warn('[IAB] Backend load failed; using local fallback', err);
+      console.warn('[IAB] Backend load failed, using local fallback', err?.message || err);
       try {
-        const mod = await import('../data/contentive_taxonomy_v3_1_with_iab.json');
-        const fallback = mod?.default || mod;
-        const list = Array.isArray(fallback?.codes) ? fallback.codes : (Array.isArray(fallback) ? fallback : []);
-        if (!Array.isArray(list) || list.length < 50) {
-          console.error('[IAB] Fallback JSON too small; check build');
+        const bundled = (await import('../data/iab_content_taxonomy_3_1.v1.json')).default;
+        const list = Array.isArray(bundled?.codes) ? bundled.codes : [];
+        const count = list.length;
+        if (count < MIN_IAB_COUNT) {
+          console.error('[IAB] Fallback JSON is too small; check build/update script.', { count });
           setIabOptions([]);
-          setTaxonomyFallbackUsed(true);
+          setTaxonomySource('fallback');
+          setTaxonomyCount(count);
           return;
         }
-        const map = new Map();
-        for (const c of list) {
-          const k = (c?.iab_code || c?.code || c?.uid || '').toString().trim().toUpperCase();
-          if (!k) continue;
-          const label = Array.isArray(c?.path) && c.path.length ? c.path.join(' > ') : (c?.label || c?.name || k);
-          if (!map.has(k)) map.set(k, { code: k, label: label });
-        }
-        const items = Array.from(map.values()).sort((a, b) => a.label.toLowerCase().localeCompare(b.label.toLowerCase()));
-        setIabOptions(items.map(it => ({ code: it.code, display: `${it.label}` })));
-        setTaxonomyFallbackUsed(true);
-        console.info(`[IAB] Source=fallback count=${items.length}`);
+        const items = buildOptions(list);
+        setIabOptions(items);
+        setTaxonomySource('fallback');
+        setTaxonomyCount(count);
+        console.info(`[IAB] Ready from bundled count: ${count}`);
       } catch (e2) {
         console.error('[IAB] Failed to load fallback JSON', e2);
         setIabOptions([]);
-        setTaxonomyFallbackUsed(true);
+        setTaxonomySource('fallback');
+        setTaxonomyCount(0);
       }
     }
+  };
+
+  const buildOptions = (codes) => {
+    const map = new Map();
+    for (const c of codes) {
+      const k = (c?.code || c?.iab_code || c?.uid || '').toString().trim().toUpperCase();
+      if (!k) continue;
+      const display = Array.isArray(c?.path) && c.path.length ? c.path.join(' > ') : (c?.label || c?.name || k);
+      if (!map.has(k)) map.set(k, { code: k, display });
+    }
+    return Array.from(map.values()).sort((a, b) => a.display.toLowerCase().localeCompare(b.display.toLowerCase()));
   };
 
   // Removed legacy label derivation; taxonomy is the source of truth now
@@ -414,68 +412,12 @@ const SegmentBuilder = () => {
     }
   };
 
-  const handleSegmentPreview = async () => {
-    try {
-      setError('');
-      const rules = buildSegmentRules();
-      const params = new URLSearchParams();
-      if (rules.date_range?.[0]) params.set('start', rules.date_range[0]);
-      if (rules.date_range?.[1]) params.set('end', rules.date_range[1]);
-      if (rules.include_iab?.length) params.set('include_iab', rules.include_iab.join(','));
-      if (rules.exclude_iab?.length) params.set('exclude_iab', rules.exclude_iab.join(','));
-      if (rules.sort_by) params.set('sort_by', rules.sort_by);
-      if (rules.order) params.set('order', rules.order);
-      params.set('format', 'json');
-      params.set('limit', '100');
-      const res = await axios.get(`${API_BASE_URL}/export-activation?${params.toString()}`, { headers: tokenHeader() });
-      const rows = res.data?.rows || [];
-      setPreviewRows(rows);
-      setPreviewCount(rows.length);
-    } catch (e) {
-      console.error('Preview failed', e);
-      setError('Preview failed');
-      setPreviewRows([]);
-      setPreviewCount(0);
-    }
-  };
-
-  const handleSegmentSave = async () => {
-    try {
-      setError('');
-      const rules = buildSegmentRules();
-      const payload = { name: segmentName || `Segment ${new Date().toISOString()}`, rules };
-      await axios.post(`${API_BASE_URL}/segments`, payload, { headers: { ...tokenHeader(), 'Content-Type': 'application/json' } });
-      await loadSegments();
-      setSegmentName('');
-    } catch (e) {
-      console.error('Save segment failed', e);
-      setError('Save segment failed');
-    }
-  };
-
-  const handleSegmentExport = async () => {
-    try {
-      setError('');
-      if (!selectedSegmentId) return;
-      const fmt = exportFormat === 'json' ? 'json' : 'csv';
-      const token = window.localStorage.getItem('fb_id_token') || '';
-      const url = `${API_BASE_URL}/segments/${selectedSegmentId}/export?format=${fmt}&limit=20000`;
-      const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-      if (!response.ok) throw new Error('Export failed');
-      const blob = await response.blob();
-      const dlUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = dlUrl;
-      link.download = `segment_${selectedSegmentId}_${new Date().toISOString().slice(0,10)}.${fmt}`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(dlUrl);
-    } catch (e) {
-      console.error('Export segment failed', e);
-      setError('Export segment failed');
-    }
-  };
+  const banner = (() => {
+    if (!taxonomySource) return null;
+    const src = taxonomySource === 'backend' ? 'Backend' : 'Local fallback';
+    const enabled = taxonomyCount >= MIN_IAB_COUNT ? 'enabled' : 'disabled';
+    return `IAB 3.1 • Source: ${src} (${taxonomyCount}) ${enabled === 'enabled' ? '(enabled)' : '(disabled)'}`;
+  })();
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
@@ -483,6 +425,9 @@ const SegmentBuilder = () => {
         <img src="/logo2.png" alt="Contentive Media Logo" style={{ maxWidth: '210px', height: 'auto', marginBottom: '-2.0rem' }} />
         <h1 style={{ margin: '0.2rem 0 0 0', fontSize: '1.8rem' }}>CONTENTIVE MEDIA</h1>
         <p style={{ fontSize: '1rem', color: '#444', margin: '0.5rem' }}>Segments</p>
+        {banner && (
+          <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>{banner}</div>
+        )}
       </div>
 
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
@@ -492,15 +437,15 @@ const SegmentBuilder = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
             <div>
               <label style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>Name</label>
-              <input type="text" value={segmentName} onChange={(e) => setSegmentName(e.target.value)} placeholder="e.g., High CTR Sports" style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: 4 }} />
+              <input type="text" value={segmentName} onChange={(e) => setSegmentName(e.target.value)} placeholder="e.g., High CTR Sports" style={{ width: '100%', padding: '0.5rem', border: "1px solid #ddd", borderRadius: 4 }} />
             </div>
             <div>
               <label style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>Start Date</label>
-              <input type="date" value={segmentStart} onChange={(e) => setSegmentStart(e.target.value)} style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: 4 }} />
+              <input type="date" value={segmentStart} onChange={(e) => setSegmentStart(e.target.value)} style={{ width: '100%', padding: '0.5rem', border: "1px solid #ddd", borderRadius: 4 }} />
             </div>
             <div>
               <label style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>End Date</label>
-              <input type="date" value={segmentEnd} onChange={(e) => setSegmentEnd(e.target.value)} style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: 4 }} />
+              <input type="date" value={segmentEnd} onChange={(e) => setSegmentEnd(e.target.value)} style={{ width: '100%', padding: '0.5rem', border: "1px solid #ddd", borderRadius: 4 }} />
             </div>
             <div>
               <label style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>Include IAB (multi-select)</label>
@@ -545,11 +490,6 @@ const SegmentBuilder = () => {
                   <option key={code} value={code}>{display}</option>
                 ))}
               </select>
-              {taxonomyFallbackUsed && (
-                <div style={{ fontSize: '0.75rem', background: '#fff7ed', color: '#9a3412', padding: '2px 6px', borderRadius: 6, display: 'inline-block', marginTop: 6 }}>
-                  IAB 3.1 • Source: Local fallback
-                </div>
-              )}
             </div>
             <div>
               <label style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>Sort By</label>
