@@ -1234,6 +1234,71 @@ def classify_url(url):
     except json.JSONDecodeError:
         raise ValueError("Failed to parse GPT response as valid JSON:\n" + content)
 
+@app.route('/api/iab-codes-in-use', methods=['GET'])
+@cross_origin()
+def get_iab_codes_in_use():
+    """Get distinct IAB codes that exist in classified content."""
+    try:
+        # Verify Firebase token
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({"error": "Missing or invalid authorization header"}), 401
+
+        token = auth_header.split('Bearer ')[1]
+        try:
+            decoded_token = auth.verify_id_token(token)
+            user_id = decoded_token['uid']
+        except Exception as e:
+            return jsonify({"error": "Invalid authentication token"}), 401
+
+        firebase_service = get_firebase_service()
+        
+        # Get distinct IAB codes from both collections
+        codes_in_use = set()
+        
+        # Check classified_urls collection
+        classified_docs = firebase_service.db.collection('classified_urls').stream()
+        for doc in classified_docs:
+            data = doc.to_dict()
+            # Get primary and secondary codes
+            primary_code = data.get('iab_code')
+            sub_code = data.get('iab_subcode') 
+            secondary_code = data.get('iab_secondary_code')
+            secondary_sub_code = data.get('iab_secondary_subcode')
+            
+            for code in [primary_code, sub_code, secondary_code, secondary_sub_code]:
+                if code and isinstance(code, str) and code.strip():
+                    codes_in_use.add(code.strip())
+        
+        # Check merged_content_signals collection  
+        merged_docs = firebase_service.db.collection('merged_content_signals').stream()
+        for doc in merged_docs:
+            data = doc.to_dict()
+            # Get classification IAB codes
+            primary_code = data.get('classification_iab_code')
+            sub_code = data.get('classification_iab_subcode')
+            secondary_code = data.get('classification_iab_secondary_code') 
+            secondary_sub_code = data.get('classification_iab_secondary_subcode')
+            
+            for code in [primary_code, sub_code, secondary_code, secondary_sub_code]:
+                if code and isinstance(code, str) and code.strip():
+                    codes_in_use.add(code.strip())
+        
+        # Convert to sorted list
+        codes_list = sorted(list(codes_in_use))
+        
+        return jsonify({
+            'codes_in_use': codes_list,
+            'count': len(codes_list),
+            'source': 'database'
+        })
+        
+    except Exception as e:
+        print(f"Error in get_iab_codes_in_use: {str(e)}")
+        import traceback
+        print(f"Full traceback: {traceback.format_exc()}")
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/health', methods=['GET'])
 @cross_origin()
 def health():

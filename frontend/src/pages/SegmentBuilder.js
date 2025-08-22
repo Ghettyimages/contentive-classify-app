@@ -54,6 +54,7 @@ const SegmentBuilder = () => {
   const [isApplied, setIsApplied] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [previewQuery, setPreviewQuery] = useState(null);
+  const [showOnlyUsedIab, setShowOnlyUsedIab] = useState(true);
 
   const taxonomyReady = iabOptions.length > 0;
   const uiDisabled = (() => {
@@ -136,6 +137,13 @@ const SegmentBuilder = () => {
     }
   }, [currentUser]);
 
+  // Reload IAB options when the filter toggle changes
+  useEffect(() => {
+    if (currentUser) {
+      loadIabOptions();
+    }
+  }, [showOnlyUsedIab]);
+
   const loadSegments = async () => {
     try {
       const res = await axios.get(`${API_BASE_URL}/segments`, { headers: tokenHeader() });
@@ -149,9 +157,13 @@ const SegmentBuilder = () => {
   const loadIabOptions = async () => {
     console.info('[IAB] initializing…');
     
-    // Try backend API first
+    let allIabCodes = [];
+    let taxonomySource = '';
+    let taxonomyCount = 0;
+    
+    // First, load all available IAB codes
     try {
-      console.log('[DEBUG] Making API call to:', `${API_BASE_URL}/api/iab31`);
+      console.log('[DEBUG] Loading all IAB codes from:', `${API_BASE_URL}/api/iab31`);
       const res = await axios.get(`${API_BASE_URL}/api/iab31`, { 
         timeout: 8000,
         headers: {
@@ -159,92 +171,90 @@ const SegmentBuilder = () => {
           'Accept': 'application/json'
         }
       });
-      console.log('[DEBUG] API response status:', res.status);
-      console.log('[DEBUG] API response data keys:', Object.keys(res.data || {}));
       
       const data = res.data;
-      if (!data || typeof data !== 'object') {
-        throw new Error('Invalid API response format');
+      if (data && data.codes && Array.isArray(data.codes)) {
+        allIabCodes = data.codes;
+        taxonomySource = 'backend';
+        taxonomyCount = data.codes.length;
+        console.log('[DEBUG] Loaded all IAB codes from backend:', taxonomyCount);
+      } else {
+        throw new Error('Invalid backend response');
       }
-      
-      const list = data.codes || [];
-      console.log('[DEBUG] Extracted codes list length:', list.length);
-      console.log('[DEBUG] First 2 codes:', list.slice(0, 2));
-      
-      if (!Array.isArray(list)) {
-        throw new Error('API response codes is not an array');
-      }
-      
-      if (list.length < MIN_IAB_COUNT) {
-        throw new Error(`Backend returned too few categories: ${list.length} < ${MIN_IAB_COUNT}`);
-      }
-      
-      const items = buildOptions(list);
-      console.log('[DEBUG] buildOptions returned:', items.length, 'items');
-      
-      if (items.length === 0) {
-        throw new Error('buildOptions returned empty array despite valid input');
-      }
-      
-      setIabOptions(items);
-      setTaxonomySource('backend');
-      setTaxonomyCount(list.length);
-      console.info(`[IAB] Ready from backend count: ${list.length}, options: ${items.length}`);
-      return;
       
     } catch (err) {
       console.warn('[IAB] Backend load failed, using local fallback. Error:', err?.message || err);
-      console.error('[DEBUG] Full backend error:', err);
+      try {
+        const bundled = (await import('../data/iab_content_taxonomy_3_1.v1.json')).default;
+        if (bundled && bundled.codes && Array.isArray(bundled.codes)) {
+          allIabCodes = bundled.codes;
+          taxonomySource = 'fallback';
+          taxonomyCount = bundled.codes.length;
+          console.log('[DEBUG] Loaded all IAB codes from fallback:', taxonomyCount);
+        }
+      } catch (e2) {
+        console.error('[IAB] Failed to load fallback JSON', e2);
+        setIabOptions([]);
+        setTaxonomySource('error');
+        setTaxonomyCount(0);
+        return;
+      }
     }
     
-    // Fallback to local JSON
-    try {
-      console.log('[DEBUG] Loading fallback JSON...');
-      const bundled = (await import('../data/iab_content_taxonomy_3_1.v1.json')).default;
-      console.log('[DEBUG] Fallback JSON loaded, keys:', Object.keys(bundled || {}));
-      
-      if (!bundled || typeof bundled !== 'object') {
-        throw new Error('Invalid fallback JSON format');
+    // Filter to only used codes if requested
+    if (showOnlyUsedIab) {
+      try {
+        console.log('[DEBUG] Fetching IAB codes in use from database...');
+        const usedRes = await axios.get(`${API_BASE_URL}/api/iab-codes-in-use`, { 
+          headers: tokenHeader(),
+          timeout: 10000
+        });
+        
+        const codesInUse = usedRes.data?.codes_in_use || [];
+        console.log('[DEBUG] IAB codes in use:', codesInUse.length, 'codes');
+        console.log('[DEBUG] Sample used codes:', codesInUse.slice(0, 5));
+        
+        if (codesInUse.length === 0) {
+          console.warn('[IAB] No codes in use found, showing all available codes');
+          // Fall back to showing all codes if none are in use yet
+          const items = buildOptions(allIabCodes);
+          setIabOptions(items);
+          setTaxonomySource(taxonomySource + ' (all - no data)');
+          setTaxonomyCount(taxonomyCount);
+          return;
+        }
+        
+        // Filter all IAB codes to only those in use
+        const usedCodesSet = new Set(codesInUse);
+        const filteredCodes = allIabCodes.filter(code => {
+          const codeValue = code.code || code.iab_code || code.uid || '';
+          return usedCodesSet.has(codeValue);
+        });
+        
+        console.log('[DEBUG] Filtered to used codes:', filteredCodes.length, 'out of', allIabCodes.length);
+        
+        const items = buildOptions(filteredCodes);
+        setIabOptions(items);
+        setTaxonomySource(taxonomySource + ' (filtered)');
+        setTaxonomyCount(filteredCodes.length);
+        console.info(`[IAB] Ready with filtered codes: ${filteredCodes.length} used out of ${taxonomyCount} total, ${items.length} options`);
+        
+      } catch (usedErr) {
+        console.warn('[IAB] Failed to get codes in use, showing all codes. Error:', usedErr?.message || usedErr);
+        // Fall back to showing all codes if the filtering fails
+        const items = buildOptions(allIabCodes);
+        setIabOptions(items);
+        setTaxonomySource(taxonomySource + ' (all - filter failed)');
+        setTaxonomyCount(taxonomyCount);
+        console.info(`[IAB] Fallback to all codes: ${taxonomyCount} total, ${items.length} options`);
       }
-      
-      const list = bundled.codes || [];
-      const count = list.length;
-      console.log('[DEBUG] Fallback codes count:', count);
-      console.log('[DEBUG] Fallback first 2 codes:', list.slice(0, 2));
-      
-      if (!Array.isArray(list)) {
-        throw new Error('Fallback codes is not an array');
-      }
-      
-      if (count < MIN_IAB_COUNT) {
-        console.error('[IAB] Fallback JSON is too small; check build/update script.', { count });
-        setIabOptions([]);
-        setTaxonomySource('fallback');
-        setTaxonomyCount(count);
-        return;
-      }
-      
-      const items = buildOptions(list);
-      console.log('[DEBUG] Fallback buildOptions returned:', items.length, 'items');
-      
-      if (items.length === 0) {
-        console.error('[IAB] buildOptions returned empty array despite valid fallback data');
-        setIabOptions([]);
-        setTaxonomySource('fallback');
-        setTaxonomyCount(count);
-        return;
-      }
-      
+    } else {
+      // Show all available codes
+      const items = buildOptions(allIabCodes);
       setIabOptions(items);
-      setTaxonomySource('fallback');
-      setTaxonomyCount(count);
-      console.info(`[IAB] Ready from bundled count: ${count}, options: ${items.length}`);
-      
-    } catch (e2) {
-      console.error('[IAB] Failed to load fallback JSON', e2);
-      setIabOptions([]);
-      setTaxonomySource('error');
-      setTaxonomyCount(0);
+      setTaxonomySource(taxonomySource + ' (all)');
+      setTaxonomyCount(taxonomyCount);
+      console.info(`[IAB] Showing all codes: ${taxonomyCount} total, ${items.length} options`);
     }
   };
 
@@ -529,6 +539,22 @@ const SegmentBuilder = () => {
             <div>
               <label style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>End Date</label>
               <input type="date" value={segmentEnd} onChange={(e) => setSegmentEnd(e.target.value)} style={{ width: '100%', padding: '0.5rem', border: "1px solid #ddd", borderRadius: 4 }} />
+            </div>
+            <div style={{ marginBottom: '1rem', padding: '0.75rem', background: '#f8f9fa', borderRadius: 6, border: '1px solid #e9ecef' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500, cursor: 'pointer' }}>
+                <input 
+                  type="checkbox" 
+                  checked={showOnlyUsedIab} 
+                  onChange={(e) => setShowOnlyUsedIab(e.target.checked)}
+                  style={{ margin: 0 }}
+                />
+                Show only IAB categories with classified content
+              </label>
+              <div style={{ fontSize: '0.8rem', color: '#6c757d', marginTop: '0.25rem' }}>
+                {showOnlyUsedIab 
+                  ? 'Displaying only categories that have been used in your classified content' 
+                  : 'Displaying all available IAB 3.1 categories'}
+              </div>
             </div>
             <div>
               <label style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>Include IAB (multi-select)</label>
