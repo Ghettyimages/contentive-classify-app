@@ -225,8 +225,9 @@ const DataDashboard = () => {
   const availableIabCodes = useMemo(() => {
     const set = new Set();
     for (const r of processedData) {
-      const code = r?.classification_iab_code || r?.iab_code;
-      if (code && typeof code === 'string' && !code.includes('-')) set.add(code);
+      // Use classification_ fields consistently (uploaded dashboard data)
+      const code = getFieldValue(r, 'classification', 'iab_code');
+      if (code && code !== 'N/A' && typeof code === 'string' && !code.includes('-')) set.add(code);
     }
     return Array.from(set).sort();
   }, [processedData]);
@@ -248,8 +249,9 @@ const DataDashboard = () => {
   // Filter rows by IAB selections
   const filteredRows = useMemo(() => {
     return processedData.filter((r) => {
-      const code = r?.classification_iab_code || r?.iab_code || '';
-      const sub = r?.classification_iab_subcode || r?.iab_subcode || '';
+      // Use classification_ fields consistently (uploaded dashboard data)
+      const code = getFieldValue(r, 'classification', 'iab_code') || '';
+      const sub = getFieldValue(r, 'classification', 'iab_subcode') || '';
       if (selectedIabCode && code !== selectedIabCode) return false;
       if (selectedIabSubcode && sub !== selectedIabSubcode) return false;
       return true;

@@ -304,19 +304,20 @@ def _extract_numeric(value, reverse: bool):
 def _activation_fields(record: dict) -> dict:
     return {
         'url': record.get('url'),
-        'iab_code': record.get('classification_iab_code'),
-        'iab_subcode': record.get('classification_iab_subcode'),
-        'iab_secondary_code': record.get('classification_iab_secondary_code'),
-        'iab_secondary_subcode': record.get('classification_iab_secondary_subcode'),
-        'tone': record.get('classification_tone'),
-        'intent': record.get('classification_intent'),
-        'conversions': record.get('attribution_conversions'),
-        'ctr': record.get('attribution_ctr'),
-        'viewability': record.get('attribution_viewability'),
-        'scroll_depth': record.get('attribution_scroll_depth'),
-        'impressions': record.get('attribution_impressions'),
-        'fill_rate': record.get('attribution_fill_rate'),
-        'last_updated': record.get('merged_at') or record.get('classification_timestamp') or record.get('uploaded_at'),
+        # Keep original field names for consistency with Dashboard
+        'classification_iab_code': record.get('classification_iab_code'),
+        'classification_iab_subcode': record.get('classification_iab_subcode'),
+        'classification_iab_secondary_code': record.get('classification_iab_secondary_code'),
+        'classification_iab_secondary_subcode': record.get('classification_iab_secondary_subcode'),
+        'classification_tone': record.get('classification_tone'),
+        'classification_intent': record.get('classification_intent'),
+        'attribution_conversions': record.get('attribution_conversions'),
+        'attribution_ctr': record.get('attribution_ctr'),
+        'attribution_viewability': record.get('attribution_viewability'),
+        'attribution_scroll_depth': record.get('attribution_scroll_depth'),
+        'attribution_impressions': record.get('attribution_impressions'),
+        'attribution_fill_rate': record.get('attribution_fill_rate'),
+        'merged_at': record.get('merged_at') or record.get('classification_timestamp') or record.get('uploaded_at'),
     }
 
 def _fetch_merged_with_filters(start_str: str, end_str: str, include_iab: list, exclude_iab: list, sort_param: str, order: str, limit: int) -> list:

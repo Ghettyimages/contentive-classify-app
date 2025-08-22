@@ -130,6 +130,14 @@ const SegmentBuilder = () => {
 
   const tokenHeader = () => ({ Authorization: `Bearer ${window.localStorage.getItem('fb_id_token') || ''}` });
 
+  // Use same field access pattern as Dashboard for consistency
+  const getFieldValue = (item, prefix, field) => {
+    const key = `${prefix}_${field}`;
+    const value = item[key];
+    if (value === null || value === undefined || value === '') return null;
+    return value;
+  };
+
   useEffect(() => {
     if (currentUser) {
       loadSegments();
@@ -168,16 +176,12 @@ const SegmentBuilder = () => {
       const codesInUse = new Set();
       
       for (const row of sourceRows) {
-        // Check all possible IAB code fields
+        // Use same field access pattern as Dashboard for consistency
         const codes = [
-          row.classification_iab_code,
-          row.classification_iab_subcode, 
-          row.classification_iab_secondary_code,
-          row.classification_iab_secondary_subcode,
-          row.iab_code,
-          row.iab_subcode,
-          row.iab_secondary_code,
-          row.iab_secondary_subcode
+          getFieldValue(row, 'classification', 'iab_code'),
+          getFieldValue(row, 'classification', 'iab_subcode'),
+          getFieldValue(row, 'classification', 'iab_secondary_code'),
+          getFieldValue(row, 'classification', 'iab_secondary_subcode')
         ];
         
         for (const code of codes) {
@@ -228,9 +232,20 @@ const SegmentBuilder = () => {
     try {
       const params = new URLSearchParams();
       params.set('fallback', '1');
-      params.set('limit', '2000');
+      params.set('limit', '2000'); // Higher limit for segment building
+      // Use same query structure as Dashboard for consistency
       const res = await axios.get(`${API_BASE_URL}/merged-data?${params.toString()}`, { headers: tokenHeader() });
-      setSourceRows(res.data?.results || []);
+      const results = res.data?.results || [];
+      console.log('[DEBUG] Loaded source rows:', results.length, 'records');
+      if (results.length > 0) {
+        console.log('[DEBUG] Sample source row IAB fields:', {
+          classification_iab_code: results[0].classification_iab_code,
+          classification_iab_subcode: results[0].classification_iab_subcode,
+          iab_code: results[0].iab_code,
+          iab_subcode: results[0].iab_subcode
+        });
+      }
+      setSourceRows(results);
     } catch (e) {
       console.error('Error loading source rows', e);
       setSourceRows([]);
@@ -259,10 +274,12 @@ const SegmentBuilder = () => {
 
   const rowMatchesIab = (row, codes) => {
     if (!codes?.length) return true;
-    const cTop = row?.classification_iab_code || row?.iab_code;
-    const cSub = row?.classification_iab_subcode || row?.iab_subcode;
-    const arrays = [];
-    const rowCodes = new Set([cTop, cSub, ...arrays].filter(Boolean));
+    // Use same field access pattern as Dashboard for consistency
+    const cTop = getFieldValue(row, 'classification', 'iab_code');
+    const cSub = getFieldValue(row, 'classification', 'iab_subcode');
+    const cSecondary = getFieldValue(row, 'classification', 'iab_secondary_code');
+    const cSecondarySubcode = getFieldValue(row, 'classification', 'iab_secondary_subcode');
+    const rowCodes = new Set([cTop, cSub, cSecondary, cSecondarySubcode].filter(Boolean));
     for (const code of codes) {
       if (rowCodes.has(code)) return true;
     }
@@ -271,10 +288,12 @@ const SegmentBuilder = () => {
 
   const rowExcludedByIab = (row, codes) => {
     if (!codes?.length) return false;
-    const cTop = row?.classification_iab_code || row?.iab_code;
-    const cSub = row?.classification_iab_subcode || row?.iab_subcode;
-    const arrays = [];
-    const rowCodes = new Set([cTop, cSub, ...arrays].filter(Boolean));
+    // Use same field access pattern as Dashboard for consistency
+    const cTop = getFieldValue(row, 'classification', 'iab_code');
+    const cSub = getFieldValue(row, 'classification', 'iab_subcode');
+    const cSecondary = getFieldValue(row, 'classification', 'iab_secondary_code');
+    const cSecondarySubcode = getFieldValue(row, 'classification', 'iab_secondary_subcode');
+    const rowCodes = new Set([cTop, cSub, cSecondary, cSecondarySubcode].filter(Boolean));
     for (const code of codes) {
       if (rowCodes.has(code)) return true;
     }
@@ -616,10 +635,11 @@ const SegmentBuilder = () => {
                     </thead>
                     <tbody>
                       {previewRows.slice(0, 100).map((r, i) => {
-                        const primaryCode = r.iab_code || r.classification_iab_code;
-                        const subCode = r.iab_subcode || r.classification_iab_subcode;
-                        const secondaryCode = r.iab_secondary_code || r.classification_iab_secondary_code;
-                        const secondarySubCode = r.iab_secondary_subcode || r.classification_iab_secondary_subcode;
+                        // Use same field access pattern as Dashboard for consistency
+                        const primaryCode = getFieldValue(r, 'classification', 'iab_code');
+                        const subCode = getFieldValue(r, 'classification', 'iab_subcode');
+                        const secondaryCode = getFieldValue(r, 'classification', 'iab_secondary_code');
+                        const secondarySubCode = getFieldValue(r, 'classification', 'iab_secondary_subcode');
                         
                         return (
                           <tr key={i} style={{ borderBottom: '1px solid #f2f2f2' }}>
@@ -636,15 +656,15 @@ const SegmentBuilder = () => {
                             <td style={{ padding: '8px' }}>
                               {secondarySubCode ? getIabDisplayString(secondarySubCode, { format: 'standard', showPath: true }) : 'N/A'}
                             </td>
-                            <td style={{ padding: '8px' }}>{r.tone || r.classification_tone}</td>
-                            <td style={{ padding: '8px' }}>{r.intent || r.classification_intent}</td>
-                            <td style={{ padding: '8px' }}>{r.attribution_conversions}</td>
-                            <td style={{ padding: '8px' }}>{r.attribution_ctr}</td>
-                            <td style={{ padding: '8px' }}>{r.attribution_viewability}</td>
-                            <td style={{ padding: '8px' }}>{r.attribution_scroll_depth}</td>
-                            <td style={{ padding: '8px' }}>{r.attribution_impressions}</td>
-                            <td style={{ padding: '8px' }}>{r.attribution_fill_rate}</td>
-                            <td style={{ padding: '8px' }}>{r.merged_at || r.upload_date}</td>
+                            <td style={{ padding: '8px' }}>{getFieldValue(r, 'classification', 'tone') || 'N/A'}</td>
+                            <td style={{ padding: '8px' }}>{getFieldValue(r, 'classification', 'intent') || 'N/A'}</td>
+                            <td style={{ padding: '8px' }}>{getFieldValue(r, 'attribution', 'conversions') || 'N/A'}</td>
+                            <td style={{ padding: '8px' }}>{getFieldValue(r, 'attribution', 'ctr') || 'N/A'}</td>
+                            <td style={{ padding: '8px' }}>{getFieldValue(r, 'attribution', 'viewability') || 'N/A'}</td>
+                            <td style={{ padding: '8px' }}>{getFieldValue(r, 'attribution', 'scroll_depth') || 'N/A'}</td>
+                            <td style={{ padding: '8px' }}>{getFieldValue(r, 'attribution', 'impressions') || 'N/A'}</td>
+                            <td style={{ padding: '8px' }}>{getFieldValue(r, 'attribution', 'fill_rate') || 'N/A'}</td>
+                            <td style={{ padding: '8px' }}>{r.merged_at || r.upload_date || 'N/A'}</td>
                           </tr>
                         );
                       })}
