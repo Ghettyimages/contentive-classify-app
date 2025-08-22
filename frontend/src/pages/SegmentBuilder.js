@@ -13,6 +13,7 @@ import '../styles/segmentBuilder.css';
 import { sortByIabCode } from '../utils/iabSort';
 import ExportFormatModal from '../components/ExportFormatModal.jsx';
 import { normalizeIabCodes } from '../utils/iabNormalize';
+import iabTaxonomyService, { getIabLabel, getIabFullPath, getIabDisplayString } from '../utils/iabTaxonomyService';
 
 const formatDate = (date) => date.toISOString().slice(0, 10);
 
@@ -154,51 +155,10 @@ const SegmentBuilder = () => {
 
   const MIN_IAB_COUNT = 200;
   const loadIabOptions = async () => {
-    console.info('[IAB] initializing…');
+    console.info('[IAB] initializing with centralized service...');
     
-    let allIabCodes = [];
-    let taxonomySource = '';
-    let totalCount = 0;
-    
-    // First, load all available IAB codes
-    try {
-      console.log('[DEBUG] Loading all IAB codes from:', `${API_BASE_URL}/api/iab31`);
-      const res = await axios.get(`${API_BASE_URL}/api/iab31`, { 
-        timeout: 8000,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-      
-      const data = res.data;
-      if (data && data.codes && Array.isArray(data.codes)) {
-        allIabCodes = data.codes;
-        taxonomySource = 'backend';
-        totalCount = data.codes.length;
-        console.log('[DEBUG] Loaded all IAB codes from backend:', totalCount);
-      } else {
-        throw new Error('Invalid backend response');
-      }
-      
-    } catch (err) {
-      console.warn('[IAB] Backend load failed, using local fallback. Error:', err?.message || err);
-      try {
-        const bundled = (await import('../data/iab_content_taxonomy_3_1.v1.json')).default;
-        if (bundled && bundled.codes && Array.isArray(bundled.codes)) {
-          allIabCodes = bundled.codes;
-          taxonomySource = 'fallback';
-          totalCount = bundled.codes.length;
-          console.log('[DEBUG] Loaded all IAB codes from fallback:', totalCount);
-        }
-      } catch (e2) {
-        console.error('[IAB] Failed to load fallback JSON', e2);
-        setIabOptions([]);
-        setTaxonomySource('error');
-        setTaxonomyCount(0);
-        return;
-      }
-    }
+    // Ensure IAB service is initialized
+    await iabTaxonomyService.initialize();
     
     // Filter to only used codes if requested
     if (showOnlyUsedIab && sourceRows.length > 0) {
@@ -232,66 +192,35 @@ const SegmentBuilder = () => {
       
       if (codesInUse.size === 0) {
         console.warn('[IAB] No codes found in source data, showing all available codes');
-        const items = buildOptions(allIabCodes);
+        const items = iabTaxonomyService.getAllOptions(true);
         setIabOptions(items);
-        setTaxonomySource(taxonomySource + ' (all - no data)');
-        setTaxonomyCount(totalCount);
+        setTaxonomySource('backend (all - no data)');
+        setTaxonomyCount(items.length);
         return;
       }
       
-      // Filter all IAB codes to only those in use
-      const filteredCodes = allIabCodes.filter(code => {
-        const codeValue = code.code || code.iab_code || code.uid || '';
-        return codesInUse.has(codeValue);
-      });
+      // Get filtered options using the centralized service
+      const items = iabTaxonomyService.getFilteredOptions(Array.from(codesInUse), true);
       
-      console.log('[DEBUG] Filtered to', filteredCodes.length, 'codes out of', allIabCodes.length, 'total');
+      console.log('[DEBUG] Filtered to', items.length, 'options');
       
-      const items = buildOptions(filteredCodes);
       setIabOptions(items);
-      setTaxonomySource(taxonomySource + ' (filtered)');
-      setTaxonomyCount(filteredCodes.length);
-      console.info(`[IAB] Showing filtered codes: ${filteredCodes.length} used out of ${totalCount} total, ${items.length} options`);
+      setTaxonomySource('backend (filtered)');
+      setTaxonomyCount(items.length);
+      console.info(`[IAB] Showing filtered codes: ${items.length} options from ${codesInUse.size} used codes`);
       
     } else {
       // Show all available codes
       console.log('[DEBUG] Showing all IAB codes (filter disabled or no source data)');
-      const items = buildOptions(allIabCodes);
+      const items = iabTaxonomyService.getAllOptions(true);
       setIabOptions(items);
-      setTaxonomySource(taxonomySource + ' (all)');
-      setTaxonomyCount(totalCount);
-      console.info(`[IAB] Showing all codes: ${totalCount} total, ${items.length} options`);
+      setTaxonomySource('backend (all)');
+      setTaxonomyCount(items.length);
+      console.info(`[IAB] Showing all codes: ${items.length} options`);
     }
   };
 
-  const buildOptions = (codes) => {
-    console.log('[DEBUG] buildOptions called with codes:', codes && codes.length ? codes.length : 0, 'items');
-    if (!codes || !Array.isArray(codes)) {
-      console.log('[DEBUG] Invalid codes input:', codes);
-      return [];
-    }
-    const map = new Map();
-    for (const c of codes) {
-      if (!c) continue;
-      const k = (c.code || c.iab_code || c.uid || '').toString().trim().toUpperCase();
-      if (!k) {
-        console.log('[DEBUG] Skipping item with no code:', c);
-        continue;
-      }
-      const display = Array.isArray(c.path) && c.path.length > 0 
-        ? c.path.join(' > ') 
-        : (c.label || c.name || k);
-      if (!map.has(k)) {
-        map.set(k, { code: k, display });
-      }
-    }
-    const result = Array.from(map.values()).sort((a, b) => a.display.toLowerCase().localeCompare(b.display.toLowerCase()));
-    console.log('[DEBUG] buildOptions result:', result.length, 'options');
-    if (result.length > 0) {
-      console.log('[DEBUG] Sample options:', result.slice(0, 3));
-    }
-    return result;
-  };
+
 
   // Removed legacy label derivation; taxonomy is the source of truth now
 
@@ -680,30 +609,45 @@ const SegmentBuilder = () => {
                   <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #eee' }}>
                     <thead>
                       <tr>
-                        {['url','iab_code','iab_subcode','iab_secondary_code','iab_secondary_subcode','tone','intent','conversions','ctr','viewability','scroll_depth','impressions','fill_rate','last_updated'].map(h => (
-                          <th key={h} style={{ padding: '8px', background: '#f8f9fa', borderBottom: '1px solid #eee', textAlign: 'left' }}>{h}</th>
+                        {['url','primary_category','subcategory','secondary_category','secondary_subcategory','tone','intent','conversions','ctr','viewability','scroll_depth','impressions','fill_rate','last_updated'].map(h => (
+                          <th key={h} style={{ padding: '8px', background: '#f8f9fa', borderBottom: '1px solid #eee', textAlign: 'left' }}>{h.replace(/_/g, ' ')}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {previewRows.slice(0, 100).map((r, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid #f2f2f2' }}>
-                          <td style={{ padding: '8px' }}>{r.url}</td>
-                          <td style={{ padding: '8px' }}>{r.iab_code || r.classification_iab_code}</td>
-                          <td style={{ padding: '8px' }}>{r.iab_subcode || r.classification_iab_subcode}</td>
-                          <td style={{ padding: '8px' }}>{r.iab_secondary_code || r.classification_iab_secondary_code}</td>
-                          <td style={{ padding: '8px' }}>{r.iab_secondary_subcode || r.classification_iab_secondary_subcode}</td>
-                          <td style={{ padding: '8px' }}>{r.tone || r.classification_tone}</td>
-                          <td style={{ padding: '8px' }}>{r.intent || r.classification_intent}</td>
-                          <td style={{ padding: '8px' }}>{r.attribution_conversions}</td>
-                          <td style={{ padding: '8px' }}>{r.attribution_ctr}</td>
-                          <td style={{ padding: '8px' }}>{r.attribution_viewability}</td>
-                          <td style={{ padding: '8px' }}>{r.attribution_scroll_depth}</td>
-                          <td style={{ padding: '8px' }}>{r.attribution_impressions}</td>
-                          <td style={{ padding: '8px' }}>{r.attribution_fill_rate}</td>
-                          <td style={{ padding: '8px' }}>{r.merged_at || r.upload_date}</td>
-                        </tr>
-                      ))}
+                      {previewRows.slice(0, 100).map((r, i) => {
+                        const primaryCode = r.iab_code || r.classification_iab_code;
+                        const subCode = r.iab_subcode || r.classification_iab_subcode;
+                        const secondaryCode = r.iab_secondary_code || r.classification_iab_secondary_code;
+                        const secondarySubCode = r.iab_secondary_subcode || r.classification_iab_secondary_subcode;
+                        
+                        return (
+                          <tr key={i} style={{ borderBottom: '1px solid #f2f2f2' }}>
+                            <td style={{ padding: '8px' }}>{r.url}</td>
+                            <td style={{ padding: '8px' }}>
+                              {primaryCode ? getIabDisplayString(primaryCode, { format: 'standard', showPath: true }) : 'N/A'}
+                            </td>
+                            <td style={{ padding: '8px' }}>
+                              {subCode ? getIabDisplayString(subCode, { format: 'standard', showPath: true }) : 'N/A'}
+                            </td>
+                            <td style={{ padding: '8px' }}>
+                              {secondaryCode ? getIabDisplayString(secondaryCode, { format: 'standard', showPath: true }) : 'N/A'}
+                            </td>
+                            <td style={{ padding: '8px' }}>
+                              {secondarySubCode ? getIabDisplayString(secondarySubCode, { format: 'standard', showPath: true }) : 'N/A'}
+                            </td>
+                            <td style={{ padding: '8px' }}>{r.tone || r.classification_tone}</td>
+                            <td style={{ padding: '8px' }}>{r.intent || r.classification_intent}</td>
+                            <td style={{ padding: '8px' }}>{r.attribution_conversions}</td>
+                            <td style={{ padding: '8px' }}>{r.attribution_ctr}</td>
+                            <td style={{ padding: '8px' }}>{r.attribution_viewability}</td>
+                            <td style={{ padding: '8px' }}>{r.attribution_scroll_depth}</td>
+                            <td style={{ padding: '8px' }}>{r.attribution_impressions}</td>
+                            <td style={{ padding: '8px' }}>{r.attribution_fill_rate}</td>
+                            <td style={{ padding: '8px' }}>{r.merged_at || r.upload_date}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                   </div>

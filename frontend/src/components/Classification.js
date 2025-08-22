@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { API_BASE_URL } from "../config";
+import iabTaxonomyService, { getIabLabel, getIabFullPath, getIabDisplayString } from "../utils/iabTaxonomyService";
 
 function Classification() {
   const [url, setUrl] = useState("");
@@ -9,6 +10,11 @@ function Classification() {
   const [bulkUrls, setBulkUrls] = useState("");
   const [bulkResults, setBulkResults] = useState([]);
   const [bulkLoading, setBulkLoading] = useState(false);
+
+  // Initialize IAB service
+  useEffect(() => {
+    iabTaxonomyService.initialize();
+  }, []);
 
   const handleClassify = async () => {
     setLoading(true);
@@ -146,14 +152,11 @@ function Classification() {
              borderRadius: "8px",
              border: "1px solid #ddd"
            }}>
-             <p><strong>IAB Category:</strong> {result.iab_category ? result.iab_category.replace(/^IAB\d+\s*\(/, '').replace(/\)$/, '') : "N/A"}</p>
-             <p><strong>IAB Code:</strong> {result.iab_code || "N/A"}</p>
-             <p><strong>IAB Subcategory:</strong> {result.iab_subcategory ? result.iab_subcategory.replace(/^IAB\d+-\d+\s*\(/, '').replace(/\)$/, '') : "N/A"}</p>
-             <p><strong>IAB Subcode:</strong> {result.iab_subcode || "N/A"}</p>
-             <p><strong>Secondary Category:</strong> {result.iab_secondary_category ? result.iab_secondary_category.replace(/^IAB\d+\s*\(/, '').replace(/\)$/, '') : "N/A"}</p>
-             <p><strong>Secondary Code:</strong> {result.iab_secondary_code || "N/A"}</p>
-             <p><strong>Secondary Subcategory:</strong> {result.iab_secondary_subcategory ? result.iab_secondary_subcategory.replace(/^IAB\d+-\d+\s*\(/, '').replace(/\)$/, '') : "N/A"}</p>
-             <p><strong>Secondary Subcode:</strong> {result.iab_secondary_subcode || "N/A"}</p>
+             <p><strong>Primary Category:</strong> {result.iab_code ? getIabDisplayString(result.iab_code, { format: 'standard', showPath: true }) : "N/A"}</p>
+             <p><strong>Subcategory:</strong> {result.iab_subcode ? getIabDisplayString(result.iab_subcode, { format: 'standard', showPath: true }) : "N/A"}</p>
+             <p><strong>Secondary Category:</strong> {result.iab_secondary_code ? getIabDisplayString(result.iab_secondary_code, { format: 'standard', showPath: true }) : "N/A"}</p>
+             <p><strong>Secondary Subcategory:</strong> {result.iab_secondary_subcode ? getIabDisplayString(result.iab_secondary_subcode, { format: 'standard', showPath: true }) : "N/A"}</p>
+             
              <p><strong>Tone:</strong> {result.tone || "N/A"}</p>
              <p><strong>Intent:</strong> {result.intent || "N/A"}</p>
              <p><strong>Audience:</strong> {result.audience || "N/A"}</p>
@@ -216,14 +219,10 @@ function Classification() {
               <tr>
                 {[
                   "URL",
-                  "IAB Category",
-                  "IAB Code",
-                  "IAB Subcategory",
-                  "IAB Subcode",
+                  "Primary Category",
+                  "Subcategory", 
                   "Secondary Category",
-                  "Secondary Code",
                   "Secondary Subcategory",
-                  "Secondary Subcode",
                   "Tone",
                   "Intent",
                   "Audience",
@@ -259,14 +258,18 @@ function Classification() {
                      textOverflow: "ellipsis",
                      whiteSpace: "nowrap"
                    }}>{r.url}</td>
-                   <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>{r.iab_category ? r.iab_category.replace(/^IAB\d+\s*\(/, '').replace(/\)$/, '') : "N/A"}</td>
-                   <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>{r.iab_code}</td>
-                   <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>{r.iab_subcategory ? r.iab_subcategory.replace(/^IAB\d+-\d+\s*\(/, '').replace(/\)$/, '') : "N/A"}</td>
-                   <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>{r.iab_subcode}</td>
-                   <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>{r.iab_secondary_category ? r.iab_secondary_category.replace(/^IAB\d+\s*\(/, '').replace(/\)$/, '') : "N/A"}</td>
-                   <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>{r.iab_secondary_code}</td>
-                   <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>{r.iab_secondary_subcategory ? r.iab_secondary_subcategory.replace(/^IAB\d+-\d+\s*\(/, '').replace(/\)$/, '') : "N/A"}</td>
-                   <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>{r.iab_secondary_subcode}</td>
+                   <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
+                     {r.iab_code ? getIabDisplayString(r.iab_code, { format: 'standard', showPath: true }) : "N/A"}
+                   </td>
+                                       <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
+                      {r.iab_subcode ? getIabDisplayString(r.iab_subcode, { format: 'standard', showPath: true }) : "N/A"}
+                    </td>
+                    <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
+                      {r.iab_secondary_code ? getIabDisplayString(r.iab_secondary_code, { format: 'standard', showPath: true }) : "N/A"}
+                    </td>
+                    <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>
+                      {r.iab_secondary_subcode ? getIabDisplayString(r.iab_secondary_subcode, { format: 'standard', showPath: true }) : "N/A"}
+                    </td>
                    <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>{r.tone}</td>
                    <td style={{ 
                      padding: "10px 8px", 

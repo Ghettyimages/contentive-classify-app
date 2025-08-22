@@ -2,8 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { API_BASE_URL } from '../config';
-// Optional label helper
-// import { labelForCode } from '../iabTaxonomy';
+import iabTaxonomyService, { getIabLabel, getIabFullPath, getIabDisplayString } from '../utils/iabTaxonomyService';
 
 // Helper to format date YYYY-MM-DD
 const formatDate = (date) => date.toISOString().slice(0, 10);
@@ -24,8 +23,11 @@ const DataDashboard = () => {
 
   useEffect(() => {
     if (currentUser) {
-      loadMergedData();
-      loadCounts();
+      // Initialize IAB service first
+      iabTaxonomyService.initialize().then(() => {
+        loadMergedData();
+        loadCounts();
+      });
     }
   }, [currentUser]);
 
@@ -160,33 +162,40 @@ const DataDashboard = () => {
 
   const exportToCSV = () => {
     const headers = ['URL','IAB Category','IAB Subcategory','Secondary IAB Category','Secondary IAB Subcategory','IAB Code','IAB Subcode','Secondary IAB Code','Secondary IAB Subcode','Tone','Intent','Audience','Keywords','Conversions','Revenue','CTR (%)','Viewability (%)','Scroll Depth (%)','Impressions','Fill Rate (%)','Clicks','Time on Page','Data Status','upload_date','merged_at'];
-    const csvData = mergedData.map(item => [
-      item.url || 'N/A',
-      getFieldValue(item, 'classification', 'iab_category'),
-      getFieldValue(item, 'classification', 'iab_subcategory'),
-      getFieldValue(item, 'classification', 'iab_secondary_category'),
-      getFieldValue(item, 'classification', 'iab_secondary_subcategory'),
-      getFieldValue(item, 'classification', 'iab_code'),
-      getFieldValue(item, 'classification', 'iab_subcode'),
-      getFieldValue(item, 'classification', 'iab_secondary_code'),
-      getFieldValue(item, 'classification', 'iab_secondary_subcode'),
-      getFieldValue(item, 'classification', 'tone'),
-      getFieldValue(item, 'classification', 'intent'),
-      getFieldValue(item, 'classification', 'audience'),
-      getFieldValue(item, 'classification', 'keywords'),
-      formatNumber(getFieldValue(item, 'attribution', 'conversions')),
-      formatNumber(getFieldValue(item, 'attribution', 'revenue')),
-      formatPercentage(getFieldValue(item, 'attribution', 'ctr')),
-      formatPercentage(getFieldValue(item, 'attribution', 'viewability')),
-      formatPercentage(getFieldValue(item, 'attribution', 'scroll_depth')),
-      formatNumber(getFieldValue(item, 'attribution', 'impressions')),
-      formatPercentage(getFieldValue(item, 'attribution', 'fill_rate')),
-      formatNumber(getFieldValue(item, 'attribution', 'clicks')),
-      formatNumber(getFieldValue(item, 'attribution', 'time_on_page')),
-      item.hasClassification && item.hasAttribution ? 'Complete' : item.hasClassification ? 'Classification Only' : item.hasAttribution ? 'Attribution Only' : 'No Data',
-      item.upload_date || '',
-      item.merged_at || ''
-    ]);
+    const csvData = mergedData.map(item => {
+      const primaryCode = getFieldValue(item, 'classification', 'iab_code');
+      const subCode = getFieldValue(item, 'classification', 'iab_subcode');
+      const secondaryCode = getFieldValue(item, 'classification', 'iab_secondary_code');
+      const secondarySubCode = getFieldValue(item, 'classification', 'iab_secondary_subcode');
+      
+      return [
+        item.url || 'N/A',
+        primaryCode ? getIabDisplayString(primaryCode, { format: 'pathOnly' }) : 'N/A',
+        subCode ? getIabDisplayString(subCode, { format: 'pathOnly' }) : 'N/A',
+        secondaryCode ? getIabDisplayString(secondaryCode, { format: 'pathOnly' }) : 'N/A',
+        secondarySubCode ? getIabDisplayString(secondarySubCode, { format: 'pathOnly' }) : 'N/A',
+        primaryCode || 'N/A',
+        subCode || 'N/A',
+        secondaryCode || 'N/A',
+        secondarySubCode || 'N/A',
+        getFieldValue(item, 'classification', 'tone'),
+        getFieldValue(item, 'classification', 'intent'),
+        getFieldValue(item, 'classification', 'audience'),
+        getFieldValue(item, 'classification', 'keywords'),
+        formatNumber(getFieldValue(item, 'attribution', 'conversions')),
+        formatNumber(getFieldValue(item, 'attribution', 'revenue')),
+        formatPercentage(getFieldValue(item, 'attribution', 'ctr')),
+        formatPercentage(getFieldValue(item, 'attribution', 'viewability')),
+        formatPercentage(getFieldValue(item, 'attribution', 'scroll_depth')),
+        formatNumber(getFieldValue(item, 'attribution', 'impressions')),
+        formatPercentage(getFieldValue(item, 'attribution', 'fill_rate')),
+        formatNumber(getFieldValue(item, 'attribution', 'clicks')),
+        formatNumber(getFieldValue(item, 'attribution', 'time_on_page')),
+        item.hasClassification && item.hasAttribution ? 'Complete' : item.hasClassification ? 'Classification Only' : item.hasAttribution ? 'Attribution Only' : 'No Data',
+        item.upload_date || '',
+        item.merged_at || ''
+      ];
+    });
     const csvContent = [headers, ...csvData].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
