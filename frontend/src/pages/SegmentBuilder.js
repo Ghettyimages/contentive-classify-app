@@ -148,52 +148,133 @@ const SegmentBuilder = () => {
   const MIN_IAB_COUNT = 200;
   const loadIabOptions = async () => {
     console.info('[IAB] initializing…');
+    
+    // Try backend API first
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/iab31`, { timeout: 8000 });
+      console.log('[DEBUG] Making API call to:', `${API_BASE_URL}/api/iab31`);
+      const res = await axios.get(`${API_BASE_URL}/api/iab31`, { 
+        timeout: 8000,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      console.log('[DEBUG] API response status:', res.status);
+      console.log('[DEBUG] API response data keys:', Object.keys(res.data || {}));
+      
       const data = res.data;
-      const list = data?.codes || [];
-      if (!Array.isArray(list) || list.length < MIN_IAB_COUNT) throw new Error('Backend returned too few categories');
+      if (!data || typeof data !== 'object') {
+        throw new Error('Invalid API response format');
+      }
+      
+      const list = data.codes || [];
+      console.log('[DEBUG] Extracted codes list length:', list.length);
+      console.log('[DEBUG] First 2 codes:', list.slice(0, 2));
+      
+      if (!Array.isArray(list)) {
+        throw new Error('API response codes is not an array');
+      }
+      
+      if (list.length < MIN_IAB_COUNT) {
+        throw new Error(`Backend returned too few categories: ${list.length} < ${MIN_IAB_COUNT}`);
+      }
+      
       const items = buildOptions(list);
+      console.log('[DEBUG] buildOptions returned:', items.length, 'items');
+      
+      if (items.length === 0) {
+        throw new Error('buildOptions returned empty array despite valid input');
+      }
+      
       setIabOptions(items);
       setTaxonomySource('backend');
       setTaxonomyCount(list.length);
-      console.info(`[IAB] Ready from backend count: ${list.length}`);
+      console.info(`[IAB] Ready from backend count: ${list.length}, options: ${items.length}`);
+      return;
+      
     } catch (err) {
-      console.warn('[IAB] Backend load failed, using local fallback', err?.message || err);
-      try {
-        const bundled = (await import('../data/iab_content_taxonomy_3_1.v1.json')).default;
-        const list = Array.isArray(bundled?.codes) ? bundled.codes : [];
-        const count = list.length;
-        if (count < MIN_IAB_COUNT) {
-          console.error('[IAB] Fallback JSON is too small; check build/update script.', { count });
-          setIabOptions([]);
-          setTaxonomySource('fallback');
-          setTaxonomyCount(count);
-          return;
-        }
-        const items = buildOptions(list);
-        setIabOptions(items);
-        setTaxonomySource('fallback');
-        setTaxonomyCount(count);
-        console.info(`[IAB] Ready from bundled count: ${count}`);
-      } catch (e2) {
-        console.error('[IAB] Failed to load fallback JSON', e2);
+      console.warn('[IAB] Backend load failed, using local fallback. Error:', err?.message || err);
+      console.error('[DEBUG] Full backend error:', err);
+    }
+    
+    // Fallback to local JSON
+    try {
+      console.log('[DEBUG] Loading fallback JSON...');
+      const bundled = (await import('../data/iab_content_taxonomy_3_1.v1.json')).default;
+      console.log('[DEBUG] Fallback JSON loaded, keys:', Object.keys(bundled || {}));
+      
+      if (!bundled || typeof bundled !== 'object') {
+        throw new Error('Invalid fallback JSON format');
+      }
+      
+      const list = bundled.codes || [];
+      const count = list.length;
+      console.log('[DEBUG] Fallback codes count:', count);
+      console.log('[DEBUG] Fallback first 2 codes:', list.slice(0, 2));
+      
+      if (!Array.isArray(list)) {
+        throw new Error('Fallback codes is not an array');
+      }
+      
+      if (count < MIN_IAB_COUNT) {
+        console.error('[IAB] Fallback JSON is too small; check build/update script.', { count });
         setIabOptions([]);
         setTaxonomySource('fallback');
-        setTaxonomyCount(0);
+        setTaxonomyCount(count);
+        return;
       }
+      
+      const items = buildOptions(list);
+      console.log('[DEBUG] Fallback buildOptions returned:', items.length, 'items');
+      
+      if (items.length === 0) {
+        console.error('[IAB] buildOptions returned empty array despite valid fallback data');
+        setIabOptions([]);
+        setTaxonomySource('fallback');
+        setTaxonomyCount(count);
+        return;
+      }
+      
+      setIabOptions(items);
+      setTaxonomySource('fallback');
+      setTaxonomyCount(count);
+      console.info(`[IAB] Ready from bundled count: ${count}, options: ${items.length}`);
+      
+    } catch (e2) {
+      console.error('[IAB] Failed to load fallback JSON', e2);
+      setIabOptions([]);
+      setTaxonomySource('error');
+      setTaxonomyCount(0);
     }
   };
 
   const buildOptions = (codes) => {
+    console.log('[DEBUG] buildOptions called with codes:', codes && codes.length ? codes.length : 0, 'items');
+    if (!codes || !Array.isArray(codes)) {
+      console.log('[DEBUG] Invalid codes input:', codes);
+      return [];
+    }
     const map = new Map();
     for (const c of codes) {
-      const k = (c?.code || c?.iab_code || c?.uid || '').toString().trim().toUpperCase();
-      if (!k) continue;
-      const display = Array.isArray(c?.path) && c.path.length ? c.path.join(' > ') : (c?.label || c?.name || k);
-      if (!map.has(k)) map.set(k, { code: k, display });
+      if (!c) continue;
+      const k = (c.code || c.iab_code || c.uid || '').toString().trim().toUpperCase();
+      if (!k) {
+        console.log('[DEBUG] Skipping item with no code:', c);
+        continue;
+      }
+      const display = Array.isArray(c.path) && c.path.length > 0 
+        ? c.path.join(' > ') 
+        : (c.label || c.name || k);
+      if (!map.has(k)) {
+        map.set(k, { code: k, display });
+      }
     }
-    return Array.from(map.values()).sort((a, b) => a.display.toLowerCase().localeCompare(b.display.toLowerCase()));
+    const result = Array.from(map.values()).sort((a, b) => a.display.toLowerCase().localeCompare(b.display.toLowerCase()));
+    console.log('[DEBUG] buildOptions result:', result.length, 'options');
+    if (result.length > 0) {
+      console.log('[DEBUG] Sample options:', result.slice(0, 3));
+    }
+    return result;
   };
 
   // Removed legacy label derivation; taxonomy is the source of truth now
@@ -413,10 +494,12 @@ const SegmentBuilder = () => {
   };
 
   const banner = (() => {
-    if (!taxonomySource) return null;
-    const src = taxonomySource === 'backend' ? 'Backend' : 'Local fallback';
-    const enabled = taxonomyCount >= MIN_IAB_COUNT ? 'enabled' : 'disabled';
-    return `IAB 3.1 • Source: ${src} (${taxonomyCount}) ${enabled === 'enabled' ? '(enabled)' : '(disabled)'}`;
+    if (!taxonomySource) return 'IAB 3.1 • Loading...';
+    const src = taxonomySource === 'backend' ? 'Backend' : 
+                taxonomySource === 'fallback' ? 'Local fallback' : 
+                taxonomySource === 'error' ? 'Error' : 'Unknown';
+    const enabled = iabOptions.length >= 50 ? 'enabled' : 'disabled';
+    return `IAB 3.1 • Source: ${src} • Raw: ${taxonomyCount} • Options: ${iabOptions.length} • Status: ${enabled}`;
   })();
 
   return (

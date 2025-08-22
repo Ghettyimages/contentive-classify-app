@@ -6,6 +6,7 @@ import logging
 import io
 from typing import List, Dict, Tuple
 from flask import Blueprint, jsonify
+from flask_cors import cross_origin
 import re
 import json
 from typing import Tuple
@@ -232,24 +233,28 @@ def load_iab_taxonomy(tsv_path: str | None = None) -> List[Dict]:
 
 
 @bp.get("/taxonomy/iab3_1")
+@cross_origin()
 def get_taxonomy():
 	items = load_iab_taxonomy()
 	return jsonify(items)
 
 
 @bp.get("/api/taxonomy/iab3_1")
+@cross_origin()
 def get_taxonomy_api():
 	return get_taxonomy()
 
 
 @bp.get("/taxonomy/count")
 @bp.get("/api/taxonomy/count")
+@cross_origin()
 def get_taxonomy_count():
 	items = load_iab_taxonomy()
 	return jsonify({"count": len(items)})
 
 
 @bp.get("/api/taxonomy/iab3_1/debug")
+@cross_origin()
 def taxonomy_debug():
 	items = load_iab_taxonomy()
 	headers, path = _HEADERS_INFO if _HEADERS_INFO else ([], _DEFAULT_PATH)
@@ -454,6 +459,7 @@ def get_taxonomy_codes() -> List[Dict]:
 
 
 @bp.get('/api/iab31')
+@cross_origin()
 def api_iab31():
 	try:
 		codes = parse_iab_tsv(os.getenv('IAB_TSV_PATH'))
