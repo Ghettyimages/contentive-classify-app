@@ -132,17 +132,16 @@ const SegmentBuilder = () => {
   useEffect(() => {
     if (currentUser) {
       loadSegments();
-      loadIabOptions();
       loadSourceRows();
     }
   }, [currentUser]);
 
-  // Reload IAB options when the filter toggle changes
+  // Load IAB options after source rows are loaded, and when filter toggle changes
   useEffect(() => {
     if (currentUser) {
       loadIabOptions();
     }
-  }, [showOnlyUsedIab]);
+  }, [currentUser, sourceRows, showOnlyUsedIab]);
 
   const loadSegments = async () => {
     try {
@@ -159,7 +158,7 @@ const SegmentBuilder = () => {
     
     let allIabCodes = [];
     let taxonomySource = '';
-    let taxonomyCount = 0;
+    let totalCount = 0;
     
     // First, load all available IAB codes
     try {
@@ -176,8 +175,8 @@ const SegmentBuilder = () => {
       if (data && data.codes && Array.isArray(data.codes)) {
         allIabCodes = data.codes;
         taxonomySource = 'backend';
-        taxonomyCount = data.codes.length;
-        console.log('[DEBUG] Loaded all IAB codes from backend:', taxonomyCount);
+        totalCount = data.codes.length;
+        console.log('[DEBUG] Loaded all IAB codes from backend:', totalCount);
       } else {
         throw new Error('Invalid backend response');
       }
@@ -189,8 +188,8 @@ const SegmentBuilder = () => {
         if (bundled && bundled.codes && Array.isArray(bundled.codes)) {
           allIabCodes = bundled.codes;
           taxonomySource = 'fallback';
-          taxonomyCount = bundled.codes.length;
-          console.log('[DEBUG] Loaded all IAB codes from fallback:', taxonomyCount);
+          totalCount = bundled.codes.length;
+          console.log('[DEBUG] Loaded all IAB codes from fallback:', totalCount);
         }
       } catch (e2) {
         console.error('[IAB] Failed to load fallback JSON', e2);
@@ -202,59 +201,66 @@ const SegmentBuilder = () => {
     }
     
     // Filter to only used codes if requested
-    if (showOnlyUsedIab) {
-      try {
-        console.log('[DEBUG] Fetching IAB codes in use from database...');
-        const usedRes = await axios.get(`${API_BASE_URL}/api/iab-codes-in-use`, { 
-          headers: tokenHeader(),
-          timeout: 10000
-        });
+    if (showOnlyUsedIab && sourceRows.length > 0) {
+      console.log('[DEBUG] Filtering IAB codes based on sourceRows data...');
+      
+      // Extract IAB codes from the source data that's already loaded
+      const codesInUse = new Set();
+      
+      for (const row of sourceRows) {
+        // Check all possible IAB code fields
+        const codes = [
+          row.classification_iab_code,
+          row.classification_iab_subcode, 
+          row.classification_iab_secondary_code,
+          row.classification_iab_secondary_subcode,
+          row.iab_code,
+          row.iab_subcode,
+          row.iab_secondary_code,
+          row.iab_secondary_subcode
+        ];
         
-        const codesInUse = usedRes.data?.codes_in_use || [];
-        console.log('[DEBUG] IAB codes in use:', codesInUse.length, 'codes');
-        console.log('[DEBUG] Sample used codes:', codesInUse.slice(0, 5));
-        
-        if (codesInUse.length === 0) {
-          console.warn('[IAB] No codes in use found, showing all available codes');
-          // Fall back to showing all codes if none are in use yet
-          const items = buildOptions(allIabCodes);
-          setIabOptions(items);
-          setTaxonomySource(taxonomySource + ' (all - no data)');
-          setTaxonomyCount(taxonomyCount);
-          return;
+        for (const code of codes) {
+          if (code && typeof code === 'string' && code.trim()) {
+            codesInUse.add(code.trim());
+          }
         }
-        
-        // Filter all IAB codes to only those in use
-        const usedCodesSet = new Set(codesInUse);
-        const filteredCodes = allIabCodes.filter(code => {
-          const codeValue = code.code || code.iab_code || code.uid || '';
-          return usedCodesSet.has(codeValue);
-        });
-        
-        console.log('[DEBUG] Filtered to used codes:', filteredCodes.length, 'out of', allIabCodes.length);
-        
-        const items = buildOptions(filteredCodes);
-        setIabOptions(items);
-        setTaxonomySource(taxonomySource + ' (filtered)');
-        setTaxonomyCount(filteredCodes.length);
-        console.info(`[IAB] Ready with filtered codes: ${filteredCodes.length} used out of ${taxonomyCount} total, ${items.length} options`);
-        
-      } catch (usedErr) {
-        console.warn('[IAB] Failed to get codes in use, showing all codes. Error:', usedErr?.message || usedErr);
-        // Fall back to showing all codes if the filtering fails
+      }
+      
+      console.log('[DEBUG] Found', codesInUse.size, 'unique IAB codes in source data');
+      console.log('[DEBUG] Sample codes in use:', Array.from(codesInUse).slice(0, 10));
+      
+      if (codesInUse.size === 0) {
+        console.warn('[IAB] No codes found in source data, showing all available codes');
         const items = buildOptions(allIabCodes);
         setIabOptions(items);
-        setTaxonomySource(taxonomySource + ' (all - filter failed)');
-        setTaxonomyCount(taxonomyCount);
-        console.info(`[IAB] Fallback to all codes: ${taxonomyCount} total, ${items.length} options`);
+        setTaxonomySource(taxonomySource + ' (all - no data)');
+        setTaxonomyCount(totalCount);
+        return;
       }
+      
+      // Filter all IAB codes to only those in use
+      const filteredCodes = allIabCodes.filter(code => {
+        const codeValue = code.code || code.iab_code || code.uid || '';
+        return codesInUse.has(codeValue);
+      });
+      
+      console.log('[DEBUG] Filtered to', filteredCodes.length, 'codes out of', allIabCodes.length, 'total');
+      
+      const items = buildOptions(filteredCodes);
+      setIabOptions(items);
+      setTaxonomySource(taxonomySource + ' (filtered)');
+      setTaxonomyCount(filteredCodes.length);
+      console.info(`[IAB] Showing filtered codes: ${filteredCodes.length} used out of ${totalCount} total, ${items.length} options`);
+      
     } else {
       // Show all available codes
+      console.log('[DEBUG] Showing all IAB codes (filter disabled or no source data)');
       const items = buildOptions(allIabCodes);
       setIabOptions(items);
       setTaxonomySource(taxonomySource + ' (all)');
-      setTaxonomyCount(taxonomyCount);
-      console.info(`[IAB] Showing all codes: ${taxonomyCount} total, ${items.length} options`);
+      setTaxonomyCount(totalCount);
+      console.info(`[IAB] Showing all codes: ${totalCount} total, ${items.length} options`);
     }
   };
 
@@ -505,11 +511,9 @@ const SegmentBuilder = () => {
 
   const banner = (() => {
     if (!taxonomySource) return 'IAB 3.1 • Loading...';
-    const src = taxonomySource === 'backend' ? 'Backend' : 
-                taxonomySource === 'fallback' ? 'Local fallback' : 
-                taxonomySource === 'error' ? 'Error' : 'Unknown';
-    const enabled = iabOptions.length >= 50 ? 'enabled' : 'disabled';
-    return `IAB 3.1 • Source: ${src} • Raw: ${taxonomyCount} • Options: ${iabOptions.length} • Status: ${enabled}`;
+    const enabled = iabOptions.length >= 10 ? 'enabled' : 'disabled';
+    const filterStatus = showOnlyUsedIab ? 'Filtered' : 'All';
+    return `IAB 3.1 • ${taxonomySource} • ${filterStatus}: ${taxonomyCount} codes • Options: ${iabOptions.length} • ${enabled}`;
   })();
 
   return (
