@@ -1,9 +1,14 @@
 // scripts/build_iab_fallback_from_tsv.mjs
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const TSV = path.resolve('backend/data/IAB_Content_Taxonomy_3_1.tsv');
-const OUT = path.resolve('frontend/src/data/iab_content_taxonomy_3_1.v1.json');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const projectRoot = path.resolve(__dirname, '..');
+
+const TSV = path.join(projectRoot, 'backend/data/IAB_Content_Taxonomy_3_1.tsv');
+const OUT = path.join(projectRoot, 'frontend/src/data/iab_content_taxonomy_3_1.v1.json');
 
 function parseTSV(txt) {
   const lines = txt.split(/\r?\n/);
