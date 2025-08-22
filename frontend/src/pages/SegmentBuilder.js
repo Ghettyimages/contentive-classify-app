@@ -244,6 +244,21 @@ const SegmentBuilder = () => {
           iab_code: results[0].iab_code,
           iab_subcode: results[0].iab_subcode
         });
+        
+        // Debug: Show all unique IAB codes in the dataset
+        const allCodes = new Set();
+        results.forEach(row => {
+          [
+            getFieldValue(row, 'classification', 'iab_code'),
+            getFieldValue(row, 'classification', 'iab_subcode'),
+            getFieldValue(row, 'classification', 'iab_secondary_code'),
+            getFieldValue(row, 'classification', 'iab_secondary_subcode')
+          ].forEach(code => {
+            if (code && code !== 'N/A') allCodes.add(code);
+          });
+        });
+        console.log('[DEBUG] All IAB codes in dataset:', Array.from(allCodes).sort());
+        console.log('[DEBUG] Looking for IAB18:', Array.from(allCodes).filter(code => code.startsWith('IAB18')));
       }
       setSourceRows(results);
     } catch (e) {
@@ -461,7 +476,8 @@ const SegmentBuilder = () => {
     if (!taxonomySource) return 'IAB 3.1 • Loading...';
     const enabled = iabOptions.length >= 10 ? 'enabled' : 'disabled';
     const filterStatus = showOnlyUsedIab ? 'Filtered' : 'All';
-    return `IAB 3.1 • ${taxonomySource} • ${filterStatus}: ${taxonomyCount} codes • Options: ${iabOptions.length} • ${enabled}`;
+    const dataInfo = sourceRows.length > 0 ? `${sourceRows.length} records loaded` : 'No data loaded';
+    return `IAB 3.1 • ${taxonomySource} • ${filterStatus}: ${taxonomyCount} codes • Options: ${iabOptions.length} • ${enabled} • ${dataInfo}`;
   })();
 
   return (
@@ -507,6 +523,25 @@ const SegmentBuilder = () => {
                   ? 'Displaying only categories that have been used in your classified content' 
                   : 'Displaying all available IAB 3.1 categories'}
               </div>
+              
+              <button 
+                onClick={loadSourceRows} 
+                style={{ 
+                  marginTop: '0.5rem', 
+                  padding: '0.4rem 0.8rem', 
+                  backgroundColor: '#28a745', 
+                  color: 'white', 
+                  border: 'none', 
+                  borderRadius: '4px', 
+                  cursor: 'pointer', 
+                  fontSize: '0.8rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.3rem'
+                }}
+              >
+                🔄 Refresh Data ({sourceRows.length} records)
+              </button>
             </div>
             <div>
               <label style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>Include IAB (multi-select)</label>
