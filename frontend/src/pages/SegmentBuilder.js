@@ -154,14 +154,17 @@ const SegmentBuilder = () => {
     }
   }, [currentUser]);
 
-  // Load IAB options after source rows are loaded
+  // Initialize IAB taxonomy service and load options after source rows are loaded
   useEffect(() => {
     if (currentUser && sourceRows.length > 0) {
-      loadIabOptions();
+      // Initialize the IAB taxonomy service first
+      iabTaxonomyService.initialize().then(() => {
+        loadIabOptions();
+      });
     }
   }, [currentUser, sourceRows]);
 
-  // DATABASE-ONLY APPROACH: Use only IAB categories from classified content
+  // DATABASE-ONLY APPROACH: Use only IAB categories from classified content, but with proper labels
 const loadIabOptions = async () => {
   console.log('[IAB] Loading categories from classified database content...');
   
@@ -194,21 +197,56 @@ const loadIabOptions = async () => {
   console.log('[IAB] Found', codesInUse.size, 'unique IAB codes in classified data');
   console.log('[IAB] Codes:', Array.from(codesInUse).sort());
   
-  // Create options from database content - NO EXTERNAL TAXONOMY
+  // Create options from database content with proper IAB labels
   const options = Array.from(codesInUse)
     .sort()
-    .map(code => ({
-      value: code,
-      code: code,
-      label: code, // Just use the code itself - no external lookup
-      display: code // Simple display - no external taxonomy
-    }));
+    .map(code => {
+      // Get proper label from IAB taxonomy service
+      const label = getIabLabel(code) || code;
+      const fullPath = getIabFullPath(code) || code;
+      
+      // Debug logging for specific codes
+      if (code === 'IAB18') {
+        console.log('[IAB Debug] IAB18 lookup:', { code, label, fullPath });
+      }
+      
+      // If no label found, try to provide a helpful fallback
+      let displayText = code;
+      if (label && label !== code) {
+        displayText = `${code} (${label})`;
+      } else {
+        // For unknown codes, show a note
+        displayText = `${code} (Unknown category)`;
+      }
+      
+      return {
+        value: code,
+        code: code,
+        label: label,
+        display: displayText
+      };
+    });
   
   setIabOptions(options);
-  setTaxonomySource('database-only');
+  setTaxonomySource('database-with-labels');
   setTaxonomyCount(options.length);
   
-  console.log('[IAB] Loaded', options.length, 'categories from classified database content (codes only)');
+  console.log('[IAB] Loaded', options.length, 'categories from classified database content with proper labels');
+  console.log('[IAB] Sample options:', options.slice(0, 5));
+  
+  // Debug: Check if IAB taxonomy service is working
+  console.log('[IAB Debug] Service initialized:', iabTaxonomyService.initialized);
+  console.log('[IAB Debug] Sample lookups:', {
+    'IAB18': getIabLabel('IAB18'),
+    'IAB9': getIabLabel('IAB9'),
+    'IAB1': getIabLabel('IAB1')
+  });
+  
+  // Log any codes that don't have labels for debugging
+  const codesWithoutLabels = options.filter(opt => opt.label === opt.code);
+  if (codesWithoutLabels.length > 0) {
+    console.log('[IAB Debug] Codes without labels:', codesWithoutLabels.map(opt => opt.code));
+  }
 };
 
   const loadSourceRows = async () => {
@@ -491,9 +529,12 @@ const loadIabOptions = async () => {
               <input type="date" value={segmentEnd} onChange={(e) => setSegmentEnd(e.target.value)} style={{ width: '100%', padding: '0.5rem', border: "1px solid #ddd", borderRadius: 4 }} />
             </div>
             <div style={{ marginBottom: '1rem', padding: '0.75rem', background: '#f8f9fa', borderRadius: 6, border: '1px solid #e9ecef' }}>
-              <div style={{ fontWeight: 500, marginBottom: '0.5rem' }}>Database Categories Only</div>
+              <div style={{ fontWeight: 500, marginBottom: '0.5rem' }}>Database Categories with Labels</div>
               <div style={{ fontSize: '0.8rem', color: '#6c757d', marginBottom: '0.5rem' }}>
-                Showing only IAB categories that exist in your classified content
+                Showing only IAB categories that exist in your classified content, with proper category names
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#6c757d', marginBottom: '0.5rem' }}>
+                <strong>IAB Taxonomy:</strong> Using official IAB 3.1 Content Taxonomy. If your data contains codes not in this taxonomy, they will show as "Unknown category".
               </div>
               
               <button 
@@ -539,7 +580,12 @@ const loadIabOptions = async () => {
               )}
               {iabOptions.length > 0 && (
                 <div style={{ fontSize: '0.75rem', background: '#e8f5e8', color: '#2d5a2d', padding: '2px 6px', borderRadius: 6, display: 'inline-block', marginTop: 6 }}>
-                  {iabOptions.length} categories from your classified content
+                  {iabOptions.length} categories from your classified content with proper labels
+                  {iabOptions.some(opt => opt.label === opt.code) && (
+                    <div style={{ fontSize: '0.7rem', color: '#856404', marginTop: 2 }}>
+                      Note: Some codes may show as "Unknown category" if not in IAB 3.1 taxonomy
+                    </div>
+                  )}
                 </div>
               )}
             </div>
