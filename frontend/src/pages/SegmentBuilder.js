@@ -162,74 +162,54 @@ const SegmentBuilder = () => {
   }, [currentUser, sourceRows]);
 
   // DATABASE-ONLY APPROACH: Use only IAB categories from classified content
-  const loadIabOptions = async () => {
-    console.log('[IAB] Loading categories from classified database content...');
-    
-    if (!sourceRows.length) {
-      console.log('[IAB] No source data loaded yet');
-      setIabOptions([]);
-      setTaxonomySource('database');
-      setTaxonomyCount(0);
-      return;
-    }
-    
-    // Extract all IAB codes that actually exist in classified data
-    const codesInUse = new Set();
-    const codeToData = new Map(); // Track first occurrence for debugging
-    
-    sourceRows.forEach(row => {
-      const codes = [
-        getFieldValue(row, 'classification', 'iab_code'),
-        getFieldValue(row, 'classification', 'iab_subcode'),
-        getFieldValue(row, 'classification', 'iab_secondary_code'),
-        getFieldValue(row, 'classification', 'iab_secondary_subcode')
-      ];
-      
-      codes.forEach(code => {
-        if (code && code !== 'N/A' && typeof code === 'string') {
-          codesInUse.add(code.trim());
-          if (!codeToData.has(code)) {
-            codeToData.set(code, row); // Store first occurrence
-          }
-        }
-      });
-    });
-    
-    console.log('[IAB] Found', codesInUse.size, 'unique IAB codes in classified data');
-    console.log('[IAB] Codes:', Array.from(codesInUse).sort());
-    
-    // Initialize taxonomy service for proper labels
-    await iabTaxonomyService.initialize();
-    
-    // Create options from actual database content with proper labels
-    const options = Array.from(codesInUse)
-      .sort()
-      .map(code => {
-        const label = iabTaxonomyService.getLabel(code);
-        const fullPath = iabTaxonomyService.getFullPath(code);
-        
-        return {
-          value: code,
-          code: code,
-          label: label || code,
-          display: label ? `${code} (${label})` : code
-        };
-      });
-    
-    setIabOptions(options);
+const loadIabOptions = async () => {
+  console.log('[IAB] Loading categories from classified database content...');
+  
+  if (!sourceRows.length) {
+    console.log('[IAB] No source data loaded yet');
+    setIabOptions([]);
     setTaxonomySource('database');
-    setTaxonomyCount(options.length);
+    setTaxonomyCount(0);
+    return;
+  }
+  
+  // Extract all IAB codes that actually exist in classified data
+  const codesInUse = new Set();
+  
+  sourceRows.forEach(row => {
+    const codes = [
+      getFieldValue(row, 'classification', 'iab_code'),
+      getFieldValue(row, 'classification', 'iab_subcode'),
+      getFieldValue(row, 'classification', 'iab_secondary_code'),
+      getFieldValue(row, 'classification', 'iab_secondary_subcode')
+    ];
     
-    console.log('[IAB] Loaded', options.length, 'categories from classified database content');
-    
-    // Debug: Check for IAB18 specifically
-    const hasIAB18 = options.find(opt => opt.code === 'IAB18');
-    if (hasIAB18) {
-      console.log('[IAB] IAB18 found in classified data:', hasIAB18.display);
-    } else {
-      console.log('[IAB] IAB18 not found in classified data');
-    }
-  };
+    codes.forEach(code => {
+      if (code && code !== 'N/A' && typeof code === 'string') {
+        codesInUse.add(code.trim());
+      }
+    });
+  });
+  
+  console.log('[IAB] Found', codesInUse.size, 'unique IAB codes in classified data');
+  console.log('[IAB] Codes:', Array.from(codesInUse).sort());
+  
+  // Create options from database content - NO EXTERNAL TAXONOMY
+  const options = Array.from(codesInUse)
+    .sort()
+    .map(code => ({
+      value: code,
+      code: code,
+      label: code, // Just use the code itself - no external lookup
+      display: code // Simple display - no external taxonomy
+    }));
+  
+  setIabOptions(options);
+  setTaxonomySource('database-only');
+  setTaxonomyCount(options.length);
+  
+  console.log('[IAB] Loaded', options.length, 'categories from classified database content (codes only)');
+};
 
   const loadSourceRows = async () => {
     try {
