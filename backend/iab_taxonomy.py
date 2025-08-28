@@ -458,18 +458,62 @@ def get_taxonomy_codes() -> List[Dict]:
 	} for it in items]
 
 
+import json
+import os
+from flask import jsonify
+from flask_cors import cross_origin
+
 @bp.get('/api/iab31')
 @cross_origin()
 def api_iab31():
-	try:
-		codes = parse_iab_tsv(os.getenv('IAB_TSV_PATH'))
-		if not codes or len(codes) < 200:
-			log.error('[IAB] Backend IAB3.1 parse too small: %s', len(codes) if codes else 0)
-			return jsonify({'error': 'taxonomy_unavailable', 'count': len(codes) if codes else 0}), 503
-		return jsonify({ 'version': '3.1', 'source': 'backend', 'codes': codes })
-	except Exception as e:
-		log.exception('[IAB] Backend IAB3.1 parse failed: %s', e)
-		return jsonify({'error': 'taxonomy_unavailable'}), 503
-
-
+    try:
+        # Use the JSON file instead of TSV for accurate mappings
+        # Path to the generated JSON file
+        json_path = os.path.join(
+            os.path.dirname(__file__), 
+            '..', 'frontend', 'src', 'data', 'iab_content_taxonomy_3_1.v1.json'
+        )
+        
+        # Fallback to absolute path if relative doesn't work
+        if not os.path.exists(json_path):
+            json_path = '/opt/render/project/src/frontend/src/data/iab_content_taxonomy_3_1.v1.json'
+        
+        print(f"[IAB API] Loading JSON from: {json_path}")
+        
+        with open(json_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        print(f"[IAB API] Loaded {len(data.get('codes', []))} codes from JSON")
+        
+        # Convert JSON format to API format
+        codes = []
+        for item in data.get('codes', []):
+            iab_code = item.get('iab_code') or item.get('code')
+            if iab_code:
+                codes.append({
+                    'code': iab_code,
+                    'label': item.get('label', ''),
+                    'path': item.get('iab_path', item.get('path', [])),
+                    'level': item.get('level', 1),
+                    'parent': item.get('parent_uid')
+                })
+        
+        # Debug: Check IAB18 specifically
+        iab18 = next((c for c in codes if c['code'] == 'IAB18'), None)
+        if iab18:
+            print(f"[IAB API] IAB18 mapping: {iab18['label']}")
+        else:
+            print("[IAB API] WARNING: IAB18 not found in mappings")
+        
+        return jsonify({'codes': codes})
+        
+    except FileNotFoundError as e:
+        print(f"[IAB API] JSON file not found: {e}")
+        return jsonify({'error': 'IAB taxonomy file not found'}), 500
+    except json.JSONDecodeError as e:
+        print(f"[IAB API] JSON decode error: {e}")
+        return jsonify({'error': 'Invalid JSON format'}), 500
+    except Exception as e:
+        print(f"[IAB API] Unexpected error: {e}")
+        return jsonify({'error': str(e)}), 500
 __all__ = ["parse_iab_tsv", "load_iab_taxonomy"]
