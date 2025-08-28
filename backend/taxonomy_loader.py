@@ -103,30 +103,52 @@ def load_taxonomy_from_tsv(tsv_source: str) -> Dict[str, Any]:
 
 
 def load_taxonomy(iab_url: str, fallback_json_path: str) -> Dict[str, Any]:
-    # Try remote TSV first if provided
-    if iab_url:
-        try:
-            return load_taxonomy_from_tsv(iab_url)
-        except Exception:
-            pass
-    # Fallback to local JSON
-    if not os.path.exists(fallback_json_path):
-        raise TaxonomyLoadError(f'Fallback JSON not found: {fallback_json_path}')
-    with open(fallback_json_path, 'r', encoding='utf-8') as f:
+    # FORCE USE CORRECT JSON FILE - Skip remote TSV to avoid old data
+    print(f"[IAB Loader] Loading taxonomy from: {fallback_json_path}")
+    
+    # Use the frontend JSON file with correct mappings
+    correct_json_path = os.path.join(
+        os.path.dirname(__file__), 
+        '..', 'frontend', 'src', 'data', 'iab_content_taxonomy_3_1.v1.json'
+    )
+    
+    # Try correct JSON first
+    json_to_use = correct_json_path if os.path.exists(correct_json_path) else fallback_json_path
+    
+    if not os.path.exists(json_to_use):
+        raise TaxonomyLoadError(f'JSON not found: {json_to_use}')
+    
+    print(f"[IAB Loader] Using JSON file: {json_to_use}")
+    
+    with open(json_to_use, 'r', encoding='utf-8') as f:
         payload = json.load(f)
+    
     codes_map: Dict[str, Dict[str, Any]] = {}
+    
     for c in payload.get('codes', []):
-        code = c.get('code')
-        if not code:
+        # Handle both formats: direct IAB codes and UID->IAB mappings
+        iab_code = c.get('iab_code') or c.get('code')
+        if not iab_code:
             continue
-        codes_map[code] = {
-            'label': c.get('label') or c.get('name') or code,
-            'path': c.get('path') or [c.get('label') or c.get('name') or code],
-            'level': c.get('level') or (code.count('-') + 1),
+            
+        label = c.get('label') or c.get('name') or iab_code
+        path = c.get('iab_path') or c.get('path') or [label]
+        
+        codes_map[iab_code] = {
+            'label': label,
+            'path': path if isinstance(path, list) else [path],
+            'level': c.get('level') or (iab_code.count('-') + 1),
         }
+        
+        # Debug: Log IAB18 specifically
+        if iab_code == 'IAB18':
+            print(f"[IAB Loader] IAB18 mapping: {label}")
+    
+    print(f"[IAB Loader] Loaded {len(codes_map)} IAB codes")
+    
     return {
         'version': payload.get('version', '3.1'),
-        'source': f"local:{os.path.basename(fallback_json_path)}",
+        'source': f"local:{os.path.basename(json_to_use)}",
         'commit': payload.get('commit') or 'unversioned',
         'codes': codes_map,
         'labels_to_codes': {},
