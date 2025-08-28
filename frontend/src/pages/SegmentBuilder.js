@@ -49,7 +49,7 @@ const SegmentBuilder = () => {
   const [exportFormat, setExportFormat] = useState('csv');
   const [error, setError] = useState('');
   const [iabOptions, setIabOptions] = useState([]);
-  const [taxonomySource, setTaxonomySource] = useState(''); // 'backend' | 'fallback' | ''
+  const [taxonomySource, setTaxonomySource] = useState(''); // 'database' | ''
   const [taxonomyCount, setTaxonomyCount] = useState(0);
   const [sourceRows, setSourceRows] = useState([]); // raw merged rows fetched for local preview
   const [isApplied, setIsApplied] = useState(false);
@@ -145,12 +145,12 @@ const SegmentBuilder = () => {
     }
   }, [currentUser]);
 
-  // Load IAB options after source rows are loaded, and when filter toggle changes
+  // Load IAB options after source rows are loaded
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && sourceRows.length > 0) {
       loadIabOptions();
     }
-  }, [currentUser, sourceRows, showOnlyUsedIab]);
+  }, [currentUser, sourceRows]);
 
   const loadSegments = async () => {
     try {
@@ -161,72 +161,67 @@ const SegmentBuilder = () => {
     }
   };
 
-  const MIN_IAB_COUNT = 200;
-  const loadIabOptions = async () => {
-    console.info('[IAB] initializing with centralized service...');
+  // DATABASE-ONLY APPROACH: Use only IAB categories from classified content
+  const loadIabOptions = () => {
+    console.log('[IAB] Loading categories from classified database content...');
     
-    // Ensure IAB service is initialized
-    await iabTaxonomyService.initialize();
+    if (!sourceRows.length) {
+      console.log('[IAB] No source data loaded yet');
+      setIabOptions([]);
+      setTaxonomySource('database');
+      setTaxonomyCount(0);
+      return;
+    }
     
-    // Filter to only used codes if requested
-    if (showOnlyUsedIab && sourceRows.length > 0) {
-      console.log('[DEBUG] Filtering IAB codes based on sourceRows data...');
+    // Extract all IAB codes that actually exist in classified data
+    const codesInUse = new Set();
+    const codeToData = new Map(); // Track first occurrence for debugging
+    
+    sourceRows.forEach(row => {
+      const codes = [
+        getFieldValue(row, 'classification', 'iab_code'),
+        getFieldValue(row, 'classification', 'iab_subcode'),
+        getFieldValue(row, 'classification', 'iab_secondary_code'),
+        getFieldValue(row, 'classification', 'iab_secondary_subcode')
+      ];
       
-      // Extract IAB codes from the source data that's already loaded
-      const codesInUse = new Set();
-      
-      for (const row of sourceRows) {
-        // Use same field access pattern as Dashboard for consistency
-        const codes = [
-          getFieldValue(row, 'classification', 'iab_code'),
-          getFieldValue(row, 'classification', 'iab_subcode'),
-          getFieldValue(row, 'classification', 'iab_secondary_code'),
-          getFieldValue(row, 'classification', 'iab_secondary_subcode')
-        ];
-        
-        for (const code of codes) {
-          if (code && typeof code === 'string' && code.trim()) {
-            codesInUse.add(code.trim());
+      codes.forEach(code => {
+        if (code && code !== 'N/A' && typeof code === 'string') {
+          codesInUse.add(code.trim());
+          if (!codeToData.has(code)) {
+            codeToData.set(code, row); // Store first occurrence
           }
         }
-      }
-      
-      console.log('[DEBUG] Found', codesInUse.size, 'unique IAB codes in source data');
-      console.log('[DEBUG] Sample codes in use:', Array.from(codesInUse).slice(0, 10));
-      
-      if (codesInUse.size === 0) {
-        console.warn('[IAB] No codes found in source data, showing all available codes');
-        const items = iabTaxonomyService.getAllOptions(true);
-        setIabOptions(items);
-        setTaxonomySource('backend (all - no data)');
-        setTaxonomyCount(items.length);
-        return;
-      }
-      
-      // Get filtered options using the centralized service
-      const items = iabTaxonomyService.getFilteredOptions(Array.from(codesInUse), true);
-      
-      console.log('[DEBUG] Filtered to', items.length, 'options');
-      
-      setIabOptions(items);
-      setTaxonomySource('backend (filtered)');
-      setTaxonomyCount(items.length);
-      console.info(`[IAB] Showing filtered codes: ${items.length} options from ${codesInUse.size} used codes`);
-      
+      });
+    });
+    
+    console.log('[IAB] Found', codesInUse.size, 'unique IAB codes in classified data');
+    console.log('[IAB] Codes:', Array.from(codesInUse).sort());
+    
+    // Create options from actual database content
+    const options = Array.from(codesInUse)
+      .sort()
+      .map(code => ({
+        value: code,
+        code: code,
+        label: code,
+        display: code
+      }));
+    
+    setIabOptions(options);
+    setTaxonomySource('database');
+    setTaxonomyCount(options.length);
+    
+    console.log('[IAB] Loaded', options.length, 'categories from classified database content');
+    
+    // Debug: Check for IAB18 specifically
+    const hasIAB18 = options.find(opt => opt.code === 'IAB18');
+    if (hasIAB18) {
+      console.log('[IAB] IAB18 found in classified data:', hasIAB18.display);
     } else {
-      // Show all available codes
-      console.log('[DEBUG] Showing all IAB codes (filter disabled or no source data)');
-      const items = iabTaxonomyService.getAllOptions(true);
-      setIabOptions(items);
-      setTaxonomySource('backend (all)');
-      setTaxonomyCount(items.length);
-      console.info(`[IAB] Showing all codes: ${items.length} options`);
+      console.log('[IAB] IAB18 not found in classified data');
     }
   };
-
-
-
-  // Removed legacy label derivation; taxonomy is the source of truth now
 
   const loadSourceRows = async () => {
     try {
@@ -474,10 +469,9 @@ const SegmentBuilder = () => {
 
   const banner = (() => {
     if (!taxonomySource) return 'IAB 3.1 • Loading...';
-    const enabled = iabOptions.length >= 10 ? 'enabled' : 'disabled';
-    const filterStatus = showOnlyUsedIab ? 'Filtered' : 'All';
+    const enabled = iabOptions.length >= 1 ? 'enabled' : 'disabled';
     const dataInfo = sourceRows.length > 0 ? `${sourceRows.length} records loaded` : 'No data loaded';
-    return `IAB 3.1 • ${taxonomySource} • ${filterStatus}: ${taxonomyCount} codes • Options: ${iabOptions.length} • ${enabled} • ${dataInfo}`;
+    return `IAB 3.1 • ${taxonomySource} • Categories: ${taxonomyCount} • Options: ${iabOptions.length} • ${enabled} • ${dataInfo}`;
   })();
 
   return (
@@ -509,25 +503,14 @@ const SegmentBuilder = () => {
               <input type="date" value={segmentEnd} onChange={(e) => setSegmentEnd(e.target.value)} style={{ width: '100%', padding: '0.5rem', border: "1px solid #ddd", borderRadius: 4 }} />
             </div>
             <div style={{ marginBottom: '1rem', padding: '0.75rem', background: '#f8f9fa', borderRadius: 6, border: '1px solid #e9ecef' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500, cursor: 'pointer' }}>
-                <input 
-                  type="checkbox" 
-                  checked={showOnlyUsedIab} 
-                  onChange={(e) => setShowOnlyUsedIab(e.target.checked)}
-                  style={{ margin: 0 }}
-                />
-                Show only IAB categories with classified content
-              </label>
-              <div style={{ fontSize: '0.8rem', color: '#6c757d', marginTop: '0.25rem' }}>
-                {showOnlyUsedIab 
-                  ? 'Displaying only categories that have been used in your classified content' 
-                  : 'Displaying all available IAB 3.1 categories'}
+              <div style={{ fontWeight: 500, marginBottom: '0.5rem' }}>Database Categories Only</div>
+              <div style={{ fontSize: '0.8rem', color: '#6c757d', marginBottom: '0.5rem' }}>
+                Showing only IAB categories that exist in your classified content
               </div>
               
               <button 
                 onClick={loadSourceRows} 
                 style={{ 
-                  marginTop: '0.5rem', 
                   padding: '0.4rem 0.8rem', 
                   backgroundColor: '#28a745', 
                   color: 'white', 
@@ -560,12 +543,15 @@ const SegmentBuilder = () => {
                   <option key={code} value={code}>{display}</option>
                 ))}
               </select>
-              {!iabOptions.length && (
-                <div style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: 6 }}>IAB taxonomy unavailable; filters disabled.</div>
+              {!iabOptions.length && sourceRows.length > 0 && (
+                <div style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: 6 }}>No IAB categories found in classified content.</div>
               )}
-              {iabOptions.length > 0 && iabOptions.length < 50 && (
-                <div style={{ fontSize: '0.75rem', background: '#fff7ed', color: '#9a3412', padding: '2px 6px', borderRadius: 6, display: 'inline-block', marginTop: 6 }}>
-                  Only {iabOptions.length} IAB codes loaded. Check taxonomy source/filters.
+              {!sourceRows.length && (
+                <div style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: 6 }}>Loading classified content...</div>
+              )}
+              {iabOptions.length > 0 && (
+                <div style={{ fontSize: '0.75rem', background: '#e8f5e8', color: '#2d5a2d', padding: '2px 6px', borderRadius: 6, display: 'inline-block', marginTop: 6 }}>
+                  {iabOptions.length} categories from your classified content
                 </div>
               )}
             </div>
@@ -679,18 +665,10 @@ const SegmentBuilder = () => {
                         return (
                           <tr key={i} style={{ borderBottom: '1px solid #f2f2f2' }}>
                             <td style={{ padding: '8px' }}>{r.url}</td>
-                            <td style={{ padding: '8px' }}>
-                              {primaryCode ? getIabDisplayString(primaryCode, { format: 'standard', showPath: true }) : 'N/A'}
-                            </td>
-                            <td style={{ padding: '8px' }}>
-                              {subCode ? getIabDisplayString(subCode, { format: 'standard', showPath: true }) : 'N/A'}
-                            </td>
-                            <td style={{ padding: '8px' }}>
-                              {secondaryCode ? getIabDisplayString(secondaryCode, { format: 'standard', showPath: true }) : 'N/A'}
-                            </td>
-                            <td style={{ padding: '8px' }}>
-                              {secondarySubCode ? getIabDisplayString(secondarySubCode, { format: 'standard', showPath: true }) : 'N/A'}
-                            </td>
+                            <td style={{ padding: '8px' }}>{primaryCode || 'N/A'}</td>
+                            <td style={{ padding: '8px' }}>{subCode || 'N/A'}</td>
+                            <td style={{ padding: '8px' }}>{secondaryCode || 'N/A'}</td>
+                            <td style={{ padding: '8px' }}>{secondarySubCode || 'N/A'}</td>
                             <td style={{ padding: '8px' }}>{getFieldValue(r, 'classification', 'tone') || 'N/A'}</td>
                             <td style={{ padding: '8px' }}>{getFieldValue(r, 'classification', 'intent') || 'N/A'}</td>
                             <td style={{ padding: '8px' }}>{getFieldValue(r, 'attribution', 'conversions') || 'N/A'}</td>
