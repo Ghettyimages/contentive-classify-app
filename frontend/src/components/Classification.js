@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { API_BASE_URL } from "../config";
 import iabTaxonomyService, { getIabLabel, getIabFullPath, getIabDisplayString } from "../utils/iabTaxonomyService";
+import ClassificationInfo from "./ClassificationInfo";
 
 function Classification() {
   const [url, setUrl] = useState("");
@@ -121,6 +122,8 @@ function Classification() {
           connecting content with intent
         </p>
       </div>
+
+      <ClassificationInfo />
 
       <h2>Classify Article by URL</h2>
       <input
