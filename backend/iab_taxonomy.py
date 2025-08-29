@@ -466,54 +466,106 @@ from flask_cors import cross_origin
 @bp.get('/api/iab31')
 @cross_origin()
 def api_iab31():
+    """
+    Reliable IAB 3.1 taxonomy API endpoint with multiple fallback strategies
+    Returns standardized format: { version, source, codes }
+    """
     try:
-        # Use the JSON file instead of TSV for accurate mappings
-        # Path to the generated JSON file
-        json_path = os.path.join(
-            os.path.dirname(__file__), 
-            '..', 'frontend', 'src', 'data', 'iab_content_taxonomy_3_1.v1.json'
-        )
+        # Strategy 1: Use the deterministic TSV parser (most accurate)
+        tsv_path = _env_path()
+        if os.path.exists(tsv_path):
+            try:
+                codes = parse_iab_tsv(tsv_path)
+                if len(codes) >= MIN_FULL_TAXONOMY:
+                    log.info(f"[IAB API] Loaded {len(codes)} codes from TSV parser")
+                    return jsonify({
+                        'version': '3.1',
+                        'source': 'backend-tsv',
+                        'codes': codes
+                    })
+            except Exception as e:
+                log.warning(f"[IAB API] TSV parser failed: {e}")
+
+        # Strategy 2: Use pre-generated JSON fallback
+        json_paths = [
+            # Development path
+            os.path.join(os.path.dirname(__file__), '..', 'frontend', 'src', 'data', 'iab_content_taxonomy_3_1.v1.json'),
+            # Production/Render path
+            '/opt/render/project/src/frontend/src/data/iab_content_taxonomy_3_1.v1.json',
+            # Alternative production path
+            os.path.join(os.path.dirname(__file__), 'data', 'iab_content_taxonomy_3_1.v1.json')
+        ]
         
-        # Fallback to absolute path if relative doesn't work
-        if not os.path.exists(json_path):
-            json_path = '/opt/render/project/src/frontend/src/data/iab_content_taxonomy_3_1.v1.json'
-        
-        print(f"[IAB API] Loading JSON from: {json_path}")
-        
-        with open(json_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        
-        print(f"[IAB API] Loaded {len(data.get('codes', []))} codes from JSON")
-        
-        # Convert JSON format to API format
-        codes = []
-        for item in data.get('codes', []):
-            iab_code = item.get('iab_code') or item.get('code')
-            if iab_code:
-                codes.append({
-                    'code': iab_code,
-                    'label': item.get('label', ''),
-                    'path': item.get('iab_path', item.get('path', [])),
-                    'level': item.get('level', 1),
-                    'parent': item.get('parent_uid')
+        for json_path in json_paths:
+            if os.path.exists(json_path):
+                try:
+                    with open(json_path, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                    
+                    codes = data.get('codes', [])
+                    if len(codes) >= MIN_FULL_TAXONOMY:
+                        log.info(f"[IAB API] Loaded {len(codes)} codes from JSON fallback: {json_path}")
+                        # Ensure consistent format
+                        formatted_codes = []
+                        for item in codes:
+                            formatted_codes.append({
+                                'code': item.get('code', ''),
+                                'label': item.get('label', ''),
+                                'path': item.get('path', []),
+                                'level': item.get('level', 1),
+                                'parent': item.get('parent')
+                            })
+                        
+                        return jsonify({
+                            'version': data.get('version', '3.1'),
+                            'source': f"fallback-json-{os.path.basename(json_path)}",
+                            'codes': formatted_codes
+                        })
+                except Exception as e:
+                    log.warning(f"[IAB API] Failed to load JSON from {json_path}: {e}")
+                    continue
+
+        # Strategy 3: Use legacy loader as last resort
+        try:
+            legacy_codes = load_iab_taxonomy()
+            if len(legacy_codes) >= 100:  # Lower threshold for legacy
+                log.info(f"[IAB API] Using legacy loader with {len(legacy_codes)} codes")
+                # Convert legacy format to standard format
+                formatted_codes = []
+                for item in legacy_codes:
+                    formatted_codes.append({
+                        'code': item.get('code', ''),
+                        'label': item.get('name', item.get('label', '')),
+                        'path': item.get('path', []),
+                        'level': item.get('level', 1),
+                        'parent': item.get('parent')
+                    })
+                
+                return jsonify({
+                    'version': '3.1',
+                    'source': 'backend-legacy',
+                    'codes': formatted_codes
                 })
+        except Exception as e:
+            log.error(f"[IAB API] Legacy loader failed: {e}")
+
+        # All strategies failed
+        log.error("[IAB API] All loading strategies failed")
+        return jsonify({
+            'error': 'IAB taxonomy not available',
+            'version': '3.1',
+            'source': 'error',
+            'codes': []
+        }), 503
         
-        # Debug: Check IAB18 specifically
-        iab18 = next((c for c in codes if c['code'] == 'IAB18'), None)
-        if iab18:
-            print(f"[IAB API] IAB18 mapping: {iab18['label']}")
-        else:
-            print("[IAB API] WARNING: IAB18 not found in mappings")
-        
-        return jsonify({'codes': codes})
-        
-    except FileNotFoundError as e:
-        print(f"[IAB API] JSON file not found: {e}")
-        return jsonify({'error': 'IAB taxonomy file not found'}), 500
-    except json.JSONDecodeError as e:
-        print(f"[IAB API] JSON decode error: {e}")
-        return jsonify({'error': 'Invalid JSON format'}), 500
     except Exception as e:
-        print(f"[IAB API] Unexpected error: {e}")
-        return jsonify({'error': str(e)}), 500
+        log.error(f"[IAB API] Unexpected error: {e}")
+        import traceback
+        log.error(f"[IAB API] Traceback: {traceback.format_exc()}")
+        return jsonify({
+            'error': str(e),
+            'version': '3.1',
+            'source': 'error',
+            'codes': []
+        }), 500
 __all__ = ["parse_iab_tsv", "load_iab_taxonomy"]

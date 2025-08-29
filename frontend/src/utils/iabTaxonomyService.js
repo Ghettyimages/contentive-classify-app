@@ -10,32 +10,67 @@ class IABTaxonomyService {
   async initialize() {
     if (this.initialized) return;
     
+    const API_URL = process.env.REACT_APP_API_URL || window.location.origin;
+    let loadedSource = 'none';
+    
     try {
-      // Try to load from backend API first
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://contentive-classify-app.onrender.com'}/api/iab31`);
+      // Try to load from backend API first with timeout
+      console.log('[IAB Service] Attempting to load from backend API...');
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000); // 8s timeout
+      
+      const response = await fetch(`${API_URL}/api/iab31`, {
+        signal: controller.signal,
+        headers: {
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache'
+        }
+      });
+      clearTimeout(timeout);
+      
       if (response.ok) {
         const data = await response.json();
-        if (data.codes && Array.isArray(data.codes)) {
+        if (data.codes && Array.isArray(data.codes) && data.codes.length >= 200) {
           this.buildCodeMap(data.codes);
           this.initialized = true;
-          console.log('[IAB Service] Initialized from backend with', this.codeToLabelMap.size, 'codes');
+          loadedSource = data.source || 'backend';
+          console.log(`[IAB Service] Initialized from ${loadedSource} with`, this.codeToLabelMap.size, 'codes');
           return;
+        } else {
+          console.warn('[IAB Service] Backend returned insufficient codes:', data.codes?.length || 0);
         }
+      } else {
+        console.warn('[IAB Service] Backend API returned error:', response.status, response.statusText);
       }
     } catch (err) {
-      console.warn('[IAB Service] Backend load failed, using fallback:', err.message);
+      if (err.name === 'AbortError') {
+        console.warn('[IAB Service] Backend API timeout after 8s, using fallback');
+      } else {
+        console.warn('[IAB Service] Backend load failed, using fallback:', err.message);
+      }
     }
 
     try {
       // Fallback to local JSON
+      console.log('[IAB Service] Loading from local fallback...');
       const { default: bundled } = await import('../data/iab_content_taxonomy_3_1.v1.json');
-      if (bundled && bundled.codes && Array.isArray(bundled.codes)) {
+      if (bundled && bundled.codes && Array.isArray(bundled.codes) && bundled.codes.length >= 200) {
         this.buildCodeMap(bundled.codes);
         this.initialized = true;
-        console.log('[IAB Service] Initialized from fallback with', this.codeToLabelMap.size, 'codes');
+        loadedSource = bundled.source || 'fallback';
+        console.log(`[IAB Service] Initialized from ${loadedSource} with`, this.codeToLabelMap.size, 'codes');
+      } else {
+        console.error('[IAB Service] Local fallback has insufficient codes:', bundled?.codes?.length || 0);
       }
     } catch (err) {
-      console.error('[IAB Service] Failed to initialize:', err);
+      console.error('[IAB Service] Failed to initialize from fallback:', err);
+    }
+
+    if (!this.initialized) {
+      console.error('[IAB Service] All initialization methods failed');
+      // Initialize with empty map to prevent repeated failures
+      this.codeToLabelMap = new Map();
+      this.initialized = true;
     }
   }
 
