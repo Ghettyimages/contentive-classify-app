@@ -19,6 +19,7 @@ from iab_taxonomy import bp as iab_bp, load_iab_taxonomy
 from iab_taxonomy import load_tsv_items, load_bundle_map, load_iab_from_db, MIN_FULL_TAXONOMY
 from iab_taxonomy import get_taxonomy_codes
 from iab_taxonomy import parse_iab_tsv
+from iab_enhanced_classification import iab_classification_helper
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -56,34 +57,13 @@ except Exception as e:
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 MAX_TOKENS = 3500
 
-# Prompt used to instruct GPT
-SYSTEM_PROMPT = """
-You are a content classification engine that analyzes article text and returns structured metadata for ad targeting.
+# Enhanced classification prompt with proper IAB 3.1 taxonomy
+def get_enhanced_classification_prompt():
+    """Get the enhanced classification prompt with current IAB 3.1 taxonomy"""
+    return iab_classification_helper.get_classification_prompt_with_taxonomy()
 
-Return only a valid JSON object with the following fields:
-
-{
-  "iab_category": "IAB9 (Sports)",
-  "iab_code": "IAB9",
-  "iab_subcategory": "IAB9-5 (Football)",
-  "iab_subcode": "IAB9-5",
-  "iab_secondary_category": "IAB1 (Arts & Entertainment)",
-  "iab_secondary_code": "IAB1",
-  "iab_secondary_subcategory": "IAB1-6 (Celebrity Fan/Gossip)",
-  "iab_secondary_subcode": "IAB1-6",
-  "tone": "Descriptive, Positive",
-  "intent": "To provide an in-depth breakdown of the topic for readers researching the subject.",
-  "audience": "Fans of the topic, general readers interested in the category.",
-  "keywords": ["keyword1", "keyword2", "keyword3"],
-  "buying_intent": "Medium – the article includes contextually relevant mentions of commercial categories, but is not explicitly promotional.",
-  "ad_suggestions": "Brand sponsorship, contextual display ads, affiliate commerce"
-}
-
-Rules:
-- Use IAB Tech Lab Content Taxonomy 3.1
-- If no secondary category fits, set the secondary fields to null
-- Return strict JSON only — no comments, markdown, or extra text
-"""
+# Fallback prompt for backwards compatibility
+SYSTEM_PROMPT = get_enhanced_classification_prompt()
 
 # Load IAB taxonomy at startup using a pinned URL if provided
 IAB_TAXONOMY_URL = os.getenv('IAB_TAXONOMY_URL', '').strip()
@@ -159,6 +139,25 @@ def taxonomy_codes():
 @cross_origin()
 def taxonomy_codes_api():
     return taxonomy_codes()
+
+@app.route("/api/taxonomy/classification-stats", methods=['GET'])
+@cross_origin()
+def classification_stats():
+    """Get statistics about the IAB taxonomy used for classification"""
+    try:
+        stats = iab_classification_helper.get_taxonomy_stats()
+        return jsonify({
+            'classification_taxonomy': stats,
+            'legacy_taxonomy': _taxonomy_summary(),
+            'enhanced_classification': True,
+            'prompt_info': {
+                'uses_full_taxonomy': True,
+                'prompt_length': len(get_enhanced_classification_prompt()),
+                'last_updated': 'dynamic'
+            }
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/admin/refresh-taxonomy', methods=['POST'])
@@ -1196,10 +1195,13 @@ def classify_url(url):
 
     print("Sending request to OpenAI API...")
     try:
+        # Get fresh prompt with current taxonomy
+        current_prompt = get_enhanced_classification_prompt()
+        
         response = client.chat.completions.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "system", "content": current_prompt},
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.4,
@@ -1214,7 +1216,9 @@ def classify_url(url):
     # Parse JSON safely
     try:
         classification_result = json.loads(content)
-        # Apply strict taxonomy validation/mapping
+        # Apply enhanced IAB 3.1 validation and normalization
+        classification_result = iab_classification_helper.validate_classification_result(classification_result)
+        # Also apply legacy validation for backwards compatibility
         classification_result = _normalize_and_validate_iab(classification_result)
         
         # Store the result in Firestore if service is available

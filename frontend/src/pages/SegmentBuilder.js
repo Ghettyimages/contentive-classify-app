@@ -14,6 +14,9 @@ import { sortByIabCode } from '../utils/iabSort';
 import ExportFormatModal from '../components/ExportFormatModal.jsx';
 import { normalizeIabCodes } from '../utils/iabNormalize';
 import iabTaxonomyService, { getIabLabel, getIabFullPath, getIabDisplayString } from '../utils/iabTaxonomyService';
+import { rowMatchesIncludeCodes, rowExcludedByExcludeCodes, getIabUsageStats } from '../utils/iabFiltering';
+import IabCategorySelector from '../components/IabCategorySelector';
+import { validateSegmentIabCodes, estimateIabSelectionImpact } from '../utils/iabValidation';
 
 const formatDate = (date) => date.toISOString().slice(0, 10);
 
@@ -56,6 +59,8 @@ const SegmentBuilder = () => {
   const [exportOpen, setExportOpen] = useState(false);
   const [previewQuery, setPreviewQuery] = useState(null);
   const [showOnlyUsedIab, setShowOnlyUsedIab] = useState(true);
+  const [validationResults, setValidationResults] = useState(null);
+  const [impactEstimate, setImpactEstimate] = useState(null);
 
   const taxonomyReady = iabOptions.length > 0;
   const uiDisabled = (() => {
@@ -154,99 +159,133 @@ const SegmentBuilder = () => {
     }
   }, [currentUser]);
 
-  // Initialize IAB taxonomy service and load options after source rows are loaded
+  // Initialize IAB taxonomy service and load options
   useEffect(() => {
-    if (currentUser && sourceRows.length > 0) {
-      // Initialize the IAB taxonomy service first
+    if (currentUser) {
+      // Initialize the IAB taxonomy service as soon as user is available
       iabTaxonomyService.initialize().then(() => {
+        console.log('[Segment Builder] IAB taxonomy service initialized, loading options...');
         loadIabOptions();
+      }).catch(err => {
+        console.error('[Segment Builder] Failed to initialize IAB taxonomy service:', err);
+        setTaxonomySource('error');
       });
     }
-  }, [currentUser, sourceRows]);
+  }, [currentUser]);
 
-  // DATABASE-ONLY APPROACH: Use only IAB categories from classified content, but with proper labels
+  // Reload options when source rows change (to update data availability indicators)
+  useEffect(() => {
+    if (currentUser && iabTaxonomyService.initialized) {
+      console.log('[Segment Builder] Source rows updated, reloading IAB options...');
+      loadIabOptions();
+    }
+  }, [sourceRows, showOnlyUsedIab]);
+
+  // Validate IAB selections and estimate impact
+  useEffect(() => {
+    if (iabTaxonomyService.initialized && iabOptions.length > 0) {
+      // Validate selections
+      const validation = validateSegmentIabCodes({
+        includeCodes: includeIab,
+        excludeCodes: excludeIab,
+        taxonomyService: iabTaxonomyService,
+        availableOptions: iabOptions
+      });
+      setValidationResults(validation);
+
+      // Estimate impact if we have source data
+      if (sourceRows.length > 0) {
+        const impact = estimateIabSelectionImpact({
+          includeCodes: includeIab,
+          excludeCodes: excludeIab,
+          sourceData: sourceRows,
+          getFieldValue
+        });
+        setImpactEstimate(impact);
+      }
+    }
+  }, [includeIab, excludeIab, iabOptions, sourceRows]);
+
+  // HYBRID APPROACH: Show all IAB categories with indicators for which ones have data
 const loadIabOptions = async () => {
-  console.log('[IAB] Loading categories from classified database content...');
+  console.log('[IAB] Loading IAB categories with data availability indicators...');
   
-  if (!sourceRows.length) {
-    console.log('[IAB] No source data loaded yet');
+  if (!iabTaxonomyService.initialized) {
+    console.log('[IAB] Taxonomy service not yet initialized');
     setIabOptions([]);
-    setTaxonomySource('database');
+    setTaxonomySource('loading');
     setTaxonomyCount(0);
     return;
   }
   
-  // Extract all IAB codes that actually exist in classified data
-  const codesInUse = new Set();
+  // Get all available IAB categories from the taxonomy service
+  const allOptions = iabTaxonomyService.getAllOptions(true); // true = include hierarchy
   
-  sourceRows.forEach(row => {
-    const codes = [
-      getFieldValue(row, 'classification', 'iab_code'),
-      getFieldValue(row, 'classification', 'iab_subcode'),
-      getFieldValue(row, 'classification', 'iab_secondary_code'),
-      getFieldValue(row, 'classification', 'iab_secondary_subcode')
-    ];
-    
-    codes.forEach(code => {
-      if (code && code !== 'N/A' && typeof code === 'string') {
-        codesInUse.add(code.trim());
-      }
-    });
-  });
-  
-  console.log('[IAB] Found', codesInUse.size, 'unique IAB codes in classified data');
-  console.log('[IAB] Codes:', Array.from(codesInUse).sort());
-  
-  // Create options from database content with proper IAB labels
-  const options = Array.from(codesInUse)
-    .sort()
-    .map(code => {
-      // Get proper label from IAB taxonomy service
-      const label = getIabLabel(code) || code;
-      const fullPath = getIabFullPath(code) || code;
-      
-      // Debug logging for specific codes
-      if (code === 'IAB18') {
-        console.log('[IAB Debug] IAB18 lookup:', { code, label, fullPath });
-      }
-      
-      // If no label found, try to provide a helpful fallback
-      let displayText = code;
-      if (label && label !== code) {
-        displayText = `${code} (${label})`;
-      } else {
-        // For unknown codes, show a note
-        displayText = `${code} (Unknown category)`;
-      }
-      
-      return {
-        value: code,
-        code: code,
-        label: label,
-        display: displayText
-      };
-    });
-  
-  setIabOptions(options);
-  setTaxonomySource('database-with-labels');
-  setTaxonomyCount(options.length);
-  
-  console.log('[IAB] Loaded', options.length, 'categories from classified database content with proper labels');
-  console.log('[IAB] Sample options:', options.slice(0, 5));
-  
-  // Debug: Check if IAB taxonomy service is working
-  console.log('[IAB Debug] Service initialized:', iabTaxonomyService.initialized);
-  console.log('[IAB Debug] Sample lookups:', {
-    'IAB18': getIabLabel('IAB18'),
-    'IAB9': getIabLabel('IAB9'),
-    'IAB1': getIabLabel('IAB1')
-  });
-  
-  // Log any codes that don't have labels for debugging
-  const codesWithoutLabels = options.filter(opt => opt.label === opt.code);
-  if (codesWithoutLabels.length > 0) {
-    console.log('[IAB Debug] Codes without labels:', codesWithoutLabels.map(opt => opt.code));
+  if (allOptions.length === 0) {
+    console.warn('[IAB] No categories available from taxonomy service');
+    setIabOptions([]);
+    setTaxonomySource('error');
+    setTaxonomyCount(0);
+    return;
   }
+  
+  // Extract IAB codes that exist in our classified data
+  const codesInData = new Set();
+  if (sourceRows.length > 0) {
+    sourceRows.forEach(row => {
+      const codes = [
+        getFieldValue(row, 'classification', 'iab_code'),
+        getFieldValue(row, 'classification', 'iab_subcode'),
+        getFieldValue(row, 'classification', 'iab_secondary_code'),
+        getFieldValue(row, 'classification', 'iab_secondary_subcode')
+      ];
+      
+      codes.forEach(code => {
+        if (code && code !== 'N/A' && typeof code === 'string') {
+          codesInData.add(code.trim());
+        }
+      });
+    });
+  }
+  
+  console.log('[IAB] Found', codesInData.size, 'codes in classified data out of', allOptions.length, 'total categories');
+  
+  // Create enhanced options with data availability indicators
+  const enhancedOptions = allOptions.map(opt => {
+    const hasData = codesInData.has(opt.code);
+    const displaySuffix = hasData ? ' ✓' : '';
+    
+    return {
+      code: opt.code,
+      label: opt.label,
+      path: opt.label, // Use the full path from getAllOptions
+      display: `${opt.code} (${opt.label})${displaySuffix}`,
+      hasData,
+      originalDisplay: opt.display
+    };
+  });
+  
+  // Filter options based on showOnlyUsedIab setting
+  const filteredOptions = showOnlyUsedIab 
+    ? enhancedOptions.filter(opt => opt.hasData)
+    : enhancedOptions;
+  
+  setIabOptions(filteredOptions);
+  setTaxonomySource('full-taxonomy');
+  setTaxonomyCount(filteredOptions.length);
+  
+  console.log('[IAB] Loaded', filteredOptions.length, 'categories (showing', 
+    showOnlyUsedIab ? 'only used' : 'all', 'categories)');
+  console.log('[IAB] Categories with data:', enhancedOptions.filter(opt => opt.hasData).length);
+  
+  // Debug logging for specific codes
+  const testCodes = ['IAB1', 'IAB9', 'IAB18'];
+  testCodes.forEach(code => {
+    const option = filteredOptions.find(opt => opt.code === code);
+    if (option) {
+      console.log(`[IAB Debug] ${code}:`, option);
+    }
+  });
 };
 
   const loadSourceRows = async () => {
@@ -309,31 +348,11 @@ const loadIabOptions = async () => {
   };
 
   const rowMatchesIab = (row, codes) => {
-    if (!codes?.length) return true;
-    // Use same field access pattern as Dashboard for consistency
-    const cTop = getFieldValue(row, 'classification', 'iab_code');
-    const cSub = getFieldValue(row, 'classification', 'iab_subcode');
-    const cSecondary = getFieldValue(row, 'classification', 'iab_secondary_code');
-    const cSecondarySubcode = getFieldValue(row, 'classification', 'iab_secondary_subcode');
-    const rowCodes = new Set([cTop, cSub, cSecondary, cSecondarySubcode].filter(Boolean));
-    for (const code of codes) {
-      if (rowCodes.has(code)) return true;
-    }
-    return false;
+    return rowMatchesIncludeCodes(row, codes, getFieldValue, true); // true = hierarchical matching
   };
 
   const rowExcludedByIab = (row, codes) => {
-    if (!codes?.length) return false;
-    // Use same field access pattern as Dashboard for consistency
-    const cTop = getFieldValue(row, 'classification', 'iab_code');
-    const cSub = getFieldValue(row, 'classification', 'iab_subcode');
-    const cSecondary = getFieldValue(row, 'classification', 'iab_secondary_code');
-    const cSecondarySubcode = getFieldValue(row, 'classification', 'iab_secondary_subcode');
-    const rowCodes = new Set([cTop, cSub, cSecondary, cSecondarySubcode].filter(Boolean));
-    for (const code of codes) {
-      if (rowCodes.has(code)) return true;
-    }
-    return false;
+    return rowExcludedByExcludeCodes(row, codes, getFieldValue, true); // true = hierarchical matching
   };
 
   const applyOtherFilters = (row) => {
@@ -529,84 +548,142 @@ const loadIabOptions = async () => {
               <input type="date" value={segmentEnd} onChange={(e) => setSegmentEnd(e.target.value)} style={{ width: '100%', padding: '0.5rem', border: "1px solid #ddd", borderRadius: 4 }} />
             </div>
             <div style={{ marginBottom: '1rem', padding: '0.75rem', background: '#f8f9fa', borderRadius: 6, border: '1px solid #e9ecef' }}>
-              <div style={{ fontWeight: 500, marginBottom: '0.5rem' }}>Database Categories with Labels</div>
+              <div style={{ fontWeight: 500, marginBottom: '0.5rem' }}>IAB 3.1 Category Selection</div>
               <div style={{ fontSize: '0.8rem', color: '#6c757d', marginBottom: '0.5rem' }}>
-                Showing only IAB categories that exist in your classified content, with proper category names
-              </div>
-              <div style={{ fontSize: '0.75rem', color: '#6c757d', marginBottom: '0.5rem' }}>
-                <strong>IAB Taxonomy:</strong> Using official IAB 3.1 Content Taxonomy. If your data contains codes not in this taxonomy, they will show as "Unknown category".
+                {showOnlyUsedIab 
+                  ? 'Showing only IAB categories that exist in your classified content (✓ = has data)'
+                  : 'Showing all IAB 3.1 categories (✓ = has data in your content)'
+                }
               </div>
               
-              <button 
-                onClick={loadSourceRows} 
-                style={{ 
-                  padding: '0.4rem 0.8rem', 
-                  backgroundColor: '#28a745', 
-                  color: 'white', 
-                  border: 'none', 
-                  borderRadius: '4px', 
-                  cursor: 'pointer', 
-                  fontSize: '0.8rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.3rem'
-                }}
-              >
-                🔄 Refresh Data ({sourceRows.length} records)
-              </button>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem', cursor: 'pointer' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={showOnlyUsedIab}
+                    onChange={(e) => {
+                      setShowOnlyUsedIab(e.target.checked);
+                      // Reload options with new filter
+                      if (iabTaxonomyService.initialized) {
+                        loadIabOptions();
+                      }
+                    }}
+                  />
+                  Show only categories with data
+                </label>
+                
+                <button 
+                  onClick={loadSourceRows} 
+                  style={{ 
+                    padding: '0.3rem 0.6rem', 
+                    backgroundColor: '#28a745', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: '4px', 
+                    cursor: 'pointer', 
+                    fontSize: '0.75rem'
+                  }}
+                >
+                  🔄 Refresh ({sourceRows.length} records)
+                </button>
+              </div>
+              
+              <div style={{ fontSize: '0.75rem', color: '#6c757d' }}>
+                <strong>IAB Taxonomy:</strong> Using official IAB 3.1 Content Taxonomy with {iabOptions.length} categories available
+              </div>
             </div>
-            <div>
-              <label style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>Include IAB (multi-select)</label>
-              <select
-                multiple
-                size={6}
-                value={includeIab}
-                onChange={(e) => {
-                  const values = Array.from(e.target.selectedOptions).map(o => o.value);
-                  setIncludeIab(values);
-                }}
-                style={{ width: '100%', padding: '0.25rem', border: '1px solid #ddd', borderRadius: 4 }}
-                disabled={!iabOptions.length}
-              >
-                {iabOptions.map(({ code, display }) => (
-                  <option key={code} value={code}>{display}</option>
-                ))}
-              </select>
-              {!iabOptions.length && sourceRows.length > 0 && (
-                <div style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: 6 }}>No IAB categories found in classified content.</div>
-              )}
-              {!sourceRows.length && (
-                <div style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: 6 }}>Loading classified content...</div>
-              )}
-              {iabOptions.length > 0 && (
-                <div style={{ fontSize: '0.75rem', background: '#e8f5e8', color: '#2d5a2d', padding: '2px 6px', borderRadius: 6, display: 'inline-block', marginTop: 6 }}>
-                  {iabOptions.length} categories from your classified content with proper labels
-                  {iabOptions.some(opt => opt.label === opt.code) && (
-                    <div style={{ fontSize: '0.7rem', color: '#856404', marginTop: 2 }}>
-                      Note: Some codes may show as "Unknown category" if not in IAB 3.1 taxonomy
+            <IabCategorySelector
+              options={iabOptions}
+              selectedCodes={includeIab}
+              onChange={setIncludeIab}
+              label="Include IAB Categories"
+              placeholder="Search categories to include..."
+              maxHeight="250px"
+              showDataIndicators={true}
+              disabled={!iabOptions.length}
+            />
+            
+            <IabCategorySelector
+              options={iabOptions}
+              selectedCodes={excludeIab}
+              onChange={setExcludeIab}
+              label="Exclude IAB Categories"
+              placeholder="Search categories to exclude..."
+              maxHeight="200px"
+              showDataIndicators={true}
+              disabled={!iabOptions.length}
+            />
+            
+            {/* Validation and Impact Display */}
+            {validationResults && (
+              <div style={{ marginBottom: '1rem' }}>
+                {/* Validation Errors */}
+                {validationResults.errors.length > 0 && (
+                  <div style={{ 
+                    padding: '0.5rem', 
+                    backgroundColor: '#f8d7da', 
+                    color: '#721c24', 
+                    border: '1px solid #f5c6cb', 
+                    borderRadius: '4px',
+                    marginBottom: '0.5rem',
+                    fontSize: '0.8rem'
+                  }}>
+                    <strong>⚠️ Validation Errors:</strong>
+                    <ul style={{ margin: '0.3rem 0 0 1rem', padding: 0 }}>
+                      {validationResults.errors.map((error, idx) => (
+                        <li key={idx}>{error}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Validation Warnings */}
+                {validationResults.warnings.length > 0 && (
+                  <div style={{ 
+                    padding: '0.5rem', 
+                    backgroundColor: '#fff3cd', 
+                    color: '#856404', 
+                    border: '1px solid #ffeaa7', 
+                    borderRadius: '4px',
+                    marginBottom: '0.5rem',
+                    fontSize: '0.8rem'
+                  }}>
+                    <strong>💡 Suggestions:</strong>
+                    <ul style={{ margin: '0.3rem 0 0 1rem', padding: 0 }}>
+                      {validationResults.warnings.map((warning, idx) => (
+                        <li key={idx}>{warning}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Impact Estimate */}
+                {impactEstimate && (includeIab.length > 0 || excludeIab.length > 0) && (
+                  <div style={{ 
+                    padding: '0.5rem', 
+                    backgroundColor: '#d1ecf1', 
+                    color: '#0c5460', 
+                    border: '1px solid #bee5eb', 
+                    borderRadius: '4px',
+                    marginBottom: '0.5rem',
+                    fontSize: '0.8rem'
+                  }}>
+                    <strong>📈 Estimated Impact:</strong> ~{impactEstimate.estimatedRows.toLocaleString()} rows 
+                    ({impactEstimate.percentageOfTotal}% of total data)
+                    <div style={{ fontSize: '0.7rem', marginTop: '0.2rem', opacity: 0.8 }}>
+                      Confidence: {impactEstimate.confidence} • {impactEstimate.note}
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
-            <div>
-              <label style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>Exclude IAB (multi-select)</label>
-              <select
-                multiple
-                size={6}
-                value={excludeIab}
-                onChange={(e) => {
-                  const values = Array.from(e.target.selectedOptions).map(o => o.value);
-                  setExcludeIab(values);
-                }}
-                style={{ width: '100%', padding: '0.25rem', border: '1px solid #ddd', borderRadius: 4 }}
-                disabled={!iabOptions.length}
-              >
-                {iabOptions.map(({ code, display }) => (
-                  <option key={code} value={code}>{display}</option>
-                ))}
-              </select>
-            </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {iabOptions.length > 0 && (
+              <div style={{ fontSize: '0.75rem', background: '#e8f5e8', color: '#2d5a2d', padding: '4px 8px', borderRadius: 6, marginBottom: '1rem' }}>
+                📊 {iabOptions.length} categories available • {iabOptions.filter(opt => opt.hasData).length} with data
+                {showOnlyUsedIab ? ' (filtered view)' : ' (complete taxonomy)'}
+              </div>
+            )}
             <div>
               <label style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>Sort By</label>
               <select value={segmentSortBy} onChange={(e) => setSegmentSortBy(e.target.value)} style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: 4 }}>
