@@ -2,7 +2,7 @@ services:
   - type: web
     name: segment-builder-api
     env: python
-    buildCommand: python -m pip install --upgrade pip && pip install -r backend/requirements.txt && node scripts/build_iab_fallback_from_tsv.mjs
+    buildCommand: python -m pip install --upgrade pip && pip install -r backend/requirements.txt && node scripts/build_correct_iab_mapping.mjs
     startCommand: bash scripts/start.sh
     envVars:
       - key: PYTHON_VERSION
