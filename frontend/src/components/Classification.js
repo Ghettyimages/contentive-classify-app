@@ -21,11 +21,18 @@ function Classification() {
     try {
       const response = await axios.post(
         `${API_BASE_URL}/classify`,
-        { url }
+        { url },
+        { 
+          timeout: 60000, // 60 second timeout for classification
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
       );
       setResult(response.data);
     } catch (error) {
       console.error("Error classifying article:", error);
+      console.error("Error details:", error.response?.data || error.message);
       setResult(null);
     } finally {
       setLoading(false);
@@ -45,11 +52,18 @@ function Classification() {
     try {
       const response = await axios.post(
         `${API_BASE_URL}/classify-bulk`,
-        { urls }
+        { urls },
+        { 
+          timeout: 120000, // 2 minute timeout for bulk classification
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
       );
       setBulkResults(response.data.results || []);
     } catch (error) {
       console.error("Bulk classification error:", error);
+      console.error("Bulk error details:", error.response?.data || error.message);
     } finally {
       setBulkLoading(false);
     }
