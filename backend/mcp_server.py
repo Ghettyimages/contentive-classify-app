@@ -56,33 +56,74 @@ except Exception as e:
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 MAX_TOKENS = 3500
 
-# Prompt used to instruct GPT
+# Improved prompt with better IAB category guidance
 SYSTEM_PROMPT = """
-You are a content classification engine that analyzes article text and returns structured metadata for ad targeting.
+You are an expert content classification engine that analyzes article text and returns structured metadata for ad targeting using the official IAB Tech Lab Content Taxonomy 3.1.
 
-Return only a valid JSON object with the following fields:
+CRITICAL: Use these EXACT IAB 3.1 category mappings:
+- IAB1: Automotive
+- IAB2: Books and Literature  
+- IAB3: Business and Finance
+- IAB4: Careers
+- IAB5: Education
+- IAB6: Family and Relationships
+- IAB7: Healthy Living
+- IAB8: Food & Drink
+- IAB9: Hobbies & Interests
+- IAB10: Home & Garden
+- IAB11: Law
+- IAB12: Medical Health
+- IAB13: News
+- IAB14: Personal Finance
+- IAB15: Pets
+- IAB16: Pop Culture
+- IAB17: Sports
+- IAB18: Style & Fashion
+- IAB19: Technology & Computing
+- IAB20: Travel
+- IAB21: Real Estate
+- IAB22: Shopping
+- IAB23: Religion & Spirituality
+- IAB24: Science
+- IAB25: Video Gaming
+
+Return ONLY a valid JSON object with these exact fields:
 
 {
-  "iab_category": "IAB9 (Sports)",
-  "iab_code": "IAB9",
-  "iab_subcategory": "IAB9-5 (Football)",
-  "iab_subcode": "IAB9-5",
-  "iab_secondary_category": "IAB1 (Arts & Entertainment)",
-  "iab_secondary_code": "IAB1",
-  "iab_secondary_subcategory": "IAB1-6 (Celebrity Fan/Gossip)",
-  "iab_secondary_subcode": "IAB1-6",
-  "tone": "Descriptive, Positive",
-  "intent": "To provide an in-depth breakdown of the topic for readers researching the subject.",
-  "audience": "Fans of the topic, general readers interested in the category.",
-  "keywords": ["keyword1", "keyword2", "keyword3"],
-  "buying_intent": "Medium – the article includes contextually relevant mentions of commercial categories, but is not explicitly promotional.",
-  "ad_suggestions": "Brand sponsorship, contextual display ads, affiliate commerce"
+  "iab_category": "IAB18 (Style & Fashion)",
+  "iab_code": "IAB18",
+  "iab_subcategory": "IAB18-1 (Beauty)",
+  "iab_subcode": "IAB18-1",
+  "iab_secondary_category": "IAB22 (Shopping)",
+  "iab_secondary_code": "IAB22",
+  "iab_secondary_subcategory": "IAB22-3 (Fashion Retail)",
+  "iab_secondary_subcode": "IAB22-3",
+  "tone": "Informative, Engaging",
+  "intent": "To educate readers about fashion trends and inspire purchasing decisions.",
+  "audience": "Fashion enthusiasts, style-conscious consumers, shoppers",
+  "keywords": ["fashion", "style", "beauty", "trends", "clothing"],
+  "buying_intent": "High - article discusses specific products, brands, or shopping recommendations",
+  "ad_suggestions": "Fashion brand partnerships, beauty product placements, style affiliate links"
 }
 
-Rules:
-- Use IAB Tech Lab Content Taxonomy 3.1
-- If no secondary category fits, set the secondary fields to null
-- Return strict JSON only — no comments, markdown, or extra text
+CLASSIFICATION RULES:
+1. Always use the EXACT IAB codes from the list above (IAB1-IAB25)
+2. Match content to the most specific primary category first
+3. Choose secondary category only if article significantly covers a second topic
+4. For subcategories, use format: IAB[X]-[1,2,3...] based on content specificity
+5. Set secondary fields to null if no clear secondary category exists
+6. Be precise with tone: Informative, Persuasive, Entertainment, Educational, Promotional, etc.
+7. Buying intent levels: Low, Medium, High based on commercial language and product mentions
+8. Keywords should be 3-7 most relevant terms from the content
+9. Return ONLY the JSON object - no explanations, comments, or markdown formatting
+
+EXAMPLE MAPPINGS:
+- Fashion/beauty articles → IAB18 (Style & Fashion)
+- Sports content → IAB17 (Sports)  
+- Tech reviews → IAB19 (Technology & Computing)
+- Travel guides → IAB20 (Travel)
+- Health/wellness → IAB7 (Healthy Living)
+- Food recipes → IAB8 (Food & Drink)
 """
 
 # Load IAB taxonomy at startup using a pinned URL if provided
@@ -175,51 +216,103 @@ def refresh_taxonomy():
 
 
 def _normalize_and_validate_iab(result: dict) -> dict:
+    """Enhanced IAB code validation with improved error handling and logging."""
     tax = app.config.get('IAB_TAXONOMY') or {}
     code_map = tax.get('codes', {})
-    label_to_codes = tax.get('labels_to_codes', {})
+    
+    # Build label-to-code mapping from corrected taxonomy
+    label_to_codes = {}
+    for code, info in code_map.items():
+        if info and 'label' in info:
+            label_key = info['label'].strip().lower()
+            if label_key not in label_to_codes:
+                label_to_codes[label_key] = []
+            label_to_codes[label_key].append(code)
 
-    def valid_or_map(code: str, label: str) -> str:
-        code_s = (code or '').strip()
-        if code_s and code_s in code_map:
-            return code_s
-        # Try map by label
-        label_key = (label or '').strip().lower()
-        if label_key and label_key in label_to_codes:
-            # Prefer deepest by level
-            candidates = label_to_codes[label_key]
-            best = None
-            best_level = -1
-            for c in candidates:
-                lvl = code_map.get(c, {}).get('level', 0)
-                if lvl > best_level:
-                    best = c
-                    best_level = lvl
-            return best
+    def extract_iab_code(text: str) -> str:
+        """Extract clean IAB code from text like 'IAB18 (Style & Fashion)'."""
+        if not text:
+            return ''
+        text = text.strip()
+        # Extract IAB code pattern
+        import re
+        match = re.match(r'^(IAB\d+(?:-\d+)?)', text)
+        return match.group(1) if match else ''
+
+    def validate_iab_code(code: str, label_text: str = '') -> str:
+        """Validate and normalize IAB code with fallback to label mapping."""
+        # First try direct code validation
+        clean_code = extract_iab_code(code) if code else ''
+        if clean_code and clean_code in code_map:
+            return clean_code
+        
+        # Try extracting code from label text (e.g., "IAB18 (Style & Fashion)")
+        if label_text:
+            extracted = extract_iab_code(label_text)
+            if extracted and extracted in code_map:
+                return extracted
+        
+        # Try label-based lookup as fallback
+        if label_text:
+            # Clean label text - remove IAB code prefix if present
+            clean_label = re.sub(r'^IAB\d+(?:-\d+)?\s*\(([^)]+)\)', r'\1', label_text.strip())
+            label_key = clean_label.lower().strip()
+            
+            if label_key in label_to_codes:
+                # Prefer root category over subcategory for primary classification
+                candidates = label_to_codes[label_key]
+                # Sort by code complexity (IAB1 before IAB1-1)
+                candidates.sort(key=lambda x: (len(x.split('-')), x))
+                return candidates[0]
+        
         return ''
 
-    primary_code = valid_or_map(result.get('iab_code'), result.get('iab_category'))
-    sub_code = valid_or_map(result.get('iab_subcode'), result.get('iab_subcategory'))
-    sec_code = valid_or_map(result.get('iab_secondary_code'), result.get('iab_secondary_category'))
-    sec_sub_code = valid_or_map(result.get('iab_secondary_subcode'), result.get('iab_secondary_subcategory'))
+    # Validate each IAB field
+    primary_code = validate_iab_code(result.get('iab_code'), result.get('iab_category'))
+    sub_code = validate_iab_code(result.get('iab_subcode'), result.get('iab_subcategory'))
+    sec_code = validate_iab_code(result.get('iab_secondary_code'), result.get('iab_secondary_category'))
+    sec_sub_code = validate_iab_code(result.get('iab_secondary_subcode'), result.get('iab_secondary_subcategory'))
 
-    # Metrics log
-    num_codes = len([c for c in [primary_code, sub_code, sec_code, sec_sub_code] if c])
-    unmapped = []
-    for lbl in [result.get('iab_category'), result.get('iab_subcategory'), result.get('iab_secondary_category'), result.get('iab_secondary_subcategory')]:
-        if lbl and (lbl.strip().lower() not in label_to_codes):
-            unmapped.append(lbl)
-    print(f"[taxonomy] version={tax.get('version')} num_codes={num_codes} unmapped_labels={unmapped}")
+    # Validate code relationships (subcategories should match parent)
+    if sub_code and primary_code:
+        if not sub_code.startswith(primary_code + '-'):
+            print(f"[taxonomy] Warning: subcategory {sub_code} doesn't match primary {primary_code}")
+            sub_code = ''  # Clear invalid subcategory
+    
+    if sec_sub_code and sec_code:
+        if not sec_sub_code.startswith(sec_code + '-'):
+            print(f"[taxonomy] Warning: secondary subcategory {sec_sub_code} doesn't match secondary {sec_code}")
+            sec_sub_code = ''  # Clear invalid secondary subcategory
 
-    # Write back normalized codes; drop invalid ones
+    # Enhanced logging
+    valid_codes = [c for c in [primary_code, sub_code, sec_code, sec_sub_code] if c]
+    invalid_inputs = []
+    
+    for field, value in [
+        ('iab_code', result.get('iab_code')), 
+        ('iab_category', result.get('iab_category')),
+        ('iab_subcode', result.get('iab_subcode')), 
+        ('iab_subcategory', result.get('iab_subcategory'))
+    ]:
+        if value and not any(extract_iab_code(str(value)) == vc for vc in valid_codes):
+            invalid_inputs.append(f"{field}={value}")
+    
+    print(f"[taxonomy] version={tax.get('version')} valid_codes={len(valid_codes)} "
+          f"codes={valid_codes} invalid_inputs={invalid_inputs}")
+
+    # Update result with validated codes
     result['iab_code'] = primary_code or None
     result['iab_subcode'] = sub_code or None
     result['iab_secondary_code'] = sec_code or None
     result['iab_secondary_subcode'] = sec_sub_code or None
 
-    # Optional sentinel if nothing could be mapped
-    if num_codes == 0:
-        result['iab_code'] = None  # keep empty rather than setting IAB0
+    # Add validation metadata for debugging
+    result['_validation'] = {
+        'valid_codes_found': len(valid_codes),
+        'taxonomy_version': tax.get('version', 'unknown'),
+        'taxonomy_source': tax.get('source', 'unknown')
+    }
+
     return result
 
 def normalize_url(raw: str) -> str:
