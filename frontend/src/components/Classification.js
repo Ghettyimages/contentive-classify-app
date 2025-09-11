@@ -10,11 +10,25 @@ function Classification() {
   const [bulkUrls, setBulkUrls] = useState("");
   const [bulkResults, setBulkResults] = useState([]);
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [openMenuIndex, setOpenMenuIndex] = useState(null);
+  const [reclassifyingIndex, setReclassifyingIndex] = useState(null);
 
   // Initialize IAB service
   useEffect(() => {
     iabTaxonomyService.initialize();
   }, []);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setOpenMenuIndex(null);
+    };
+    
+    if (openMenuIndex !== null) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [openMenuIndex]);
 
   const handleClassify = async () => {
     setLoading(true);
@@ -39,7 +53,7 @@ function Classification() {
     }
   };
 
-  const handleBulkClassify = async () => {
+  const handleBulkClassify = async (forceReclassify = false) => {
     const urls = bulkUrls
       .split("\n")
       .map((u) => u.trim())
@@ -52,7 +66,10 @@ function Classification() {
     try {
       const response = await axios.post(
         `${API_BASE_URL}/classify-bulk`,
-        { urls },
+        { 
+          urls,
+          force_reclassify: forceReclassify
+        },
         { 
           timeout: 120000, // 2 minute timeout for bulk classification
           headers: {
@@ -67,6 +84,50 @@ function Classification() {
     } finally {
       setBulkLoading(false);
     }
+  };
+
+  const handleForceReclassify = async (urlToReclassify, index) => {
+    setReclassifyingIndex(index);
+    setOpenMenuIndex(null);
+    
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/classify`,
+        { 
+          url: urlToReclassify,
+          force_reclassify: true
+        },
+        { 
+          timeout: 60000, // 60 second timeout for single classification
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      // Update the specific result in the array
+      const newResults = [...bulkResults];
+      newResults[index] = { ...response.data, url: urlToReclassify };
+      setBulkResults(newResults);
+      
+    } catch (error) {
+      console.error("Force reclassify error:", error);
+      console.error("Force reclassify details:", error.response?.data || error.message);
+      
+      // Update with error
+      const newResults = [...bulkResults];
+      newResults[index] = { 
+        url: urlToReclassify, 
+        error: error.response?.data?.error || error.message || "Reclassification failed"
+      };
+      setBulkResults(newResults);
+    } finally {
+      setReclassifyingIndex(null);
+    }
+  };
+
+  const toggleMenu = (index) => {
+    setOpenMenuIndex(openMenuIndex === index ? null : index);
   };
 
   const exportCSV = () => {
@@ -190,33 +251,73 @@ function Classification() {
         rows={6}
         style={{ width: "100%", padding: "0.5rem", fontSize: "1rem" }}
       />
-      <button
-        onClick={handleBulkClassify}
-        style={{
-          marginTop: "1rem",
-          padding: "0.5rem 1rem",
-          fontSize: "1rem",
-          cursor: "pointer",
-        }}
-      >
-        Classify All
-      </button>
+      <div style={{ marginTop: "1rem", display: "flex", gap: "1rem" }}>
+        <button
+          onClick={() => handleBulkClassify(false)}
+          style={{
+            padding: "0.5rem 1rem",
+            fontSize: "1rem",
+            cursor: "pointer",
+            backgroundColor: "#007bff",
+            color: "white",
+            border: "none",
+            borderRadius: "4px"
+          }}
+        >
+          Classify All
+        </button>
+        <button
+          onClick={() => handleBulkClassify(true)}
+          style={{
+            padding: "0.5rem 1rem",
+            fontSize: "1rem",
+            cursor: "pointer",
+            backgroundColor: "#28a745",
+            color: "white",
+            border: "none",
+            borderRadius: "4px"
+          }}
+          title="Reclassify all URLs with the new improved taxonomy and prompt"
+        >
+          🔄 Force Reclassify All
+        </button>
+      </div>
       {bulkLoading && <p>Loading...</p>}
 
       {bulkResults.length > 0 && (
         <div style={{ marginTop: "2rem" }}>
-          <button onClick={exportCSV} style={{ marginRight: "1rem" }}>
-            Export CSV
-          </button>
-          <button onClick={exportJSON}>Export JSON</button>
-          <p style={{ 
-            fontSize: "0.9rem", 
-            color: "#666", 
-            margin: "0.5rem 0", 
-            fontStyle: "italic" 
+          <div style={{ marginBottom: "1rem" }}>
+            <button onClick={exportCSV} style={{ marginRight: "1rem" }}>
+              Export CSV
+            </button>
+            <button onClick={exportJSON}>Export JSON</button>
+          </div>
+          
+          <div style={{ 
+            backgroundColor: "#f8f9fa", 
+            padding: "1rem", 
+            borderRadius: "6px", 
+            marginBottom: "1rem",
+            border: "1px solid #dee2e6"
           }}>
-            Export for full intent data
-          </p>
+            <p style={{ 
+              fontSize: "0.9rem", 
+              color: "#495057", 
+              margin: "0 0 0.5rem 0", 
+              fontWeight: "500"
+            }}>
+              💡 New: Force Reclassification Available
+            </p>
+            <p style={{ 
+              fontSize: "0.85rem", 
+              color: "#666", 
+              margin: "0", 
+              lineHeight: "1.4"
+            }}>
+              Click the <strong>⋯</strong> menu next to any URL to <strong>🔄 Force Reclassify</strong> with our improved taxonomy. 
+              Use this to fix old classifications that used incorrect IAB mappings.
+            </p>
+          </div>
 
           <table
             style={{
@@ -243,6 +344,7 @@ function Classification() {
                   "Keywords",
                   "Buying Intent",
                   "Ad Suggestions",
+                  "Actions"
                                  ].map((h) => (
                    <th key={h} style={{ 
                      borderBottom: "2px solid #ddd",
@@ -304,12 +406,99 @@ function Classification() {
                    }}>{Array.isArray(r.keywords) ? r.keywords.join(", ") : r.keywords}</td>
                    <td style={{ padding: "10px 8px", borderRight: "1px solid #eee" }}>{r.buying_intent}</td>
                    <td style={{ 
-                     padding: "10px 8px",
+                     padding: "10px 8px", 
+                     borderRight: "1px solid #eee",
                      maxWidth: "150px",
                      overflow: "hidden",
                      textOverflow: "ellipsis",
                      whiteSpace: "nowrap"
                    }}>{r.ad_suggestions}</td>
+                   <td style={{ 
+                     padding: "10px 8px",
+                     position: "relative",
+                     width: "60px",
+                     textAlign: "center"
+                   }}>
+                     {reclassifyingIndex === i ? (
+                       <div style={{ 
+                         fontSize: "0.8rem", 
+                         color: "#666",
+                         fontStyle: "italic" 
+                       }}>
+                         Reclassifying...
+                       </div>
+                     ) : (
+                       <div style={{ position: "relative" }}>
+                         <button
+                           onClick={() => toggleMenu(i)}
+                           style={{
+                             background: "none",
+                             border: "none",
+                             fontSize: "1.2rem",
+                             cursor: "pointer",
+                             padding: "4px 8px",
+                             borderRadius: "4px",
+                             color: "#666"
+                           }}
+                           onMouseEnter={(e) => e.target.style.backgroundColor = "#f0f0f0"}
+                           onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
+                         >
+                           ⋯
+                         </button>
+                         {openMenuIndex === i && (
+                           <div style={{
+                             position: "absolute",
+                             top: "100%",
+                             right: "0",
+                             backgroundColor: "white",
+                             border: "1px solid #ddd",
+                             borderRadius: "4px",
+                             boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                             zIndex: 1000,
+                             minWidth: "160px"
+                           }}>
+                             <button
+                               onClick={() => handleForceReclassify(r.url, i)}
+                               style={{
+                                 display: "block",
+                                 width: "100%",
+                                 padding: "8px 12px",
+                                 border: "none",
+                                 background: "none",
+                                 textAlign: "left",
+                                 cursor: "pointer",
+                                 fontSize: "0.85rem",
+                                 color: "#333"
+                               }}
+                               onMouseEnter={(e) => e.target.style.backgroundColor = "#f8f9fa"}
+                               onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
+                             >
+                               🔄 Force Reclassify
+                             </button>
+                             <button
+                               onClick={() => navigator.clipboard.writeText(r.url)}
+                               style={{
+                                 display: "block",
+                                 width: "100%",
+                                 padding: "8px 12px",
+                                 border: "none",
+                                 background: "none",
+                                 textAlign: "left",
+                                 cursor: "pointer",
+                                 fontSize: "0.85rem",
+                                 color: "#333",
+                                 borderTop: "1px solid #eee"
+                               }}
+                               onMouseEnter={(e) => e.target.style.backgroundColor = "#f8f9fa"}
+                               onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
+                             >
+                               📋 Copy URL
+                             </button>
+                           </div>
+                         )}
+                       </div>
+                     )}
+                   </td>
                  </tr>
                ))}
             </tbody>
