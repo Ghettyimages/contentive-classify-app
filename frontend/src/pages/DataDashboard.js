@@ -170,14 +170,14 @@ const DataDashboard = () => {
       
       return [
         item.url || 'N/A',
-        primaryCode ? getIabDisplayString(primaryCode, { format: 'pathOnly' }) : 'N/A',
-        subCode ? getIabDisplayString(subCode, { format: 'pathOnly' }) : 'N/A',
-        secondaryCode ? getIabDisplayString(secondaryCode, { format: 'pathOnly' }) : 'N/A',
-        secondarySubCode ? getIabDisplayString(secondarySubCode, { format: 'pathOnly' }) : 'N/A',
-        primaryCode || 'N/A',
-        subCode || 'N/A',
-        secondaryCode || 'N/A',
-        secondarySubCode || 'N/A',
+        primaryCode ? getIabDisplayString(primaryCode, { format: 'standard', showPath: true }) : 'N/A',
+        subCode ? getIabDisplayString(subCode, { format: 'standard', showPath: true }) : 'N/A',
+        secondaryCode ? getIabDisplayString(secondaryCode, { format: 'standard', showPath: true }) : 'N/A',
+        secondarySubCode ? getIabDisplayString(secondarySubCode, { format: 'standard', showPath: true }) : 'N/A',
+        primaryCode ? getIabDisplayString(primaryCode, { format: 'standard', showPath: false }) : 'N/A',
+        subCode ? getIabDisplayString(subCode, { format: 'standard', showPath: false }) : 'N/A',
+        secondaryCode ? getIabDisplayString(secondaryCode, { format: 'standard', showPath: false }) : 'N/A',
+        secondarySubCode ? getIabDisplayString(secondarySubCode, { format: 'standard', showPath: false }) : 'N/A',
         getFieldValue(item, 'classification', 'tone'),
         getFieldValue(item, 'classification', 'intent'),
         getFieldValue(item, 'classification', 'audience'),
@@ -349,7 +349,7 @@ const DataDashboard = () => {
             >
               <option value="">All</option>
               {availableIabCodes.map((code) => (
-                <option key={code} value={code}>{code /* or labelForCode(code) */}</option>
+                <option key={code} value={code}>{getIabDisplayString(code, { format: 'standard', showPath: false })}</option>
               ))}
             </select>
           </label>
@@ -363,7 +363,7 @@ const DataDashboard = () => {
             >
               <option value="">All</option>
               {availableIabSubcodes.map((sub) => (
-                <option key={sub} value={sub}>{sub /* or labelForCode(sub) */}</option>
+                <option key={sub} value={sub}>{getIabDisplayString(sub, { format: 'standard', showPath: false })}</option>
               ))}
             </select>
           </label>
