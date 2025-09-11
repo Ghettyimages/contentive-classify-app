@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { API_BASE_URL } from "../config";
+import { useAuth } from "../context/AuthContext";
 import iabTaxonomyService, { getIabLabel, getIabFullPath, getIabDisplayString } from "../utils/iabTaxonomyService";
 
 function Classification() {
+  const { currentUser } = useAuth();
   const [url, setUrl] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -12,6 +14,18 @@ function Classification() {
   const [bulkLoading, setBulkLoading] = useState(false);
   const [openMenuIndex, setOpenMenuIndex] = useState(null);
   const [reclassifyingIndex, setReclassifyingIndex] = useState(null);
+
+  // Helper to get auth headers
+  const getAuthHeaders = () => {
+    const token = window.localStorage.getItem('fb_id_token');
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+  };
 
   // Initialize IAB service
   useEffect(() => {
@@ -38,12 +52,15 @@ function Classification() {
         { url },
         { 
           timeout: 60000, // 60 second timeout for classification
-          headers: {
-            'Content-Type': 'application/json'
-          }
+          headers: getAuthHeaders()
         }
       );
       setResult(response.data);
+      
+      // Show success message if user is authenticated (will be saved to dashboard)
+      if (currentUser) {
+        console.log("✅ Classification saved to your dashboard");
+      }
     } catch (error) {
       console.error("Error classifying article:", error);
       console.error("Error details:", error.response?.data || error.message);
@@ -72,12 +89,16 @@ function Classification() {
         },
         { 
           timeout: 120000, // 2 minute timeout for bulk classification
-          headers: {
-            'Content-Type': 'application/json'
-          }
+          headers: getAuthHeaders()
         }
       );
       setBulkResults(response.data.results || []);
+      
+      // Show success message if user is authenticated
+      if (currentUser) {
+        const successful = response.data.results?.filter(r => !r.error)?.length || 0;
+        console.log(`✅ ${successful} classifications saved to your dashboard`);
+      }
     } catch (error) {
       console.error("Bulk classification error:", error);
       console.error("Bulk error details:", error.response?.data || error.message);
@@ -99,9 +120,7 @@ function Classification() {
         },
         { 
           timeout: 60000, // 60 second timeout for single classification
-          headers: {
-            'Content-Type': 'application/json'
-          }
+          headers: getAuthHeaders()
         }
       );
       
@@ -198,6 +217,24 @@ function Classification() {
       </div>
 
       <h2>Classify Article by URL</h2>
+      {currentUser && (
+        <div style={{ 
+          backgroundColor: "#e8f5e8", 
+          padding: "0.8rem", 
+          borderRadius: "6px", 
+          marginBottom: "1rem",
+          border: "1px solid #c3e6c3"
+        }}>
+          <p style={{ 
+            fontSize: "0.9rem", 
+            color: "#2d5a2d", 
+            margin: "0", 
+            fontWeight: "500"
+          }}>
+            ✅ You're logged in - all classifications will be saved to your Dashboard for analysis and export.
+          </p>
+        </div>
+      )}
       <input
         type="text"
         placeholder="Enter article URL"
@@ -244,6 +281,24 @@ function Classification() {
 
       <hr style={{ margin: "3rem 0" }} />
       <h2>Bulk URL Classification</h2>
+      {currentUser && (
+        <div style={{ 
+          backgroundColor: "#e8f5e8", 
+          padding: "0.8rem", 
+          borderRadius: "6px", 
+          marginBottom: "1rem",
+          border: "1px solid #c3e6c3"
+        }}>
+          <p style={{ 
+            fontSize: "0.9rem", 
+            color: "#2d5a2d", 
+            margin: "0", 
+            fontWeight: "500"
+          }}>
+            💾 All bulk classifications will be automatically saved to your Dashboard and merged with any attribution data.
+          </p>
+        </div>
+      )}
       <textarea
         value={bulkUrls}
         onChange={(e) => setBulkUrls(e.target.value)}

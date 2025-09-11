@@ -953,14 +953,27 @@ def classify():
     if not url:
         return jsonify({"error": "Missing URL parameter"}), 400
 
+    # Get user ID from auth header (optional for single classifications)
+    user_id = None
+    try:
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            token = auth_header.split('Bearer ')[1]
+            decoded_token = auth.verify_id_token(token)
+            user_id = decoded_token['uid']
+            print(f"🔐 Authenticated user: {user_id}")
+    except Exception as e:
+        print(f"⚠️ Authentication optional for classify: {e}")
+        # Continue without user_id for public access
+
     # Basic URL validation
     url = url.strip()
     if not (url.startswith('http://') or url.startswith('https://')):
         url = 'https://' + url
 
     try:
-        print(f"🚀 Starting classification for URL: {url} (force_reclassify: {force_reclassify})")
-        result = classify_url(url, force_reclassify=force_reclassify)
+        print(f"🚀 Starting classification for URL: {url} (force_reclassify: {force_reclassify}, user_id: {user_id})")
+        result = classify_url(url, force_reclassify=force_reclassify, user_id=user_id)
         print(f"✅ Classification completed successfully for: {url}")
         return jsonify(result)
     except ValueError as ve:
@@ -1005,13 +1018,28 @@ def classify_bulk():
     force_reclassify = data.get("force_reclassify", False)  # New parameter
     results = []
 
-    print(f"🚀 Starting bulk classification of {len(urls)} URLs (force_reclassify: {force_reclassify})")
+    # Get user ID from auth header (optional for bulk classifications)
+    user_id = None
+    try:
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            token = auth_header.split('Bearer ')[1]
+            decoded_token = auth.verify_id_token(token)
+            user_id = decoded_token['uid']
+            print(f"🔐 Authenticated user for bulk classification: {user_id}")
+    except Exception as e:
+        print(f"⚠️ Authentication optional for bulk classify: {e}")
+        # Continue without user_id for public access
 
+    print(f"🚀 Starting bulk classification of {len(urls)} URLs (force_reclassify: {force_reclassify}, user_id: {user_id})")
+
+    successful_count = 0
     for url in urls:
         try:
-            result = classify_url(url, force_reclassify=force_reclassify)
+            result = classify_url(url, force_reclassify=force_reclassify, user_id=user_id)
             result["url"] = url
             results.append(result)
+            successful_count += 1
             print(f"✅ Completed {len(results)}/{len(urls)}: {url}")
         except Exception as e:
             error_result = {
@@ -1021,7 +1049,19 @@ def classify_bulk():
             results.append(error_result)
             print(f"❌ Failed {len(results)}/{len(urls)}: {url} - {str(e)}")
 
-    print(f"🎯 Bulk classification complete: {len([r for r in results if 'error' not in r])}/{len(urls)} successful")
+    print(f"🎯 Bulk classification complete: {successful_count}/{len(urls)} successful")
+    
+    # If user is authenticated and we had successful classifications, trigger merge
+    if user_id and successful_count > 0:
+        try:
+            print(f"🔄 Auto-triggering merge after bulk classification for user {user_id}")
+            from merge_attribution_with_classification import merge_attribution_data
+            merge_result = merge_attribution_data(user_id=user_id)
+            print(f"✅ Auto-merge completed: {merge_result.get('success', False)}")
+        except Exception as e:
+            print(f"❌ Auto-merge failed (non-critical): {e}")
+            # Don't fail the classification if merge fails
+    
     return jsonify({"results": results})
 
 @app.route("/recent-classifications", methods=["GET"])
@@ -1284,8 +1324,8 @@ def trigger_merge():
         print(f"Full traceback: {traceback.format_exc()}")
         return jsonify({"error": str(e)}), 500
 
-def classify_url(url, force_reclassify=False):
-    print(f"Starting classify_url function for: {url} (force_reclassify: {force_reclassify})")
+def classify_url(url, force_reclassify=False, user_id=None):
+    print(f"Starting classify_url function for: {url} (force_reclassify: {force_reclassify}, user_id: {user_id})")
     
     # Check OpenAI API key
     openai_key = os.getenv("OPENAI_API_KEY")
@@ -1454,9 +1494,23 @@ def classify_url(url, force_reclassify=False):
                     **classification_result,
                     'url_normalized': normalize_url(url),
                     'taxonomy_version': (app.config.get('IAB_TAXONOMY') or {}).get('version', '3.1'),
+                    'user_id': user_id,  # Add user_id for dashboard integration
+                    'timestamp': firebase_service._get_timestamp()
                 }
                 firebase_service.save_classification(url, classification_result_with_meta)
-                print(f"Successfully saved classification to Firestore for: {url}")
+                print(f"Successfully saved classification to Firestore for: {url} (user_id: {user_id})")
+                
+                # If user is authenticated, trigger merge to make it appear in dashboard
+                if user_id:
+                    try:
+                        print(f"🔄 Auto-triggering merge after single classification for user {user_id}")
+                        from merge_attribution_with_classification import merge_attribution_data
+                        merge_result = merge_attribution_data(user_id=user_id)
+                        print(f"✅ Auto-merge completed: {merge_result.get('success', False)}")
+                    except Exception as e:
+                        print(f"❌ Auto-merge failed (non-critical): {e}")
+                        # Don't fail the classification if merge fails
+                        
             except Exception as e:
                 print(f"Failed to save classification to Firestore: {e}")
         
