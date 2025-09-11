@@ -932,18 +932,52 @@ def classify():
     data = request.json
     url = data.get("url")
     if not url:
-        return jsonify({"error": "Missing URL"}), 400
+        return jsonify({"error": "Missing URL parameter"}), 400
+
+    # Basic URL validation
+    url = url.strip()
+    if not (url.startswith('http://') or url.startswith('https://')):
+        url = 'https://' + url
 
     try:
-        print(f"Starting classification for URL: {url}")
+        print(f"🚀 Starting classification for URL: {url}")
         result = classify_url(url)
-        print(f"Classification completed successfully for: {url}")
+        print(f"✅ Classification completed successfully for: {url}")
         return jsonify(result)
+    except ValueError as ve:
+        # Handle content extraction errors with user-friendly messages
+        error_msg = str(ve)
+        print(f"❌ Content extraction error for {url}: {error_msg}")
+        return jsonify({
+            "error": error_msg,
+            "error_type": "content_extraction",
+            "url": url,
+            "suggestion": "Try a different article URL that is publicly accessible and doesn't require login or subscription."
+        }), 422  # Unprocessable Entity
     except Exception as e:
-        print(f"Error in classify endpoint: {str(e)}")
+        print(f"❌ Unexpected error in classify endpoint: {str(e)}")
         import traceback
-        print(f"Full traceback: {traceback.format_exc()}")
-        return jsonify({"error": str(e)}), 500
+        print(f"📋 Full traceback: {traceback.format_exc()}")
+        
+        # Check for specific error types
+        if "OpenAI" in str(e) or "API" in str(e):
+            return jsonify({
+                "error": "AI classification service temporarily unavailable. Please try again in a moment.",
+                "error_type": "ai_service",
+                "url": url
+            }), 503
+        elif "timeout" in str(e).lower():
+            return jsonify({
+                "error": "Request timeout. The article may be too large or the site too slow to respond.",
+                "error_type": "timeout", 
+                "url": url
+            }), 408
+        else:
+            return jsonify({
+                "error": "An unexpected error occurred during classification. Please try again.",
+                "error_type": "unknown",
+                "url": url
+            }), 500
 
 @app.route("/classify-bulk", methods=["POST"])
 def classify_bulk():
@@ -1254,31 +1288,106 @@ def classify_url(url):
     # If not cached, proceed with classification
     print(f"Classifying URL (not cached): {url}")
     
-    # Step 1: Try newspaper3k
+    # Enhanced content extraction with multiple fallbacks
+    article_text = ""
+    extraction_method = ""
+    
+    # Step 1: Try newspaper3k with better headers
     try:
         print("Attempting to extract content with newspaper3k...")
         article = Article(url)
+        article.config.browser_user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        article.config.request_timeout = 15
         article.download()
         article.parse()
         article_text = article.text.strip()
-        if not article_text:
-            raise ValueError("Empty article text from newspaper3k")
-        print(f"Successfully extracted {len(article_text)} characters with newspaper3k")
+        if article_text and len(article_text) > 50:  # Require meaningful content
+            print(f"✅ Successfully extracted {len(article_text)} characters with newspaper3k")
+            extraction_method = "newspaper3k"
+        else:
+            raise ValueError("Empty or insufficient article text from newspaper3k")
     except Exception as e:
-        print(f"newspaper3k failed: {e}")
-        # Step 2: Fallback with BeautifulSoup
+        print(f"❌ newspaper3k failed: {e}")
+        
+        # Step 2: Enhanced BeautifulSoup with better headers and selectors
         try:
-            print("Attempting fallback with BeautifulSoup...")
-            resp = requests.get(url, timeout=10)
+            print("Attempting fallback with enhanced BeautifulSoup...")
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Accept-Encoding': 'gzip, deflate',
+                'Connection': 'keep-alive',
+            }
+            resp = requests.get(url, timeout=15, headers=headers)
+            resp.raise_for_status()
             soup = BeautifulSoup(resp.content, "html.parser")
-            paragraphs = soup.find_all("p")
-            article_text = " ".join(p.get_text() for p in paragraphs).strip()
-            if not article_text:
-                raise ValueError("Fallback also returned empty content")
-            print(f"Successfully extracted {len(article_text)} characters with BeautifulSoup")
+            
+            # Remove script and style elements
+            for script in soup(["script", "style", "nav", "header", "footer", "aside"]):
+                script.decompose()
+            
+            # Try multiple content selectors
+            content_selectors = [
+                'article', '[role="main"]', '.content', '.post-content', 
+                '.entry-content', '.article-body', '.story-body', 'main',
+                '.post', '.article', '[class*="content"]', '[class*="article"]'
+            ]
+            
+            for selector in content_selectors:
+                content_elem = soup.select_one(selector)
+                if content_elem:
+                    article_text = content_elem.get_text(separator=' ', strip=True)
+                    if article_text and len(article_text) > 100:
+                        print(f"✅ Successfully extracted {len(article_text)} characters using selector '{selector}'")
+                        extraction_method = f"BeautifulSoup ({selector})"
+                        break
+            
+            # Fallback to all paragraphs if selectors didn't work
+            if not article_text or len(article_text) < 100:
+                paragraphs = soup.find_all("p")
+                article_text = " ".join(p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True))
+                if article_text and len(article_text) > 50:
+                    print(f"✅ Successfully extracted {len(article_text)} characters from all paragraphs")
+                    extraction_method = "BeautifulSoup (paragraphs)"
+                else:
+                    raise ValueError("No meaningful content found in paragraphs")
+                    
         except Exception as e2:
-            print(f"BeautifulSoup fallback also failed: {e2}")
-            raise ValueError(f"Failed to extract content from URL: {e2}")
+            print(f"❌ Enhanced BeautifulSoup also failed: {e2}")
+            
+            # Step 3: Last resort - try basic text extraction
+            try:
+                print("Attempting last resort text extraction...")
+                resp = requests.get(url, timeout=10, headers={'User-Agent': 'Mozilla/5.0'})
+                soup = BeautifulSoup(resp.content, "html.parser")
+                # Get all text, remove extra whitespace
+                raw_text = soup.get_text(separator=' ', strip=True)
+                # Clean up the text
+                lines = [line.strip() for line in raw_text.split('\n') if line.strip()]
+                article_text = ' '.join(lines)
+                
+                if article_text and len(article_text) > 200:
+                    print(f"✅ Last resort extracted {len(article_text)} characters")
+                    extraction_method = "BeautifulSoup (raw text)"
+                else:
+                    raise ValueError("Last resort extraction insufficient")
+                    
+            except Exception as e3:
+                print(f"❌ All extraction methods failed: {e3}")
+                # Provide helpful error message based on URL
+                if 'linkedin.com' in url.lower():
+                    error_msg = "LinkedIn articles require login access. Please try a publicly accessible article URL."
+                elif 'medium.com' in url.lower():
+                    error_msg = "Medium articles may be behind a paywall. Please try a free article URL."
+                elif 'nytimes.com' in url.lower() or 'wsj.com' in url.lower():
+                    error_msg = "This news site requires subscription access. Please try a free news article URL."
+                else:
+                    error_msg = f"Unable to extract content from this URL. The site may block automated access or require JavaScript rendering. Please try a different article URL."
+                
+                raise ValueError(error_msg)
+    
+    print(f"📄 Content extraction successful via {extraction_method}: {len(article_text)} characters")
 
     if len(article_text) > MAX_TOKENS * 4:
         article_text = article_text[:MAX_TOKENS * 4]
