@@ -948,6 +948,8 @@ def test_auth():
 def classify():
     data = request.json
     url = data.get("url")
+    force_reclassify = data.get("force_reclassify", False)  # New parameter
+    
     if not url:
         return jsonify({"error": "Missing URL parameter"}), 400
 
@@ -957,8 +959,8 @@ def classify():
         url = 'https://' + url
 
     try:
-        print(f"🚀 Starting classification for URL: {url}")
-        result = classify_url(url)
+        print(f"🚀 Starting classification for URL: {url} (force_reclassify: {force_reclassify})")
+        result = classify_url(url, force_reclassify=force_reclassify)
         print(f"✅ Classification completed successfully for: {url}")
         return jsonify(result)
     except ValueError as ve:
@@ -1000,19 +1002,26 @@ def classify():
 def classify_bulk():
     data = request.json
     urls = data.get("urls", [])
+    force_reclassify = data.get("force_reclassify", False)  # New parameter
     results = []
+
+    print(f"🚀 Starting bulk classification of {len(urls)} URLs (force_reclassify: {force_reclassify})")
 
     for url in urls:
         try:
-            result = classify_url(url)
+            result = classify_url(url, force_reclassify=force_reclassify)
             result["url"] = url
             results.append(result)
+            print(f"✅ Completed {len(results)}/{len(urls)}: {url}")
         except Exception as e:
-            results.append({
+            error_result = {
                 "url": url,
                 "error": str(e)
-            })
+            }
+            results.append(error_result)
+            print(f"❌ Failed {len(results)}/{len(urls)}: {url} - {str(e)}")
 
+    print(f"🎯 Bulk classification complete: {len([r for r in results if 'error' not in r])}/{len(urls)} successful")
     return jsonify({"results": results})
 
 @app.route("/recent-classifications", methods=["GET"])
@@ -1275,8 +1284,8 @@ def trigger_merge():
         print(f"Full traceback: {traceback.format_exc()}")
         return jsonify({"error": str(e)}), 500
 
-def classify_url(url):
-    print(f"Starting classify_url function for: {url}")
+def classify_url(url, force_reclassify=False):
+    print(f"Starting classify_url function for: {url} (force_reclassify: {force_reclassify})")
     
     # Check OpenAI API key
     openai_key = os.getenv("OPENAI_API_KEY")
@@ -1292,8 +1301,8 @@ def classify_url(url):
         print(f"Firebase service initialization failed: {e}")
         firebase_service = None
     
-    # Check if URL has already been classified and stored in Firestore
-    if firebase_service:
+    # Check if URL has already been classified and stored in Firestore (unless force reclassify)
+    if firebase_service and not force_reclassify:
         try:
             cached_result = firebase_service.get_classification_by_url(url)
             if cached_result:
@@ -1301,6 +1310,8 @@ def classify_url(url):
                 return cached_result
         except Exception as e:
             print(f"Error checking cache: {e}")
+    elif force_reclassify:
+        print(f"🔄 Force reclassifying URL (bypassing cache): {url}")
     
     # If not cached, proceed with classification
     print(f"Classifying URL (not cached): {url}")
