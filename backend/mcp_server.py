@@ -461,7 +461,7 @@ def _fetch_merged_with_filters(start_str: str, end_str: str, include_iab: list, 
 
 @app.route("/")
 def index():
-    return "MCP Server is running."
+    return "MCP Server is running with enhanced content extraction."
 
 @app.route("/debug-env", methods=["GET"])
 def debug_env():
