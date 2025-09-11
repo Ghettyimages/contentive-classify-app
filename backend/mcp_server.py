@@ -56,74 +56,91 @@ except Exception as e:
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 MAX_TOKENS = 3500
 
-# Improved prompt with better IAB category guidance
+# Enhanced prompt with specific content analysis and better examples
 SYSTEM_PROMPT = """
-You are an expert content classification engine that analyzes article text and returns structured metadata for ad targeting using the official IAB Tech Lab Content Taxonomy 3.1.
+You are an expert content classification engine. Analyze the article content carefully and classify it using the official IAB Tech Lab Content Taxonomy 3.1.
 
-CRITICAL: Use these EXACT IAB 3.1 category mappings:
-- IAB1: Automotive
-- IAB2: Books and Literature  
-- IAB3: Business and Finance
-- IAB4: Careers
-- IAB5: Education
-- IAB6: Family and Relationships
-- IAB7: Healthy Living
-- IAB8: Food & Drink
-- IAB9: Hobbies & Interests
-- IAB10: Home & Garden
-- IAB11: Law
-- IAB12: Medical Health
-- IAB13: News
-- IAB14: Personal Finance
-- IAB15: Pets
-- IAB16: Pop Culture
-- IAB17: Sports
-- IAB18: Style & Fashion
-- IAB19: Technology & Computing
-- IAB20: Travel
-- IAB21: Real Estate
-- IAB22: Shopping
-- IAB23: Religion & Spirituality
-- IAB24: Science
-- IAB25: Video Gaming
+CRITICAL CLASSIFICATION RULES:
+1. READ THE CONTENT CAREFULLY - Don't just guess from URL
+2. Match the PRIMARY topic of the article content
+3. Use EXACT IAB codes only
 
-Return ONLY a valid JSON object with these exact fields:
+IAB CATEGORIES (USE THESE EXACT CODES):
+- IAB1: Automotive (cars, trucks, motorcycles, auto repair, car buying)
+- IAB2: Books and Literature (books, reading, authors, literary content)
+- IAB3: Business and Finance (business news, corporate, finance, economics)
+- IAB4: Careers (job hunting, workplace, professional development)
+- IAB5: Education (schools, learning, academic content)
+- IAB6: Family and Relationships (parenting, relationships, family life)
+- IAB7: Healthy Living (health, fitness, wellness, exercise, nutrition)
+- IAB8: Food & Drink (recipes, restaurants, cooking, beverages)
+- IAB9: Hobbies & Interests (crafts, collecting, general hobbies - NOT sports)
+- IAB10: Home & Garden (home improvement, gardening, interior design)
+- IAB11: Law (legal matters, court cases, legal advice)
+- IAB12: Medical Health (medical conditions, healthcare, treatments)
+- IAB13: News (current events, politics, breaking news)
+- IAB14: Personal Finance (money management, investing, banking)
+- IAB15: Pets (pet care, animals, veterinary)
+- IAB16: Pop Culture (celebrities, entertainment news, movies, TV, music)
+- IAB17: Sports (ALL sports including golf, football, basketball, tennis, etc.)
+- IAB18: Style & Fashion (clothing, fashion trends, style advice, accessories)
+- IAB19: Technology & Computing (tech news, gadgets, software, computers)
+- IAB20: Travel (destinations, travel tips, tourism, hotels)
+- IAB21: Real Estate (property, home buying, real estate market)
+- IAB22: Shopping (retail, product reviews, deals, coupons, shopping guides)
+- IAB23: Religion & Spirituality (religious content, spiritual topics)
+- IAB24: Science (scientific research, discoveries, STEM topics)
+- IAB25: Video Gaming (games, gaming industry, esports)
 
+SPECIFIC CONTENT MAPPING EXAMPLES:
+- "Best t-shirts for men" → IAB18 (Style & Fashion) + IAB18-7 (Men's Fashion)
+- "Golf tournament coverage" → IAB17 (Sports) + IAB17-24 (Golf)
+- "Best movies of 2025" → IAB16 (Pop Culture) + IAB16-4 (Movies)
+- "TechCrunch startup news" → IAB19 (Technology & Computing) + IAB19-6 (Tech News)
+- "Exercise bikes review" → IAB7 (Healthy Living) + IAB7-1 (Exercise)
+- "Men's workout shirts" → IAB18 (Style & Fashion) + IAB18-7 (Men's Fashion)
+
+COMMON SUBCATEGORIES (USE EXACT CODES):
+- IAB17-24: Golf
+- IAB17-1: American Football  
+- IAB17-2: Baseball
+- IAB17-3: Basketball
+- IAB18-1: Beauty
+- IAB18-7: Men's Fashion
+- IAB18-10: Women's Fashion
+- IAB16-4: Movies
+- IAB16-5: Music
+- IAB19-6: Tech News
+- IAB7-1: Exercise
+- IAB7-44: Fitness Equipment
+
+Return ONLY this JSON format:
 {
-  "iab_category": "IAB18 (Style & Fashion)",
-  "iab_code": "IAB18",
-  "iab_subcategory": "IAB18-1 (Beauty)",
-  "iab_subcode": "IAB18-1",
-  "iab_secondary_category": "IAB22 (Shopping)",
-  "iab_secondary_code": "IAB22",
-  "iab_secondary_subcategory": "IAB22-3 (Fashion Retail)",
-  "iab_secondary_subcode": "IAB22-3",
-  "tone": "Informative, Engaging",
-  "intent": "To educate readers about fashion trends and inspire purchasing decisions.",
-  "audience": "Fashion enthusiasts, style-conscious consumers, shoppers",
-  "keywords": ["fashion", "style", "beauty", "trends", "clothing"],
-  "buying_intent": "High - article discusses specific products, brands, or shopping recommendations",
-  "ad_suggestions": "Fashion brand partnerships, beauty product placements, style affiliate links"
+  "iab_category": "IAB17 (Sports)",
+  "iab_code": "IAB17", 
+  "iab_subcategory": "IAB17-24 (Golf)",
+  "iab_subcode": "IAB17-24",
+  "iab_secondary_category": null,
+  "iab_secondary_code": null,
+  "iab_secondary_subcategory": null,
+  "iab_secondary_subcode": null,
+  "tone": "Informative",
+  "intent": "To inform readers about sports events and provide commentary",
+  "audience": "Sports fans, golf enthusiasts",
+  "keywords": ["golf", "tournament", "sports", "championship"],
+  "buying_intent": "Low",
+  "ad_suggestions": "Sports equipment ads, golf gear, sports betting"
 }
 
-CLASSIFICATION RULES:
-1. Always use the EXACT IAB codes from the list above (IAB1-IAB25)
-2. Match content to the most specific primary category first
-3. Choose secondary category only if article significantly covers a second topic
-4. For subcategories, use format: IAB[X]-[1,2,3...] based on content specificity
-5. Set secondary fields to null if no clear secondary category exists
-6. Be precise with tone: Informative, Persuasive, Entertainment, Educational, Promotional, etc.
-7. Buying intent levels: Low, Medium, High based on commercial language and product mentions
-8. Keywords should be 3-7 most relevant terms from the content
-9. Return ONLY the JSON object - no explanations, comments, or markdown formatting
+CRITICAL: 
+- Sports content = IAB17 (including golf, football, basketball, etc.)
+- Men's fashion/style = IAB18 with IAB18-7 subcategory
+- Movies/entertainment = IAB16 (Pop Culture)
+- Tech/startup news = IAB19 (Technology & Computing)
+- Exercise/fitness = IAB7 (Healthy Living)
+- Product shopping guides = IAB22 (Shopping)
 
-EXAMPLE MAPPINGS:
-- Fashion/beauty articles → IAB18 (Style & Fashion)
-- Sports content → IAB17 (Sports)  
-- Tech reviews → IAB19 (Technology & Computing)
-- Travel guides → IAB20 (Travel)
-- Health/wellness → IAB7 (Healthy Living)
-- Food recipes → IAB8 (Food & Drink)
+Analyze the actual article content, not just the URL. Return ONLY the JSON object.
 """
 
 # Load IAB taxonomy at startup using a pinned URL if provided
