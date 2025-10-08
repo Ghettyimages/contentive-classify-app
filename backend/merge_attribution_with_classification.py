@@ -98,6 +98,9 @@ class AttributionClassificationMerger:
 
             print(f"🔗 Processing {len(attribution_data)} attribution versions (per upload)")
 
+            # Track URLs we have already produced a merged record for
+            processed_norms = set()
+
             # Process each attribution document as its own version
             for attribution_record in attribution_data:
                 try:
@@ -108,6 +111,7 @@ class AttributionClassificationMerger:
                     if merged_record:
                         success = self._save_merged_record(merged_record)
                         if success:
+                            processed_norms.add(url_norm)
                             if classification_record:
                                 self.stats['successful_merges'] += 1
                                 print(f"✅ Merged: {url[:50]}... ({attribution_record.get('upload_date', 'no-date')})")
@@ -123,6 +127,32 @@ class AttributionClassificationMerger:
                 except Exception as e:
                     self.stats['errors'] += 1
                     print(f"❌ Error processing attribution doc: {e}")
+
+            # Additionally, create classification-only merged records for any
+            # classified URLs that do not have attribution entries yet
+            try:
+                for classification_record in classification_data:
+                    try:
+                        url = classification_record.get('url', '')
+                        url_norm = classification_record.get('url_normalized') or normalize_url(url)
+                        if not url_norm or url_norm in processed_norms:
+                            continue
+                        merged_record = self._create_merged_record(url, url_norm, None, classification_record)
+                        if merged_record:
+                            success = self._save_merged_record(merged_record)
+                            if success:
+                                processed_norms.add(url_norm)
+                                self.stats['classification_only'] += 1
+                                print(f"🏷️  Classification only: {url[:50]}...")
+                            else:
+                                self.stats['errors'] += 1
+                                print(f"❌ Failed to save classification-only merged record for: {url[:50]}...")
+                    except Exception as e:
+                        self.stats['errors'] += 1
+                        print(f"❌ Error processing classification doc: {e}")
+            except Exception as e:
+                self.stats['errors'] += 1
+                print(f"❌ Error in classification-only merge pass: {e}")
             
             # Print final statistics
             self._print_merge_statistics()
@@ -159,7 +189,9 @@ class AttributionClassificationMerger:
             
             for doc in docs:
                 data = doc.to_dict()
+                data = data or {}
                 data['_id'] = doc.id
+                attribution_data.append(data)
                 
             print(f"✅ Retrieved {len(attribution_data)} attribution records")
             return attribution_data
@@ -194,7 +226,10 @@ class AttributionClassificationMerger:
         
         merged_ts = now_iso_utc()
         merged_record = {
-            'uid': attribution_record.get('uid') if attribution_record else None,
+            # Prefer attribution uid; fall back to classification user_id
+            'uid': (attribution_record.get('uid') if attribution_record else (
+                (classification_record.get('uid') or classification_record.get('user_id')) if classification_record else None
+            )),
             'url': url,
             'url_normalized': url_normalized,
             'upload_date': (attribution_record.get('upload_date') if attribution_record and attribution_record.get('upload_date') else merged_ts),
