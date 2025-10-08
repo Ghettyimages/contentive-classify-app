@@ -2,10 +2,14 @@ services:
   - type: web
     name: segment-builder-api
     env: python
-    buildCommand: python -m pip install --upgrade pip && pip install -r backend/requirements.txt && node scripts/build_correct_iab_mapping.mjs
+    buildCommand: python -m pip install --upgrade pip && pip install -r backend/requirements.txt
     startCommand: bash scripts/start.sh
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.4
       - key: IAB_TSV_PATH
         value: /opt/render/project/src/backend/data/IAB_Content_Taxonomy_3_1.tsv
+      - key: FIREBASE_SERVICE_ACCOUNT
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false

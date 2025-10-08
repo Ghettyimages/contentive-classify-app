@@ -500,6 +500,30 @@ def debug_env():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+@app.route("/debug-firestore", methods=["POST"])
+def debug_firestore():
+    """Attempt a simple write+read roundtrip to Firestore to validate credentials.
+    Requires a valid Firebase ID token in Authorization header.
+    """
+    try:
+        # Require auth to avoid abuse
+        user_id = _verify_and_get_user_id()
+        svc = get_firebase_service()
+        db = svc.db
+        now = now_iso_utc()
+        payload = { 'uid': user_id, 'ts': now, 'kind': 'debug' }
+        # Write
+        db.collection('debug_checks').add(payload)
+        # Read last few
+        docs = db.collection('debug_checks').limit(5).stream()
+        count = sum(1 for _ in docs)
+        return jsonify({ 'ok': True, 'wrote_at': now, 'recent_count': count })
+    except PermissionError as pe:
+        return jsonify({ 'ok': False, 'error': str(pe) }), 401
+    except Exception as e:
+        return jsonify({ 'ok': False, 'error': str(e) }), 500
+
 @app.route("/merged-data", methods=["GET"])
 def get_merged_data():
     """Get merged attribution and classification data with optional date range and KPI sorting.
@@ -1499,8 +1523,40 @@ def classify_url(url, force_reclassify=False, user_id=None):
                 }
                 firebase_service.save_classification(url, classification_result_with_meta)
                 print(f"Successfully saved classification to Firestore for: {url} (user_id: {user_id})")
-                
-                # If user is authenticated, trigger merge to make it appear in dashboard
+
+                # Immediately create a classification-only merged record so the
+                # Dashboard can display the newly classified URL without waiting
+                # for attribution uploads or a full merge pass.
+                try:
+                    merged_record = {
+                        'uid': user_id,
+                        'url': url,
+                        'url_normalized': normalize_url(url),
+                        'upload_date': now_iso_utc(),
+                        'merged_at': now_iso_utc(),
+                        'has_attribution_data': False,
+                        'has_classification_data': True,
+                        'classification_iab_category': classification_result.get('iab_category'),
+                        'classification_iab_code': classification_result.get('iab_code'),
+                        'classification_iab_subcategory': classification_result.get('iab_subcategory'),
+                        'classification_iab_subcode': classification_result.get('iab_subcode'),
+                        'classification_iab_secondary_category': classification_result.get('iab_secondary_category'),
+                        'classification_iab_secondary_code': classification_result.get('iab_secondary_code'),
+                        'classification_iab_secondary_subcategory': classification_result.get('iab_secondary_subcategory'),
+                        'classification_iab_secondary_subcode': classification_result.get('iab_secondary_subcode'),
+                        'classification_tone': classification_result.get('tone'),
+                        'classification_intent': classification_result.get('intent'),
+                        'classification_audience': classification_result.get('audience'),
+                        'classification_keywords': classification_result.get('keywords'),
+                        'classification_timestamp': classification_result_with_meta.get('timestamp'),
+                    }
+                    firebase_service.db.collection('merged_content_signals').add(merged_record)
+                    print(f"✅ Wrote classification-only merged record for: {url}")
+                except Exception as e:
+                    print(f"⚠️ Failed to write classification-only merged record: {e}")
+
+                # If user is authenticated, trigger a scoped merge to enrich any
+                # matching attribution; otherwise, skip.
                 if user_id:
                     try:
                         print(f"🔄 Auto-triggering merge after single classification for user {user_id}")
@@ -1510,7 +1566,7 @@ def classify_url(url, force_reclassify=False, user_id=None):
                     except Exception as e:
                         print(f"❌ Auto-merge failed (non-critical): {e}")
                         # Don't fail the classification if merge fails
-                        
+
             except Exception as e:
                 print(f"Failed to save classification to Firestore: {e}")
         
