@@ -21,6 +21,10 @@ import firebase_admin
 from firebase_admin import firestore
 from urllib.parse import urlparse
 
+def now_iso_utc() -> str:
+    """Return current time as ISO-8601 UTC with trailing Z."""
+    return datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+
 
 def normalize_url(url: str) -> str:
     """Normalize URLs for consistent matching: lowercase, strip query/hash, drop trailing slash (except root)."""
