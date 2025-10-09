@@ -2,7 +2,7 @@ import os
 import json
 from datetime import datetime, timedelta
 from datetime import timezone
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS, cross_origin
 from newspaper import Article
@@ -1465,19 +1465,43 @@ def classify_url(url, force_reclassify=False, user_id=None):
                 else:
                     raise ValueError("Last resort extraction insufficient")
                     
-            except Exception as e3:
-                print(f"❌ All extraction methods failed: {e3}")
-                # Provide helpful error message based on URL
-                if 'linkedin.com' in url.lower():
-                    error_msg = "LinkedIn articles require login access. Please try a publicly accessible article URL."
-                elif 'medium.com' in url.lower():
-                    error_msg = "Medium articles may be behind a paywall. Please try a free article URL."
-                elif 'nytimes.com' in url.lower() or 'wsj.com' in url.lower():
-                    error_msg = "This news site requires subscription access. Please try a free news article URL."
-                else:
-                    error_msg = f"Unable to extract content from this URL. The site may block automated access or require JavaScript rendering. Please try a different article URL."
-                
-                raise ValueError(error_msg)
+        except Exception as e3:
+            print(f"❌ All extraction methods failed: {e3}")
+
+        # Step 4: Reader-as-a-service fallback (Jina Reader)
+        # This fetches a readability-extracted article via a public endpoint to
+        # handle sites blocking direct scraping (common 403/anti-bot). Only text
+        # is returned; we do not send credentials.
+        if not article_text or len(article_text) < 150:
+            try:
+                encoded = quote(url, safe='')
+                jina_url = f"https://r.jina.ai/http://{encoded}"
+                print(f"Attempting Jina Reader fallback: {jina_url}")
+                resp = requests.get(jina_url, timeout=20, headers={'User-Agent': 'Mozilla/5.0'})
+                if resp.status_code == 200:
+                    txt = (resp.text or '').strip()
+                    if txt and len(txt) > 200:
+                        article_text = txt
+                        extraction_method = "jina-reader"
+                        print(f"✅ Jina Reader extracted {len(article_text)} characters")
+            except Exception as ej:
+                print(f"❌ Jina Reader fallback failed: {ej}")
+
+        # Still no usable content
+        if not article_text or len(article_text) < 50:
+            # Provide helpful error message based on URL
+            if 'linkedin.com' in url.lower():
+                error_msg = "LinkedIn articles require login access. Please try a publicly accessible article URL."
+            elif 'medium.com' in url.lower():
+                error_msg = "Medium articles may be behind a paywall. Please try a free article URL."
+            elif 'nytimes.com' in url.lower() or 'wsj.com' in url.lower():
+                error_msg = "This news site requires subscription access. Please try a free news article URL."
+            else:
+                error_msg = (
+                    "Unable to extract content from this URL. The site may block automated access "
+                    "or require JavaScript rendering. Please try a different article URL."
+                )
+            raise ValueError(error_msg)
     
     print(f"📄 Content extraction successful via {extraction_method}: {len(article_text)} characters")
 
