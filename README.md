@@ -123,8 +123,8 @@ Build integration
 - Frontend build script runs the same fallback step before `react-scripts build`
 
 Runtime behavior
-- Segment Builder loads `/api/iab31` with an 8s timeout; if unavailable or too small (<200), it falls back to the bundled JSON.
-- UI enables filters when at least 200 codes are available.
+- A shared frontend taxonomy service (`frontend/src/utils/iabTaxonomyService.js`) loads `/api/iab31` and falls back to the bundled JSON if the API is unavailable. The resulting cache (labels, hierarchy, metadata) is reused by the Classification page, Data Dashboard, and Segment Builder so that every surface shows the same IAB 3.1 taxonomy.
+- Segment Builder can filter its dropdown to codes that appear in merged data while still relying on the centralized taxonomy for naming and hierarchy. Disable the filter to browse the full taxonomy.
 
 Configuration
 - Set `IAB_TSV_PATH` (default `backend/data/IAB_Content_Taxonomy_3_1.tsv`)

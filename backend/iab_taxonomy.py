@@ -482,30 +482,43 @@ def api_iab31():
         
         with open(json_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
-        
-        print(f"[IAB API] Loaded {len(data.get('codes', []))} codes from JSON")
-        
+
+        raw_codes = data.get('codes', [])
+        print(f"[IAB API] Loaded {len(raw_codes)} codes from JSON")
+
         # Convert JSON format to API format
         codes = []
-        for item in data.get('codes', []):
+        for item in raw_codes:
             iab_code = item.get('iab_code') or item.get('code')
-            if iab_code:
-                codes.append({
-                    'code': iab_code,
-                    'label': item.get('label', ''),
-                    'path': item.get('iab_path', item.get('path', [])),
-                    'level': item.get('level', 1),
-                    'parent': item.get('parent_uid')
-                })
-        
+            if not iab_code:
+                continue
+
+            path = item.get('iab_path') or item.get('path') or []
+            if isinstance(path, str):
+                path = [path]
+
+            codes.append({
+                'code': iab_code,
+                'label': item.get('label', ''),
+                'path': path,
+                'level': item.get('level', 1),
+                'parent': item.get('parent') or item.get('parent_uid')
+            })
+
         # Debug: Check IAB18 specifically
         iab18 = next((c for c in codes if c['code'] == 'IAB18'), None)
         if iab18:
             print(f"[IAB API] IAB18 mapping: {iab18['label']}")
         else:
             print("[IAB API] WARNING: IAB18 not found in mappings")
-        
-        return jsonify({'codes': codes})
+
+        payload = {
+            'version': data.get('version', '3.1'),
+            'source': data.get('source', f'json:{os.path.basename(json_path)}'),
+            'codes': codes,
+        }
+
+        return jsonify(payload)
         
     except FileNotFoundError as e:
         print(f"[IAB API] JSON file not found: {e}")
