@@ -7,6 +7,7 @@ Tests the full pipeline without requiring external API calls.
 import json
 import sys
 import re
+from pathlib import Path
 
 def test_mock_classification_pipeline():
     """Test the complete classification pipeline with mock data."""
@@ -32,8 +33,14 @@ def test_mock_classification_pipeline():
     }
     
     # Load corrected taxonomy
-    json_path = '/workspace/frontend/src/data/iab_content_taxonomy_3_1.v1.json'
-    with open(json_path, 'r') as f:
+    project_root = Path(__file__).resolve().parent
+    taxonomy_path = (project_root / 'frontend' / 'src' / 'data' / 'iab_content_taxonomy_3_1.v1.json').resolve()
+
+    if not taxonomy_path.exists():
+        # Support running from repository root where frontend folder is a sibling of this test file
+        taxonomy_path = (Path(__file__).resolve().parent.parent / 'frontend' / 'src' / 'data' / 'iab_content_taxonomy_3_1.v1.json').resolve()
+
+    with taxonomy_path.open('r', encoding='utf-8') as f:
         taxonomy_data = json.load(f)
     
     # Build code map
