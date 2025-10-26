@@ -52,8 +52,8 @@ This will start:
 
 ## 🔌 API Endpoints
 
-- `POST /classify` - Classify a single URL
-- `POST /classify-bulk` - Classify multiple URLs
+- `POST /classify` - Classify a single URL and persist the result to the authenticated user's dashboard
+- `POST /classify-bulk` - Classify multiple URLs and save each successful result to the dashboard for logged-in users
 - `GET /recent-classifications` - Get recent classifications from Firestore
 - `POST /upload-attribution` - Upload attribution CSV data (requires Firebase ID token)
 - `POST /merge-attribution` - Trigger merge of attribution and classification data (requires Firebase ID token)
@@ -70,6 +70,17 @@ This will start:
 - **Firestore caching** - Avoid re-classifying previously analyzed URLs
 - **Bulk processing** - Classify multiple URLs simultaneously
 - **Data persistence** - Store all classification results with timestamps
+- **Dashboard sync** - Every classification that succeeds while you're logged in is written straight to your SignalSync dashboard
+
+## 🗂️ Dashboard Persistence
+
+The backend automatically writes classification responses to Firestore so they surface inside the SignalSync dashboard without any extra steps:
+
+1. When you call `POST /classify` or `POST /classify-bulk`, include a Firebase ID token in the `Authorization: Bearer <token>` header.
+2. The API stores each classification with the associated `user_id` and immediately triggers the merge routine so the dashboard reflects the new insight.
+3. Because the data is cached, repeat requests for the same URL reuse the saved result while keeping it visible in the dashboard history.
+
+Even unauthenticated classifications are cached in Firestore for performance, but authentication is required for the result to show up in your personal dashboard.
 
 ## 🔧 Development
 
