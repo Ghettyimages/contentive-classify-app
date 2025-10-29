@@ -2,7 +2,7 @@ import os
 import json
 from datetime import datetime, timedelta
 from datetime import timezone
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS, cross_origin
 from newspaper import Article
@@ -499,6 +499,30 @@ def debug_env():
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/debug-firestore", methods=["POST"])
+def debug_firestore():
+    """Attempt a simple write+read roundtrip to Firestore to validate credentials.
+    Requires a valid Firebase ID token in Authorization header.
+    """
+    try:
+        # Require auth to avoid abuse
+        user_id = _verify_and_get_user_id()
+        svc = get_firebase_service()
+        db = svc.db
+        now = now_iso_utc()
+        payload = { 'uid': user_id, 'ts': now, 'kind': 'debug' }
+        # Write
+        db.collection('debug_checks').add(payload)
+        # Read last few
+        docs = db.collection('debug_checks').limit(5).stream()
+        count = sum(1 for _ in docs)
+        return jsonify({ 'ok': True, 'wrote_at': now, 'recent_count': count })
+    except PermissionError as pe:
+        return jsonify({ 'ok': False, 'error': str(pe) }), 401
+    except Exception as e:
+        return jsonify({ 'ok': False, 'error': str(e) }), 500
 
 @app.route("/merged-data", methods=["GET"])
 def get_merged_data():
@@ -1441,19 +1465,43 @@ def classify_url(url, force_reclassify=False, user_id=None):
                 else:
                     raise ValueError("Last resort extraction insufficient")
                     
-            except Exception as e3:
-                print(f"❌ All extraction methods failed: {e3}")
-                # Provide helpful error message based on URL
-                if 'linkedin.com' in url.lower():
-                    error_msg = "LinkedIn articles require login access. Please try a publicly accessible article URL."
-                elif 'medium.com' in url.lower():
-                    error_msg = "Medium articles may be behind a paywall. Please try a free article URL."
-                elif 'nytimes.com' in url.lower() or 'wsj.com' in url.lower():
-                    error_msg = "This news site requires subscription access. Please try a free news article URL."
-                else:
-                    error_msg = f"Unable to extract content from this URL. The site may block automated access or require JavaScript rendering. Please try a different article URL."
-                
-                raise ValueError(error_msg)
+        except Exception as e3:
+            print(f"❌ All extraction methods failed: {e3}")
+
+        # Step 4: Reader-as-a-service fallback (Jina Reader)
+        # This fetches a readability-extracted article via a public endpoint to
+        # handle sites blocking direct scraping (common 403/anti-bot). Only text
+        # is returned; we do not send credentials.
+        if not article_text or len(article_text) < 150:
+            try:
+                encoded = quote(url, safe='')
+                jina_url = f"https://r.jina.ai/http://{encoded}"
+                print(f"Attempting Jina Reader fallback: {jina_url}")
+                resp = requests.get(jina_url, timeout=20, headers={'User-Agent': 'Mozilla/5.0'})
+                if resp.status_code == 200:
+                    txt = (resp.text or '').strip()
+                    if txt and len(txt) > 200:
+                        article_text = txt
+                        extraction_method = "jina-reader"
+                        print(f"✅ Jina Reader extracted {len(article_text)} characters")
+            except Exception as ej:
+                print(f"❌ Jina Reader fallback failed: {ej}")
+
+        # Still no usable content
+        if not article_text or len(article_text) < 50:
+            # Provide helpful error message based on URL
+            if 'linkedin.com' in url.lower():
+                error_msg = "LinkedIn articles require login access. Please try a publicly accessible article URL."
+            elif 'medium.com' in url.lower():
+                error_msg = "Medium articles may be behind a paywall. Please try a free article URL."
+            elif 'nytimes.com' in url.lower() or 'wsj.com' in url.lower():
+                error_msg = "This news site requires subscription access. Please try a free news article URL."
+            else:
+                error_msg = (
+                    "Unable to extract content from this URL. The site may block automated access "
+                    "or require JavaScript rendering. Please try a different article URL."
+                )
+            raise ValueError(error_msg)
     
     print(f"📄 Content extraction successful via {extraction_method}: {len(article_text)} characters")
 
@@ -1499,8 +1547,40 @@ def classify_url(url, force_reclassify=False, user_id=None):
                 }
                 firebase_service.save_classification(url, classification_result_with_meta)
                 print(f"Successfully saved classification to Firestore for: {url} (user_id: {user_id})")
-                
-                # If user is authenticated, trigger merge to make it appear in dashboard
+
+                # Immediately create a classification-only merged record so the
+                # Dashboard can display the newly classified URL without waiting
+                # for attribution uploads or a full merge pass.
+                try:
+                    merged_record = {
+                        'uid': user_id,
+                        'url': url,
+                        'url_normalized': normalize_url(url),
+                        'upload_date': now_iso_utc(),
+                        'merged_at': now_iso_utc(),
+                        'has_attribution_data': False,
+                        'has_classification_data': True,
+                        'classification_iab_category': classification_result.get('iab_category'),
+                        'classification_iab_code': classification_result.get('iab_code'),
+                        'classification_iab_subcategory': classification_result.get('iab_subcategory'),
+                        'classification_iab_subcode': classification_result.get('iab_subcode'),
+                        'classification_iab_secondary_category': classification_result.get('iab_secondary_category'),
+                        'classification_iab_secondary_code': classification_result.get('iab_secondary_code'),
+                        'classification_iab_secondary_subcategory': classification_result.get('iab_secondary_subcategory'),
+                        'classification_iab_secondary_subcode': classification_result.get('iab_secondary_subcode'),
+                        'classification_tone': classification_result.get('tone'),
+                        'classification_intent': classification_result.get('intent'),
+                        'classification_audience': classification_result.get('audience'),
+                        'classification_keywords': classification_result.get('keywords'),
+                        'classification_timestamp': classification_result_with_meta.get('timestamp'),
+                    }
+                    firebase_service.db.collection('merged_content_signals').add(merged_record)
+                    print(f"✅ Wrote classification-only merged record for: {url}")
+                except Exception as e:
+                    print(f"⚠️ Failed to write classification-only merged record: {e}")
+
+                # If user is authenticated, trigger a scoped merge to enrich any
+                # matching attribution; otherwise, skip.
                 if user_id:
                     try:
                         print(f"🔄 Auto-triggering merge after single classification for user {user_id}")
@@ -1510,7 +1590,7 @@ def classify_url(url, force_reclassify=False, user_id=None):
                     except Exception as e:
                         print(f"❌ Auto-merge failed (non-critical): {e}")
                         # Don't fail the classification if merge fails
-                        
+
             except Exception as e:
                 print(f"Failed to save classification to Firestore: {e}")
         
