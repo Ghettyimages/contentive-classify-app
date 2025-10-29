@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { API_BASE_URL } from '../config';
@@ -43,8 +43,7 @@ const SegmentBuilder = () => {
   const [segmentOrder, setSegmentOrder] = useState('desc');
   const [previewRows, setPreviewRows] = useState([]);
   const [previewCount, setPreviewCount] = useState(0);
-  const [exportFormat, setExportFormat] = useState('csv');
-  const [error, setError] = useState('');
+  const [error] = useState('');
   const [iabOptions, setIabOptions] = useState([]);
   const [taxonomySource, setTaxonomySource] = useState('');
   const [taxonomyVersion, setTaxonomyVersion] = useState('');
@@ -137,21 +136,21 @@ const SegmentBuilder = () => {
     return value;
   };
 
-  const loadSegments = async () => {
+  const loadSegments = useCallback(async () => {
     try {
       const res = await axios.get(`${API_BASE_URL}/segments`, { headers: tokenHeader() });
       setSegments(res.data?.segments || []);
     } catch (e) {
       console.error('Error loading segments', e);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (currentUser) {
       loadSegments();
       loadSourceRows();
     }
-  }, [currentUser]);
+  }, [currentUser, loadSegments, loadSourceRows]);
 
   // Initialize IAB taxonomy service and load options after source rows are loaded
   const usedIabCodes = useMemo(() => {
@@ -226,9 +225,9 @@ const SegmentBuilder = () => {
     if (filteredExclude.length !== excludeIab.length) {
       setExcludeIab(filteredExclude);
     }
-  }, [iabOptions]);
+  }, [iabOptions, includeIab, excludeIab]);
 
-  const loadSourceRows = async () => {
+  const loadSourceRows = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       params.set('fallback', '1');
@@ -265,7 +264,7 @@ const SegmentBuilder = () => {
       console.error('Error loading source rows', e);
       setSourceRows([]);
     }
-  };
+  }, []);
 
   const buildSegmentRules = () => {
     const include_iab = includeIab;
@@ -361,11 +360,7 @@ const SegmentBuilder = () => {
     }
   };
 
-  const onClear = () => {
-    setPreviewRows([]);
-    setPreviewCount(0);
-    setIsApplied(false);
-  };
+  
 
   const onSaveClient = async () => {
     try {
@@ -417,60 +412,7 @@ const SegmentBuilder = () => {
     return Boolean(selectedSegmentId) || (Array.isArray(previewRows) && previewRows.length > 0);
   };
 
-  const onExportClick = async () => {
-    try {
-      if (!canExport()) return;
-      const authInstance = getAuth();
-      const token = await authInstance.currentUser?.getIdToken?.();
-      const body = {
-        segmentId: selectedSegmentId || null,
-        include_codes: includeIab || [],
-        exclude_codes: excludeIab || [],
-        filters: {
-          date_range: [segmentStart, segmentEnd],
-          kpi: {
-            ctr: kpiCtr || null,
-            viewability: kpiViewability || null,
-            scroll_depth: kpiScrollDepth || null,
-            conversions: kpiConversions || null,
-            impressions: kpiImpressions || null,
-            fill_rate: kpiFillRate || null,
-          }
-        },
-      };
-      slog('[Export] request body', body);
-      const res = await axios.post(`${API_BASE_URL}/export-segment`, body, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        responseType: 'text'
-      });
-      if (res.status !== 200) throw new Error(`Export failed (${res.status})`);
-      const csvText = typeof res.data === 'string' ? res.data : (res.data?.csv || '');
-      if (!csvText) throw new Error('Empty CSV returned');
-      const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `segment_${Date.now()}.csv`;
-      document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      const status = e?.response?.status;
-      const serverErr = e?.response?.data?.error || e?.response?.data || e?.message || String(e);
-      serror('[Export] failed', { status, serverErr });
-      alert(`Export failed${status ? ` (${status})` : ''}: ${serverErr}`);
-      if (Array.isArray(previewRows) && previewRows.length > 0) {
-        const headers = Object.keys(previewRows[0]);
-        const csv = [headers.join(','), ...previewRows.map(r => headers.map(h => JSON.stringify(r[h] ?? '')).join(','))].join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `segment_preview_${Date.now()}.csv`;
-        document.body.appendChild(a); a.click(); a.remove();
-        URL.revokeObjectURL(url);
-      }
-    }
-  };
+  
 
   const banner = (() => {
     const version = taxonomyVersion || '3.1';

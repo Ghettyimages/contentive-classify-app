@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { API_BASE_URL } from "../config";
 import { useAuth } from "../context/AuthContext";
-import iabTaxonomyService, { getIabLabel, getIabFullPath, getIabDisplayString } from "../utils/iabTaxonomyService";
+import iabTaxonomyService, { getIabDisplayString } from "../utils/iabTaxonomyService";
 
 function Classification() {
   const { currentUser } = useAuth();
