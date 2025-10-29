@@ -19,7 +19,7 @@ from iab_taxonomy import bp as iab_bp, load_iab_taxonomy
 from iab_taxonomy import load_tsv_items, load_bundle_map, load_iab_from_db, MIN_FULL_TAXONOMY
 from iab_taxonomy import get_taxonomy_codes
 from iab_taxonomy import parse_iab_tsv
-from typing import Optional, Tuple
+from typing import Optional
 
 # Initialize Flask app
 app = Flask(__name__)

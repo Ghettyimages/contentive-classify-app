@@ -9,3 +9,7 @@ services:
         value: 3.12.4
       - key: IAB_TSV_PATH
         value: /opt/render/project/src/backend/data/IAB_Content_Taxonomy_3_1.tsv
+      - key: ADMIRAL_PROPERTY_ID
+        value: A-6883CB48FC37EDB63FB66463-1
+      - key: ADMIRAL_ENV
+        value: production
