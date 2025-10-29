@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { API_BASE_URL } from '../config';
-import iabTaxonomyService, { getIabLabel, getIabFullPath, getIabDisplayString } from '../utils/iabTaxonomyService';
+import iabTaxonomyService, { getIabDisplayString } from '../utils/iabTaxonomyService';
 
-// Helper to format date YYYY-MM-DD
-const formatDate = (date) => date.toISOString().slice(0, 10);
 
 const DataDashboard = () => {
   const { currentUser } = useAuth();
@@ -29,20 +27,20 @@ const DataDashboard = () => {
         loadCounts();
       });
     }
-  }, [currentUser]);
+  }, [currentUser, loadMergedData, loadCounts]);
 
   const tokenHeader = () => ({ Authorization: `Bearer ${window.localStorage.getItem('fb_id_token') || ''}` });
 
-  const loadCounts = async () => {
+  const loadCounts = useCallback(async () => {
     try {
       const res = await axios.get(`${API_BASE_URL}/counts`, { headers: tokenHeader() });
       setCounts(res.data || { attribution_count: 0, classified_count: 0, merged_count: 0 });
     } catch (e) {
       console.error('Counts error', e);
     }
-  };
+  }, []);
 
-  const loadMergedData = async () => {
+  const loadMergedData = useCallback(async () => {
     setLoading(true);
     setError('');
 
@@ -77,7 +75,7 @@ const DataDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [sortField, sortDirection, loadCounts]);
 
   const mapSortKey = (field) => {
     const map = {

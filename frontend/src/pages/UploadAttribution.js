@@ -1,13 +1,10 @@
 import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import { getIdToken } from '../firebase/auth';
 import axios from 'axios';
 import { API_BASE_URL } from '../config';
 
 const UploadAttribution = () => {
-  const { currentUser } = useAuth();
-  const navigate = useNavigate();
+  
   const [file, setFile] = useState(null);
   const [previewData, setPreviewData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -207,11 +204,7 @@ const UploadAttribution = () => {
     }
   };
 
-  const getFieldValue = (row, field) => {
-    // Try the normalized lowercase field name first, then fallback to original field name
-    const normalizedField = field.toLowerCase();
-    return row[normalizedField] || row[field] || 'N/A';
-  };
+  
 
   return (
     <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
