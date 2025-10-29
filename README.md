@@ -52,8 +52,8 @@ This will start:
 
 ## 🔌 API Endpoints
 
-- `POST /classify` - Classify a single URL
-- `POST /classify-bulk` - Classify multiple URLs
+- `POST /classify` - Classify a single URL and persist the result to the authenticated user's dashboard
+- `POST /classify-bulk` - Classify multiple URLs and save each successful result to the dashboard for logged-in users
 - `GET /recent-classifications` - Get recent classifications from Firestore
 - `POST /upload-attribution` - Upload attribution CSV data (requires Firebase ID token)
 - `POST /merge-attribution` - Trigger merge of attribution and classification data (requires Firebase ID token)
@@ -70,6 +70,28 @@ This will start:
 - **Firestore caching** - Avoid re-classifying previously analyzed URLs
 - **Bulk processing** - Classify multiple URLs simultaneously
 - **Data persistence** - Store all classification results with timestamps
+- **Dashboard sync** - Every classification that succeeds while you're logged in is written straight to your SignalSync dashboard
+
+## 🗂️ Dashboard Persistence
+
+The backend automatically writes classification responses to Firestore so they surface inside the SignalSync dashboard without any extra steps:
+
+1. When you classify from the app UI, the browser automatically includes your Firebase session token. The backend writes the classification to Firestore with your `user_id` so it appears on the SignalSync dashboard moments later.
+2. When you call `POST /classify` or `POST /classify-bulk` directly, include a Firebase ID token in the `Authorization: Bearer <token>` header so the same persistence flow runs.
+3. Because the data is cached, repeat requests for the same URL reuse the saved result while keeping it visible in the dashboard history.
+4. Bulk jobs follow the same rules—each successful URL response in the payload is saved against the authenticated user.
+
+Even unauthenticated classifications are cached in Firestore for performance, but authentication is required for the result to show up in your personal dashboard.
+
+### Programmatic classification checklist
+
+Whether you are using `reclassify_urls.py`, the API directly, or another integration, make sure to:
+
+1. Obtain a Firebase ID token for the user whose dashboard should receive the result.
+2. Pass the token via `Authorization: Bearer <token>` when calling `POST /classify` or `POST /classify-bulk`.
+3. Optionally set `force_reclassify: true` to refresh existing URLs—the updated classification overwrites the saved copy and the dashboard reflects the latest insight.
+
+Following these steps guarantees that **every URL you classify is persisted to the SignalSync dashboard** for the authenticated user.
 
 ## 🔧 Development
 
