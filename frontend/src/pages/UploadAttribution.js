@@ -1,0 +1,407 @@
+import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { getIdToken } from '../firebase/auth';
+import axios from 'axios';
+import { API_BASE_URL } from '../config';
+
+const UploadAttribution = () => {
+  const { currentUser } = useAuth();
+  const navigate = useNavigate();
+  const [file, setFile] = useState(null);
+  const [previewData, setPreviewData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const parseCSVForPreview = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const csv = e.target.result;
+          const lines = csv.split('\n');
+          const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+          
+          const data = lines.slice(1, 6) // First 5 rows for preview
+            .filter(line => line.trim())
+            .map(line => {
+              const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+              const row = {};
+              headers.forEach((header, index) => {
+                const value = values[index] || '';
+                const normalizedHeader = header.toLowerCase();
+                
+                // Keep empty strings as empty strings - don't convert to null
+                row[normalizedHeader] = value;
+              });
+              return row;
+            });
+          
+          resolve(data);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsText(file);
+    });
+  };
+
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile && selectedFile.type === 'text/csv') {
+      setFile(selectedFile);
+      setError('');
+      setSuccess('');
+      
+      // Parse CSV for preview
+      parseCSVForPreview(selectedFile)
+        .then(data => {
+          setPreviewData(data);
+        })
+        .catch(err => {
+          setError('Error parsing CSV file. Please check the format.');
+        });
+    } else {
+      setError('Please select a valid CSV file');
+      setFile(null);
+    }
+  };
+
+  const parseCSV = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const text = e.target.result;
+          const lines = text.split('\n');
+          const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+          
+          console.log('📊 CSV Headers:', headers);
+          
+          const data = lines.slice(1) // All rows except header
+            .filter(line => line.trim())
+            .map((line, rowIndex) => {
+              const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+              const row = {};
+              headers.forEach((header, index) => {
+                const value = values[index];
+                const normalizedHeader = header.toLowerCase();
+                
+                // Only convert truly empty strings to null, preserve "0" and other valid values
+                if (value === '' || value === undefined) {
+                  row[normalizedHeader] = null;
+                } else {
+                  row[normalizedHeader] = value;
+                }
+                
+                // Debug CTR values specifically
+                if (normalizedHeader === 'ctr') {
+                  console.log(`📊 Row ${rowIndex + 1} CTR: Raw='${value}', Final='${row[normalizedHeader]}', Type='${typeof row[normalizedHeader]}'`);
+                }
+              });
+              return row;
+            });
+          
+          console.log('📊 Parsed CSV data sample:', data.slice(0, 2));
+          resolve(data);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsText(file);
+    });
+  };
+
+  const handleSubmit = async () => {
+    if (!file) {
+      setError('Please select a CSV file first');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const data = await parseCSV(file);
+
+      // Debug: Check what we're about to send
+      console.log('📊 About to send to backend:');
+      data.slice(0, 3).forEach((row, index) => {
+        console.log(`📊 Row ${index + 1}: CTR='${row.ctr}' (${typeof row.ctr})`);
+      });
+
+      // Log the exact request body
+      console.log('📊 Full request body being sent:', JSON.stringify({ data }, null, 2));
+
+      // Send to backend
+      console.log('Getting Firebase token for upload...');
+      const token = await getIdToken();
+      console.log('Upload token received:', token ? 'Yes' : 'No');
+      
+      if (!token) {
+        setError('No authentication token available for upload. Please log in again.');
+        return;
+      }
+
+      console.log('Sending upload request...');
+      const response = await axios.post(
+        `${API_BASE_URL}/upload-attribution`,
+        { data },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      const responseMessage = response.data.message || `Successfully uploaded ${data.length} attribution records!`;
+      setSuccess(responseMessage);
+      setFile(null);
+      setPreviewData([]);
+    } catch (err) {
+      console.error('Upload error:', err);
+      setError(err.response?.data?.error || 'Error uploading attribution data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+
+  const handleTestAuth = async () => {
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      console.log('Testing authentication...');
+      const token = await getIdToken();
+      
+      if (!token) {
+        setError('No authentication token available. Please log in again.');
+        return;
+      }
+
+      const response = await axios.post(
+        `${API_BASE_URL}/test-auth`,
+        {},
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      setSuccess(`Auth test successful! User: ${response.data.email}`);
+    } catch (err) {
+      console.error('Auth test error:', err);
+      setError(err.response?.data?.error || 'Authentication test failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getFieldValue = (row, field) => {
+    // Try the normalized lowercase field name first, then fallback to original field name
+    const normalizedField = field.toLowerCase();
+    return row[normalizedField] || row[field] || 'N/A';
+  };
+
+  return (
+    <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
+      <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+        <img
+          src="/logo2.png"
+          alt="Contentive Media Logo"
+          style={{ maxWidth: "210px", height: "auto", marginBottom: "-2.0rem" }}
+        />
+        <h1 style={{ margin: "0.2rem 0 0 0", fontSize: "1.8rem" }}>CONTENTIVE MEDIA</h1>
+        <p style={{ fontSize: "1rem", color: "#444", margin: "0.5rem" }}>
+          Upload Attribution Data
+        </p>
+      </div>
+
+      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+        <div style={{ 
+          backgroundColor: "#f8f9fa", 
+          padding: "2rem", 
+          borderRadius: "8px",
+          border: "1px solid #dee2e6",
+          marginBottom: "2rem"
+        }}>
+          <h2 style={{ marginTop: 0, color: "#333" }}>Upload Attribution CSV</h2>
+          <p style={{ color: "#666", marginBottom: "1.5rem" }}>
+            Upload a CSV file containing attribution data. The file should include a header row with columns for URL and optional metrics.
+          </p>
+
+          <div style={{ marginBottom: "1.5rem" }}>
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleFileChange}
+              style={{
+                padding: "0.5rem",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+                width: "100%",
+                maxWidth: "400px"
+              }}
+            />
+          </div>
+
+          {error && (
+            <div style={{
+              backgroundColor: "#f8d7da",
+              color: "#721c24",
+              padding: "0.75rem",
+              borderRadius: "4px",
+              marginBottom: "1rem",
+              border: "1px solid #f5c6cb"
+            }}>
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div style={{
+              backgroundColor: "#d4edda",
+              color: "#155724",
+              padding: "0.75rem",
+              borderRadius: "4px",
+              marginBottom: "1rem",
+              border: "1px solid #c3e6cb"
+            }}>
+              {success}
+            </div>
+          )}
+
+          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+            <button
+              onClick={handleSubmit}
+              disabled={!file || loading}
+              style={{
+                padding: "0.75rem 1.5rem",
+                backgroundColor: file ? "#007bff" : "#6c757d",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: file && !loading ? "pointer" : "not-allowed",
+                fontSize: "1rem",
+                opacity: loading ? 0.7 : 1
+              }}
+            >
+              {loading ? "Uploading..." : "Upload Attribution Data"}
+            </button>
+            
+
+            
+            <button
+              onClick={handleTestAuth}
+              disabled={loading}
+              style={{
+                padding: "0.75rem 1.5rem",
+                backgroundColor: "#ffc107",
+                color: "black",
+                border: "none",
+                borderRadius: "4px",
+                cursor: !loading ? "pointer" : "not-allowed",
+                fontSize: "1rem",
+                opacity: loading ? 0.7 : 1
+              }}
+            >
+              Test Auth
+            </button>
+          </div>
+        </div>
+
+        {previewData.length > 0 && (
+          <div style={{ 
+            backgroundColor: "#fff", 
+            padding: "2rem", 
+            borderRadius: "8px",
+            border: "1px solid #dee2e6"
+          }}>
+            <h3 style={{ marginTop: 0, color: "#333" }}>Preview (First 5 Rows)</h3>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                fontSize: "0.9rem",
+                border: "1px solid #ddd"
+              }}>
+                <thead>
+                  <tr>
+                    {Object.keys(previewData[0] || {}).map(header => (
+                      <th key={header} style={{
+                        borderBottom: "2px solid #ddd",
+                        backgroundColor: "#f8f9fa",
+                        padding: "12px 8px",
+                        textAlign: "left",
+                        fontWeight: "600",
+                        color: "#333"
+                      }}>
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {previewData.map((row, index) => (
+                    <tr key={index} style={{ borderBottom: "1px solid #eee" }}>
+                      {Object.keys(row).map(key => (
+                        <td key={key} style={{
+                          padding: "10px 8px",
+                          borderRight: "1px solid #eee",
+                          maxWidth: "200px",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap"
+                        }}>
+                          {row[key]}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        <div style={{ 
+          backgroundColor: "#e7f3ff", 
+          padding: "1.5rem", 
+          borderRadius: "8px",
+          border: "1px solid #b3d9ff",
+          marginTop: "2rem"
+        }}>
+          <h4 style={{ marginTop: 0, color: "#0056b3" }}>Expected CSV Format</h4>
+          <p style={{ color: "#0056b3", marginBottom: "1rem" }}>
+            Your CSV should include these columns (URL is required, others are optional). 
+            <strong>New URLs will be automatically classified, and CTR will be calculated if missing.</strong>
+          </p>
+          <ul style={{ color: "#0056b3", margin: 0 }}>
+            <li><strong>url</strong> - The webpage URL (required)</li>
+            <li><strong>conversions</strong> - Number of conversions</li>
+            <li><strong>revenue</strong> - Revenue amount</li>
+            <li><strong>impressions</strong> - Number of impressions</li>
+            <li><strong>clicks</strong> - Number of clicks</li>
+            <li><strong>ctr</strong> - Click-through rate</li>
+            <li><strong>scroll_depth</strong> - Average scroll depth percentage</li>
+            <li><strong>viewability</strong> - Viewability percentage</li>
+            <li><strong>time_on_page</strong> - Average time on page (seconds)</li>
+            <li><strong>fill_rate</strong> - Ad fill rate percentage</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default UploadAttribution;

@@ -1,0 +1,54 @@
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { 
+  onAuthStateChange, 
+  createUserProfile, 
+  auth
+} from '../firebase/auth';
+
+const AuthContext = createContext();
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+export const AuthProvider = ({ children }) => {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChange(async (user) => {
+      if (user) {
+        // Create user profile in Firestore if it doesn't exist
+        await createUserProfile(user);
+        setCurrentUser(user);
+        try {
+          const token = await user.getIdToken();
+          window.localStorage.setItem('fb_id_token', token);
+        } catch (e) {
+          console.error('Failed to cache ID token', e);
+        }
+      } else {
+        setCurrentUser(null);
+        window.localStorage.removeItem('fb_id_token');
+      }
+      setLoading(false);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  const value = {
+    currentUser,
+    loading
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {!loading && children}
+    </AuthContext.Provider>
+  );
+};

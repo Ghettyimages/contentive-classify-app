@@ -1,12 +1,11 @@
-# Classify Backend (Flask)
+# Backend README
 
-This is the backend API for Contentive's Classify tool.
+Create a `.env` file with:
 
-## Endpoints
+```
+OPENAI_API_KEY=your_openai_key
+FIREBASE_SERVICE_ACCOUNT={...firebase service account json...}
+PORT=5000
+```
 
-### POST /classify
-Request JSON:
-```json
-{
-  "url": "https://example.com/some-article"
-}
+See root `README.md` for setup instructions.

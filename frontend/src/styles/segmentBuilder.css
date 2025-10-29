@@ -1,0 +1,40 @@
+.segment-toolbar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 12px;
+	margin: 8px 0 12px;
+	flex-wrap: wrap;
+}
+.segment-toolbar__left,
+.segment-toolbar__right {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.segment-toolbar__label {
+	font-weight: 600;
+}
+.saved-segments .saved-segments__select {
+	min-width: 220px;
+}
+.btn {
+	padding: 6px 10px;
+	border: 1px solid #d1d5db;
+	border-radius: 8px;
+	background: #fff;
+	cursor: pointer;
+}
+.btn:hover { filter: brightness(0.98); }
+.btn-primary {
+	background: #111827;
+	color: #fff;
+	border-color: #111827;
+}
+.btn-secondary {
+	background: #f3f4f6;
+}
+.btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
