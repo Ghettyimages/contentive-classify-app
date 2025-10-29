@@ -19,6 +19,7 @@ from iab_taxonomy import bp as iab_bp, load_iab_taxonomy
 from iab_taxonomy import load_tsv_items, load_bundle_map, load_iab_from_db, MIN_FULL_TAXONOMY
 from iab_taxonomy import get_taxonomy_codes
 from iab_taxonomy import parse_iab_tsv
+from typing import Optional, Tuple
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -384,6 +385,95 @@ def normalize_url(raw: str) -> str:
 def now_iso_utc() -> str:
     """Return current time as ISO-8601 UTC with trailing Z."""
     return datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+
+# -----------------------------------------------------------------------------
+# Admiral Install API integration
+# Server-side fetch with simple per-visitor caching. Returns JS to embed in <head>.
+# -----------------------------------------------------------------------------
+
+_ADMIRAL_CACHE = {}
+
+def _get_client_ip() -> str:
+    candidates = [
+        request.headers.get('X-Forwarded-For', ''),
+        request.headers.get('CF-Connecting-IP', ''),
+        request.headers.get('True-Client-IP', ''),
+        request.headers.get('X-Real-IP', ''),
+        request.remote_addr or ''
+    ]
+    for raw in candidates:
+        if not raw:
+            continue
+        # X-Forwarded-For may contain a list
+        ip = raw.split(',')[0].strip()
+        if ip:
+            return ip
+    return '0.0.0.0'
+
+def _admiral_cache_get(key: str) -> Optional[str]:
+    try:
+        entry = _ADMIRAL_CACHE.get(key)
+        if not entry:
+            return None
+        expires, body = entry
+        if datetime.utcnow() < expires:
+            return body
+        # expired
+        _ADMIRAL_CACHE.pop(key, None)
+        return None
+    except Exception:
+        return None
+
+def _admiral_cache_set(key: str, body: str, ttl_seconds: int) -> None:
+    try:
+        _ADMIRAL_CACHE[key] = (datetime.utcnow() + timedelta(seconds=ttl_seconds), body)
+    except Exception:
+        pass
+
+@app.route('/api/admiral/bootstrap', methods=['GET'])
+@cross_origin()
+def admiral_bootstrap():
+    property_id = (os.getenv('ADMIRAL_PROPERTY_ID') or '').strip()
+    environment = (os.getenv('ADMIRAL_ENV') or 'production').strip()
+    disable_services = (os.getenv('ADMIRAL_DISABLE_SERVICES') or '').strip()
+    disable_features = (os.getenv('ADMIRAL_DISABLE_FEATURES') or '').strip()
+
+    # If not configured, return 204 so the caller can no-op
+    if not property_id:
+        return Response('', status=204)
+
+    client_ip = _get_client_ip()
+    cache_key = f"{property_id}|{environment}|{disable_services}|{disable_features}|{client_ip}"
+    cached = _admiral_cache_get(cache_key)
+    if cached is not None:
+        return Response(cached, mimetype='application/javascript', headers={
+            'Cache-Control': 'private, max-age=3600'
+        })
+
+    # Build Admiral Install API URL
+    base = f"https://delivery.api.getadmiral.com/script/{property_id}/bootstrap"
+    params = {
+        'environment': environment,
+        'ip': client_ip,
+    }
+    if disable_services:
+        params['disableServices'] = disable_services
+    if disable_features:
+        params['disableFeatures'] = disable_features
+
+    try:
+        resp = requests.get(base, params=params, timeout=5)
+        resp.raise_for_status()
+        body = resp.text or ''
+        # Cache for 6 hours as a safe default
+        _admiral_cache_set(cache_key, body, ttl_seconds=6 * 60 * 60)
+        return Response(body, mimetype='application/javascript', headers={
+            'Cache-Control': 'private, max-age=3600'
+        })
+    except Exception as e:
+        # On failure, no-op to avoid breaking page load
+        app.logger.warning('Admiral Install API fetch failed: %s', e)
+        return Response('', status=204)
 
 def _verify_and_get_user_id() -> str:
     auth_header = request.headers.get('Authorization')
