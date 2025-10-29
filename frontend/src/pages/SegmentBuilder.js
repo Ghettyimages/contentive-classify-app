@@ -7,7 +7,6 @@ import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/fire
 // IAB options now powered by backend /api/iab31 with local fallback
 import SavedSegmentsDropdown from '../components/SavedSegmentsDropdown';
 import { slog, serror } from '../utils/log';
-import { getAuth } from 'firebase/auth';
 import '../styles/segmentBuilder.css';
 import ExportFormatModal from '../components/ExportFormatModal.jsx';
 import iabTaxonomyService, { getIabMetadata } from '../utils/iabTaxonomyService';
@@ -145,12 +144,7 @@ const SegmentBuilder = () => {
     }
   }, []);
 
-  useEffect(() => {
-    if (currentUser) {
-      loadSegments();
-      loadSourceRows();
-    }
-  }, [currentUser, loadSegments, loadSourceRows]);
+  // moved below after loadSourceRows definition to avoid TDZ
 
   // Initialize IAB taxonomy service and load options after source rows are loaded
   const usedIabCodes = useMemo(() => {
@@ -265,6 +259,13 @@ const SegmentBuilder = () => {
       setSourceRows([]);
     }
   }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      loadSegments();
+      loadSourceRows();
+    }
+  }, [currentUser, loadSegments, loadSourceRows]);
 
   const buildSegmentRules = () => {
     const include_iab = includeIab;
@@ -406,10 +407,6 @@ const SegmentBuilder = () => {
       serror('Save to Firestore failed', e);
       alert('Failed to save segment.');
     }
-  };
-
-  const canExport = () => {
-    return Boolean(selectedSegmentId) || (Array.isArray(previewRows) && previewRows.length > 0);
   };
 
   
