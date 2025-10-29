@@ -1,3 +1,5 @@
+import { API_BASE_URL } from '../config';
+
 // Centralized IAB Taxonomy Service
 // Provides consistent IAB 3.1 code-to-label mapping across all components
 
@@ -5,18 +7,23 @@ class IABTaxonomyService {
   constructor() {
     this.codeToLabelMap = new Map();
     this.initialized = false;
+    this.version = '3.1';
+    this.source = '';
+    this.totalCodes = 0;
   }
 
   async initialize() {
     if (this.initialized) return;
-    
+
     try {
       // Try to load from backend API first
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://contentive-classify-app.onrender.com'}/api/iab31`);
+      const response = await fetch(`${API_BASE_URL}/api/iab31`);
       if (response.ok) {
         const data = await response.json();
         if (data.codes && Array.isArray(data.codes)) {
           this.buildCodeMap(data.codes);
+          this.version = data.version || this.version;
+          this.source = data.source || 'api:iab31';
           this.initialized = true;
           console.log('[IAB Service] Initialized from backend with', this.codeToLabelMap.size, 'codes');
           return;
@@ -31,6 +38,8 @@ class IABTaxonomyService {
       const { default: bundled } = await import('../data/iab_content_taxonomy_3_1.v1.json');
       if (bundled && bundled.codes && Array.isArray(bundled.codes)) {
         this.buildCodeMap(bundled.codes);
+        this.version = bundled.version || this.version;
+        this.source = bundled.source || 'local:iab_content_taxonomy_3_1.v1.json';
         this.initialized = true;
         console.log('[IAB Service] Initialized from fallback with', this.codeToLabelMap.size, 'codes');
       }
@@ -43,11 +52,11 @@ class IABTaxonomyService {
     this.codeToLabelMap.clear();
     for (const item of codes) {
       if (!item || !item.code) continue;
-      
+
       const code = item.code.trim();
       const label = item.label || item.name || '';
       const path = Array.isArray(item.path) ? item.path : [];
-      
+
       // Store both the simple label and the full path
       this.codeToLabelMap.set(code, {
         label: label,
@@ -57,6 +66,7 @@ class IABTaxonomyService {
         parent: item.parent || null
       });
     }
+    this.totalCodes = this.codeToLabelMap.size;
   }
 
   // Get label for a code
@@ -119,16 +129,7 @@ class IABTaxonomyService {
 
   // Get all codes as options for dropdowns
   getAllOptions(includeHierarchy = true) {
-    const options = [];
-    for (const [code, info] of this.codeToLabelMap.entries()) {
-      options.push({
-        value: code,
-        label: includeHierarchy ? info.fullPath : info.label,
-        code: code,
-        display: includeHierarchy ? `${code} (${info.fullPath})` : `${code} (${info.label})`
-      });
-    }
-    return options.sort((a, b) => this.compareIabCodes(a.code, b.code));
+    return this.buildOptions(Array.from(this.codeToLabelMap.keys()), { includeHierarchy, includeUnknown: false });
   }
 
   // Compare IAB codes for sorting (IAB1 < IAB1-1 < IAB1-2 < IAB2)
@@ -137,39 +138,72 @@ class IABTaxonomyService {
       const parts = code.replace('IAB', '').split('-').map(p => parseInt(p) || 0);
       return parts;
     };
-    
+
     const partsA = parseCode(a);
     const partsB = parseCode(b);
-    
+
     for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
       const partA = partsA[i] || 0;
       const partB = partsB[i] || 0;
       if (partA !== partB) return partA - partB;
     }
-    return 0;
+    return a.localeCompare(b);
   }
 
   // Get filtered options based on codes that exist in data
   getFilteredOptions(usedCodes, includeHierarchy = true) {
     if (!usedCodes || usedCodes.length === 0) {
-      return this.getAllOptions(includeHierarchy);
+      return [];
     }
-    
-    const usedSet = new Set(usedCodes);
+
+    return this.buildOptions(usedCodes, { includeHierarchy, includeUnknown: true });
+  }
+
+  buildOptions(codes, { includeHierarchy = true, includeUnknown = false } = {}) {
+    if (!Array.isArray(codes)) return [];
+
     const options = [];
-    
-    for (const [code, info] of this.codeToLabelMap.entries()) {
-      if (usedSet.has(code)) {
+    const seen = new Set();
+
+    for (const raw of codes) {
+      if (typeof raw !== 'string') continue;
+      const clean = raw.trim();
+      if (!clean || seen.has(clean)) continue;
+      seen.add(clean);
+
+      const info = this.codeToLabelMap.get(clean);
+      if (info) {
         options.push({
-          value: code,
+          value: clean,
           label: includeHierarchy ? info.fullPath : info.label,
-          code: code,
-          display: includeHierarchy ? `${code} (${info.fullPath})` : `${code} (${info.label})`
+          code: clean,
+          path: info.path,
+          display: includeHierarchy ? `${clean} (${info.fullPath})` : `${clean} (${info.label})`
+        });
+        continue;
+      }
+
+      if (includeUnknown) {
+        options.push({
+          value: clean,
+          label: clean,
+          code: clean,
+          path: [],
+          display: `${clean} (Unknown category)`
         });
       }
     }
-    
+
     return options.sort((a, b) => this.compareIabCodes(a.code, b.code));
+  }
+
+  getMetadata() {
+    return {
+      initialized: this.initialized,
+      version: this.version,
+      source: this.source,
+      count: this.codeToLabelMap.size,
+    };
   }
 }
 
@@ -183,8 +217,9 @@ export const getIabLabel = (code) => iabTaxonomyService.getLabel(code);
 export const getIabFullPath = (code) => iabTaxonomyService.getFullPath(code);
 export const getIabDisplayString = (code, options) => iabTaxonomyService.getDisplayString(code, options);
 export const hasIabCode = (code) => iabTaxonomyService.hasCode(code);
+export const getIabMetadata = () => iabTaxonomyService.getMetadata();
 
 // Initialize the service when module is imported
-iabTaxonomyService.initialize().catch(err => 
+iabTaxonomyService.initialize().catch(err =>
   console.error('[IAB Service] Initialization failed:', err)
 );
