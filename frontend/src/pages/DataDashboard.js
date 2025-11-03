@@ -19,16 +19,6 @@ const DataDashboard = () => {
   const [selectedIabCode, setSelectedIabCode] = useState('');
   const [selectedIabSubcode, setSelectedIabSubcode] = useState('');
 
-  useEffect(() => {
-    if (currentUser) {
-      // Initialize IAB service first
-      iabTaxonomyService.initialize().then(() => {
-        loadMergedData();
-        loadCounts();
-      });
-    }
-  }, [currentUser, loadMergedData, loadCounts]);
-
   const tokenHeader = () => ({ Authorization: `Bearer ${window.localStorage.getItem('fb_id_token') || ''}` });
 
   const loadCounts = useCallback(async () => {
@@ -76,6 +66,16 @@ const DataDashboard = () => {
       setLoading(false);
     }
   }, [sortField, sortDirection, loadCounts]);
+
+  useEffect(() => {
+    if (currentUser) {
+      // Initialize IAB service first
+      iabTaxonomyService.initialize().then(() => {
+        loadMergedData();
+        loadCounts();
+      });
+    }
+  }, [currentUser, loadMergedData, loadCounts]);
 
   const mapSortKey = (field) => {
     const map = {
